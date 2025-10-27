@@ -33,7 +33,7 @@ export default function HeroSection() {
           Welcome to Nomadic Performance
         </h1>
         <p style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '2rem', fontWeight: 500, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-          Elevate your outdoor experience with expert training, guides, and resources for Utah&apos;s adventurous spirit.
+          Helping outdoor athletes and adventurers stay strong, prevent injuries, and perform at their best—anywhere, anytime.
         </p>
         <Link href="/blog" style={{ display: 'inline-block', padding: '0.75rem 2rem', fontSize: '1.25rem', fontWeight: 700, color: '#1a3a2a', background: '#fff', borderRadius: '2rem', textDecoration: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', transition: 'background 0.2s' }}>
           Explore the Blog
