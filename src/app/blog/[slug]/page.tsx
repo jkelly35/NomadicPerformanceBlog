@@ -1,10 +1,6 @@
 // src/app/blog/[slug]/page.tsx
 import { notFound } from "next/navigation";
 import { getAllPostsMeta, getPostBySlug } from "@/lib/posts";
-import { MDXRemote } from "next-mdx-remote/rsc";
-import remarkGfm from "remark-gfm";
-import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import NavBar from "../../../components/NavBar";
 import Footer from "../../../components/Footer";
 
@@ -46,18 +42,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       </section>
       <section style={{ padding: '4rem 5vw', background: '#fff' }}>
         <div className="blog-content" style={{ maxWidth: '800px', margin: '0 auto', lineHeight: '1.8', fontSize: '1.1rem', color: '#333', fontFamily: 'Georgia, serif' }}>
-          <MDXRemote
-            source={content}
-            options={{
-              mdxOptions: {
-                remarkPlugins: [remarkGfm],
-                rehypePlugins: [
-                  rehypeSlug,
-                  [rehypeAutolinkHeadings, { behavior: "wrap" }],
-                ],
-              },
-            }}
-          />
+          <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }} />
         </div>
       </section>
       <Footer />
