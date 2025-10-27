@@ -3,6 +3,7 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import NewsletterSignup from "../../components/NewsletterSignup";
 import SearchBar from "../../components/SearchBar";
+import TagFilter from "../../components/TagFilter";
 import BlogContent from "../../components/BlogContent";
 import { getAllPostsMeta } from "@/lib/posts";
 import { Suspense } from 'react';
@@ -31,6 +32,11 @@ export default async function BlogIndex() {
               <SearchBar placeholder="Search articles..." />
             </Suspense>
           </div>
+
+          {/* Tag Filter */}
+          <Suspense fallback={<div style={{ height: '60px' }}></div>}>
+            <TagFilter posts={posts} />
+          </Suspense>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <span style={{ background: '#1a3a2a', color: '#fff', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 600 }}>Physical Therapy</span>
