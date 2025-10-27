@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Outdoor Fitness & Adventure Blog",
-  description: "Expert training, guides, and resources for Utah's adventurous spirit. Elevate your outdoor experience with professional physical therapy and fitness advice.",
+  description: "Helping outdoor athletes and adventurers stay strong, prevent injuries, and perform at their best—anywhere, anytime.",
   keywords: "outdoor fitness, Utah adventures, physical therapy, nomadic performance, hiking, skiing",
   authors: [{ name: "Nomadic Performance" }],
   openGraph: {
