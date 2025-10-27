@@ -15,6 +15,18 @@ html, body {
 .blog-content h5,
 .blog-content h6 {
 	color: #1a3a2a !important;
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+}
+
+/* Override any blue link colors in blog content */
+.blog-content h1 a,
+.blog-content h2 a,
+.blog-content h3 a,
+.blog-content h4 a,
+.blog-content h5 a,
+.blog-content h6 a {
+	color: #1a3a2a !important;
+	text-decoration: none !important;
 }
 
 .blog-content h1 {
@@ -126,6 +138,97 @@ html, body {
 @media (min-width: 768px) {
   .nav-search {
     display: block;
+  }
+}
+
+/* Mobile Navigation Styles */
+.mobile-menu-btn {
+  display: block !important;
+}
+
+.desktop-nav {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-menu-btn {
+    display: none !important;
+  }
+
+  .desktop-nav {
+    display: flex !important;
+  }
+}
+
+/* Mobile responsive typography */
+@media (max-width: 767px) {
+  /* Hero section mobile adjustments */
+  .hero-title {
+    font-size: 2.2rem !important;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem !important;
+  }
+
+  /* Blog post headings mobile */
+  .blog-content h1 {
+    font-size: 2rem !important;
+  }
+
+  .blog-content h2 {
+    font-size: 1.6rem !important;
+  }
+
+  .blog-content h3 {
+    font-size: 1.3rem !important;
+  }
+
+  /* General mobile spacing */
+  .mobile-padding {
+    padding: 2rem 1rem !important;
+  }
+
+  .mobile-margin {
+    margin: 1rem !important;
+  }
+
+  /* Mobile navigation improvements */
+  nav {
+    padding: 1rem 1rem !important;
+  }
+
+  /* Footer mobile adjustments */
+  footer {
+    padding: 2rem 1rem !important;
+    text-align: center !important;
+  }
+
+  /* Form elements mobile */
+  input, textarea, select, button {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+
+  /* Grid layouts for mobile */
+  .mobile-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Card layouts for mobile */
+  .mobile-card {
+    margin: 0 0.5rem 1rem 0.5rem !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .blog-content h1 {
+    font-size: 2.2rem !important;
+  }
+
+  .blog-content h2 {
+    font-size: 1.8rem !important;
   }
 }
 

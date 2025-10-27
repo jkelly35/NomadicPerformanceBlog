@@ -28,14 +28,48 @@ export default function HeroSection() {
           zIndex: 1,
         }}
       />
-      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '4rem 2rem', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', maxWidth: '600px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: 900, color: '#fff', marginBottom: '1.5rem', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        textAlign: 'center',
+        padding: '2rem 1rem',
+        background: 'rgba(0,0,0,0.4)',
+        borderRadius: '8px',
+        maxWidth: '600px',
+        margin: '0 auto'
+      }}>
+        <h1 style={{
+          fontSize: 'clamp(2rem, 8vw, 3rem)',
+          fontWeight: 900,
+          color: '#fff',
+          marginBottom: '1.5rem',
+          textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+          lineHeight: '1.2'
+        }}>
           Welcome to Nomadic Performance
         </h1>
-        <p style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '2rem', fontWeight: 500, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+        <p style={{
+          fontSize: 'clamp(1.1rem, 4vw, 1.5rem)',
+          color: '#fff',
+          marginBottom: '2rem',
+          fontWeight: 500,
+          textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+          lineHeight: '1.4'
+        }}>
           Helping outdoor athletes and adventurers stay strong, prevent injuries, and perform at their best—anywhere, anytime.
         </p>
-        <Link href="/blog" style={{ display: 'inline-block', padding: '0.75rem 2rem', fontSize: '1.25rem', fontWeight: 700, color: '#1a3a2a', background: '#fff', borderRadius: '2rem', textDecoration: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', transition: 'background 0.2s' }}>
+        <Link href="/blog" style={{
+          display: 'inline-block',
+          padding: '0.75rem 2rem',
+          fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+          fontWeight: 700,
+          color: '#1a3a2a',
+          background: '#fff',
+          borderRadius: '2rem',
+          textDecoration: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          transition: 'background 0.2s'
+        }}>
           Explore the Blog
         </Link>
       </div>

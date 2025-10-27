@@ -47,18 +47,36 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   return (
     <main>
       <NavBar />
-      <section style={{ padding: '4rem 5vw', background: '#f9f9f9', minHeight: '20vh' }}>
+      <section style={{ padding: '2rem 1rem', background: '#f9f9f9', minHeight: '20vh' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: 900, color: '#1a3a2a', marginBottom: '1rem' }}>
+          <h1 style={{
+            fontSize: 'clamp(1.8rem, 6vw, 3rem)',
+            fontWeight: 900,
+            color: '#1a3a2a',
+            marginBottom: '1rem'
+          }}>
             {meta.title}
           </h1>
-          <p style={{ fontSize: '1.1rem', color: '#666' }}>
+          <p style={{
+            fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
+            color: '#666'
+          }}>
             {new Date(meta.date).toLocaleDateString()}
           </p>
         </div>
       </section>
-      <section style={{ padding: '4rem 5vw', background: '#fff' }}>
-        <div className="blog-content" style={{ maxWidth: '800px', margin: '0 auto', lineHeight: '1.8', fontSize: '1.1rem', color: '#333', fontFamily: 'Georgia, serif' }}>
+      <section style={{
+        padding: '2rem 1rem',
+        background: '#fff'
+      }}>
+        <div className="blog-content" style={{
+          maxWidth: '800px',
+          margin: '0 auto',
+          lineHeight: '1.8',
+          fontSize: 'clamp(1rem, 2vw, 1.1rem)',
+          color: '#333',
+          fontFamily: 'Georgia, serif'
+        }}>
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
         </div>
       </section>
