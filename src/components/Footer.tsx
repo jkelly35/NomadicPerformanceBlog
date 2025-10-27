@@ -18,6 +18,11 @@ export default function Footer() {
           </div>
         </div>
         <div style={{ borderTop: '1px solid #333', paddingTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            <a href="/privacy" style={{ color: '#ccc', textDecoration: 'none', fontSize: '0.9rem' }}>
+              Privacy Policy
+            </a>
+          </div>
           <p style={{ fontSize: '0.9rem', margin: 0 }}>
             © 2025 Nomadic Performance. All rights reserved.
           </p>
