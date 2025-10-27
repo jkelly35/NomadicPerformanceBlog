@@ -128,3 +128,10 @@ html, body {
     display: block;
   }
 }
+
+/* CTA Button hover effects */
+.cta-button:hover {
+  background: #2d5a3d !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26,58,42,0.3);
+}
