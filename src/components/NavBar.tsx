@@ -16,6 +16,7 @@ export default function NavBar() {
       <div>
         <Link href="/about" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} className="nav-link">About Me</Link>
         <Link href="/blog" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} className="nav-link">Blog</Link>
+        <Link href="/contact" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} className="nav-link">Contact</Link>
         <Link href="/login" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} className="nav-link">Log In</Link>
       </div>
     </nav>
