@@ -10,15 +10,22 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@next/mdx": "^16.0.0",
     "@tailwindcss/typography": "^0.5.19",
     "gray-matter": "^4.0.3",
     "next": "15.5.5",
-    "next-mdx-remote": "^5.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "rehype-autolink-headings": "^7.1.0",
+    "rehype-highlight": "^7.0.2",
     "rehype-slug": "^6.0.0",
-    "remark-gfm": "^4.0.1"
+    "rehype-stringify": "^10.0.1",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-html": "^16.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

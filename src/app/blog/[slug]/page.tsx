@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import { getAllPostsMeta, getPostBySlug } from "@/lib/posts";
 import NavBar from "../../../components/NavBar";
 import Footer from "../../../components/Footer";
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import rehypeStringify from 'rehype-stringify';
+import rehypeSlug from 'rehype-slug';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 
 // Pre-generate static paths
 export async function generateStaticParams() {
@@ -27,6 +33,17 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const { meta, content } = await getPostBySlug(slug).catch(() => ({ meta: null, content: "" }));
   if (!meta) return notFound();
 
+  // Process markdown to HTML on the server
+  const processedContent = await unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypeSlug)
+    .use(rehypeAutolinkHeadings, { behavior: 'wrap' })
+    .use(rehypeStringify)
+    .process(content);
+
+  const htmlContent = processedContent.toString();
+
   return (
     <main>
       <NavBar />
@@ -42,7 +59,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       </section>
       <section style={{ padding: '4rem 5vw', background: '#fff' }}>
         <div className="blog-content" style={{ maxWidth: '800px', margin: '0 auto', lineHeight: '1.8', fontSize: '1.1rem', color: '#333', fontFamily: 'Georgia, serif' }}>
-          <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }} />
+          <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
         </div>
       </section>
       <Footer />
