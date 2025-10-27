@@ -19,9 +19,8 @@ export default function NewsletterSignup() {
     setStatus('loading');
 
     try {
-      // Replace YOUR_FORM_ID with your actual Formspree form ID
-      // Sign up at https://formspree.io/ for free
-      const response = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+      // Formspree endpoint for newsletter subscriptions
+      const response = await fetch('https://formspree.io/f/xldodoyk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
