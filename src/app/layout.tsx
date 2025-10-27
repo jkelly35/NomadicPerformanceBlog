@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Nomadic Performance" }],
   openGraph: {
     title: "Nomadic Performance",
-    description: "Elevate your outdoor experience with expert training and guides for Utah adventures.",
+    description: "Helping outdoor athletes and adventurers stay strong, prevent injuries, and perform at their best—anywhere, anytime.",
     type: "website",
   },
   icons: {
