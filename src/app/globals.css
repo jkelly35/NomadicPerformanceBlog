@@ -117,3 +117,14 @@ html, body {
 .social-link:hover {
   opacity: 0.8 !important;
 }
+
+/* Navigation search bar - hidden on mobile */
+.nav-search {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .nav-search {
+    display: block;
+  }
+}
