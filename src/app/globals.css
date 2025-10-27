@@ -85,3 +85,35 @@ html, body {
 }
 
 /* No global Tailwind utility classes here. Use in JSX only. */
+
+/* Navigation link hover effects */
+.nav-link:hover {
+  color: #ccc !important;
+}
+
+/* Post card hover effects */
+.post-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Subscribe button hover effects */
+.subscribe-btn:hover:not(:disabled) {
+  background: #f0f0f0 !important;
+}
+
+/* 404 page button hover effects */
+.btn-home:hover {
+  transform: translateY(-2px) !important;
+}
+
+.btn-blog:hover {
+  background: rgba(255,255,255,0.3) !important;
+}
+
+.nav-card:hover {
+  background: #2d5a3d !important;
+}
+
+.social-link:hover {
+  opacity: 0.8 !important;
+}

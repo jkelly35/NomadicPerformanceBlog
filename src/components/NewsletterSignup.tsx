@@ -103,6 +103,7 @@ export default function NewsletterSignup() {
           <button
             type="submit"
             disabled={status === 'loading'}
+            className="subscribe-btn"
             style={{
               padding: '0.75rem 2rem',
               background: status === 'loading' ? '#ccc' : '#fff',
@@ -114,16 +115,6 @@ export default function NewsletterSignup() {
               cursor: status === 'loading' ? 'not-allowed' : 'pointer',
               transition: 'background 0.2s',
               opacity: status === 'loading' ? 0.7 : 1
-            }}
-            onMouseOver={(e) => {
-              if (status !== 'loading') {
-                e.currentTarget.style.background = '#f0f0f0';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (status !== 'loading') {
-                e.currentTarget.style.background = '#fff';
-              }
             }}
           >
             {status === 'loading' ? 'Subscribing...' : 'Subscribe'}

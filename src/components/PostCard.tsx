@@ -17,7 +17,7 @@ interface PostCardProps {
 
 export default function PostCard({ post }: PostCardProps) {
   return (
-    <article style={{ background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', transition: 'transform 0.2s', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+    <article className="post-card" style={{ background: '#f9f9f9', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', transition: 'transform 0.2s', cursor: 'pointer' }}>
       <Link href={`/blog/${post.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.5rem' }}>
