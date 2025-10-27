@@ -16,7 +16,7 @@ export default function NavBar() {
       <div>
         <Link href="/about" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#ccc'} onMouseOut={(e) => e.currentTarget.style.color = '#fff'}>About Me</Link>
         <Link href="/blog" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#ccc'} onMouseOut={(e) => e.currentTarget.style.color = '#fff'}>Blog</Link>
-        <a href="/login" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#ccc'} onMouseOut={(e) => e.currentTarget.style.color = '#fff'}>Log In</a>
+        <Link href="/login" style={{ margin: '0 1rem', fontSize: '1.1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#ccc'} onMouseOut={(e) => e.currentTarget.style.color = '#fff'}>Log In</Link>
       </div>
     </nav>
   );
