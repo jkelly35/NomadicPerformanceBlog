@@ -5,44 +5,80 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
+import {
+  getRecentWorkouts,
+  getHealthMetrics,
+  getActiveGoals,
+  getUserStats,
+  getWeeklyWorkoutStats,
+  Workout,
+  HealthMetric,
+  Goal,
+  UserStat
+} from '@/lib/fitness-data'
 
-export default function DashboardPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
+interface DashboardData {
+  workouts: Workout[]
+  healthMetrics: HealthMetric[]
+  goals: Goal[]
+  userStats: UserStat[]
+  weeklyStats: { count: number; totalMinutes: number }
+}
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading, router])
+async function DashboardWrapper() {
+  // Fetch all dashboard data
+  const [workouts, healthMetrics, goals, userStats, weeklyStats] = await Promise.all([
+    getRecentWorkouts(5),
+    getHealthMetrics(),
+    getActiveGoals(),
+    getUserStats(),
+    getWeeklyWorkoutStats()
+  ])
 
-  if (loading) {
-    return (
-      <main style={{ minHeight: '100vh', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #e9ecef',
-            borderTop: '4px solid #1a3a2a',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 1rem'
-          }}></div>
-          <p style={{ color: '#666' }}>Loading your dashboard...</p>
-        </div>
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </main>
-    )
+  const data: DashboardData = {
+    workouts,
+    healthMetrics,
+    goals,
+    userStats,
+    weeklyStats
   }
 
-  if (!user) {
-    return null
+  return <DashboardContent data={data} />
+}
+
+function DashboardContent({ data }: { data: DashboardData }) {
+  const { user } = useAuth()
+
+  // Helper functions to get data
+  const getStatValue = (statType: string) => {
+    const stat = data.userStats.find(s => s.stat_type === statType)
+    return stat?.value || 0
+  }
+
+  const getHealthMetric = (metricType: string) => {
+    const metric = data.healthMetrics.find(m => m.metric_type === metricType)
+    return metric?.value || 0
+  }
+
+  const getGoal = (goalType: string) => {
+    return data.goals.find(g => g.goal_type === goalType)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today'
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday'
+    } else {
+      const diffTime = Math.abs(today.getTime() - date.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return `${diffDays} days ago`
+    }
   }
 
   return (
@@ -67,7 +103,7 @@ export default function DashboardPage() {
             marginBottom: '1.5rem',
             letterSpacing: '0.05em'
           }}>
-            Welcome Back, {user.email?.split('@')[0]}!
+            Welcome Back, {user?.email?.split('@')[0]}!
           </h1>
           <p style={{
             fontSize: '1.3rem',
@@ -98,7 +134,7 @@ export default function DashboardPage() {
               fontWeight: 700,
               marginBottom: '0.5rem'
             }}>
-              Welcome back, {user.email?.split('@')[0]}! 👋
+              Welcome back, {user?.email?.split('@')[0]}! 👋
             </h2>
             <p style={{
               fontSize: '1.2rem',
@@ -119,7 +155,7 @@ export default function DashboardPage() {
                 borderRadius: '20px',
                 fontSize: '0.9rem'
               }}>
-                🔥 Streak: 7 days
+                🔥 Streak: {Math.round(getStatValue('streak_days'))} days
               </div>
               <div style={{
                 background: 'rgba(255,255,255,0.1)',
@@ -161,7 +197,7 @@ export default function DashboardPage() {
                 fontWeight: 'bold',
                 color: '#fff'
               }}>
-                85
+                {Math.round(getStatValue('fitness_score'))}
               </div>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -215,7 +251,7 @@ export default function DashboardPage() {
                 fontWeight: 'bold',
                 color: '#fff'
               }}>
-                5
+                {data.weeklyStats.count}
               </div>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -259,7 +295,7 @@ export default function DashboardPage() {
                 fontWeight: 'bold',
                 color: '#fff'
               }}>
-                420
+                {data.weeklyStats.totalMinutes}
               </div>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -303,7 +339,7 @@ export default function DashboardPage() {
                 fontWeight: 'bold',
                 color: '#fff'
               }}>
-                92
+                {Math.round(getStatValue('recovery_score'))}
               </div>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -355,14 +391,8 @@ export default function DashboardPage() {
               </h3>
 
               <div style={{ display: 'grid', gap: '1rem' }}>
-                {[
-                  { activity: 'Trail Running', duration: '45 min', date: 'Today', intensity: 'High', calories: 380 },
-                  { activity: 'Strength Training', duration: '60 min', date: 'Yesterday', intensity: 'Medium', calories: 250 },
-                  { activity: 'Yoga & Mobility', duration: '30 min', date: '2 days ago', intensity: 'Low', calories: 120 },
-                  { activity: 'Hiking', duration: '120 min', date: '3 days ago', intensity: 'High', calories: 520 },
-                  { activity: 'Core Workout', duration: '20 min', date: '4 days ago', intensity: 'Medium', calories: 150 }
-                ].map((workout, index) => (
-                  <div key={index} style={{
+                {data.workouts.length > 0 ? data.workouts.map((workout) => (
+                  <div key={workout.id} style={{
                     background: '#fff',
                     borderRadius: '8px',
                     padding: '1rem',
@@ -377,13 +407,13 @@ export default function DashboardPage() {
                         color: '#1a3a2a',
                         marginBottom: '0.25rem'
                       }}>
-                        {workout.activity}
+                        {workout.activity_type}
                       </div>
                       <div style={{
                         fontSize: '0.8rem',
                         color: '#666'
                       }}>
-                        {workout.date} • {workout.duration} • {workout.calories} cal
+                        {formatDate(workout.workout_date)} • {workout.duration_minutes} min • {workout.calories_burned || 0} cal
                       </div>
                     </div>
                     <div style={{
@@ -399,7 +429,15 @@ export default function DashboardPage() {
                       {workout.intensity}
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '2rem',
+                    color: '#666'
+                  }}>
+                    No workouts logged yet. Start your fitness journey!
+                  </div>
+                )}
               </div>
             </div>
 
@@ -435,7 +473,10 @@ export default function DashboardPage() {
                       Weekly Workouts
                     </span>
                     <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                      5/6 completed
+                      {(() => {
+                        const goal = getGoal('weekly_workouts');
+                        return goal ? `${Math.round(goal.current_value)}/${Math.round(goal.target_value)} completed` : '0/6 completed';
+                      })()}
                     </span>
                   </div>
                   <div style={{
@@ -447,7 +488,10 @@ export default function DashboardPage() {
                     <div style={{
                       background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
                       height: '100%',
-                      width: '83%',
+                      width: `${(() => {
+                        const goal = getGoal('weekly_workouts');
+                        return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
+                      })()}%`,
                       borderRadius: '10px'
                     }}></div>
                   </div>
@@ -464,7 +508,10 @@ export default function DashboardPage() {
                       Monthly Active Minutes
                     </span>
                     <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                      1,420/2,000
+                      {(() => {
+                        const goal = getGoal('monthly_minutes');
+                        return goal ? `${Math.round(goal.current_value)}/${Math.round(goal.target_value)}` : '0/2000';
+                      })()}
                     </span>
                   </div>
                   <div style={{
@@ -476,7 +523,10 @@ export default function DashboardPage() {
                     <div style={{
                       background: 'linear-gradient(135deg, #007bff 0%, #6610f2 100%)',
                       height: '100%',
-                      width: '71%',
+                      width: `${(() => {
+                        const goal = getGoal('monthly_minutes');
+                        return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
+                      })()}%`,
                       borderRadius: '10px'
                     }}></div>
                   </div>
@@ -493,7 +543,10 @@ export default function DashboardPage() {
                       Strength Goals
                     </span>
                     <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                      3/4 achieved
+                      {(() => {
+                        const goal = getGoal('strength_goals');
+                        return goal ? `${Math.round(goal.current_value)}/${Math.round(goal.target_value)} achieved` : '0/4 achieved';
+                      })()}
                     </span>
                   </div>
                   <div style={{
@@ -505,7 +558,10 @@ export default function DashboardPage() {
                     <div style={{
                       background: 'linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%)',
                       height: '100%',
-                      width: '75%',
+                      width: `${(() => {
+                        const goal = getGoal('strength_goals');
+                        return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
+                      })()}%`,
                       borderRadius: '10px'
                     }}></div>
                   </div>
@@ -598,7 +654,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: '0.8rem', color: '#666' }}>Average bpm</div>
                   </div>
                   <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    58
+                    {Math.round(getHealthMetric('resting_hr'))}
                   </div>
                 </div>
 
@@ -616,7 +672,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: '0.8rem', color: '#666' }}>Last night</div>
                   </div>
                   <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
-                    87%
+                    {Math.round(getHealthMetric('sleep_quality'))}%
                   </div>
                 </div>
 
@@ -634,7 +690,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: '0.8rem', color: '#666' }}>Estimated</div>
                   </div>
                   <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    12.5%
+                    {getHealthMetric('body_fat').toFixed(1)}%
                   </div>
                 </div>
               </div>
@@ -823,4 +879,46 @@ export default function DashboardPage() {
       <Footer />
     </main>
   );
+}
+
+export default function DashboardPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login')
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #e9ecef',
+            borderTop: '4px solid #1a3a2a',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <p style={{ color: '#666' }}>Loading your dashboard...</p>
+        </div>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </main>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
+
+  return <DashboardWrapper />
 }
