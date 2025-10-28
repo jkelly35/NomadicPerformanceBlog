@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
 
 // Fonts removed
 
@@ -39,7 +40,9 @@ export default function RootLayout({
             gtag('config', 'G-LKV47FWN2N');
           `}
         </Script>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

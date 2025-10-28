@@ -6,21 +6,34 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import { createClient } from '@/lib/supabase'
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      setLoading(false)
+      return
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
       })
@@ -28,7 +41,8 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
-        router.push('/dashboard')
+        // Redirect to login with success message
+        router.push('/login?message=Check your email to confirm your account')
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -59,7 +73,7 @@ export default function LoginPage() {
             marginBottom: '1.5rem',
             letterSpacing: '0.05em'
           }}>
-            Welcome Back
+            Join Our Community
           </h1>
           <p style={{
             fontSize: '1.3rem',
@@ -67,12 +81,12 @@ export default function LoginPage() {
             lineHeight: '1.6',
             marginBottom: '2rem'
           }}>
-            Access your personalized fitness journey and exclusive content
+            Start your personalized fitness journey with exclusive content and expert guidance
           </p>
         </div>
       </section>
 
-      {/* Login Form Section */}
+      {/* Signup Form Section */}
       <section style={{ padding: '4rem 5vw', background: '#fff' }}>
         <div style={{
           maxWidth: '400px',
@@ -105,19 +119,19 @@ export default function LoginPage() {
               color: '#1a3a2a',
               marginBottom: '0.5rem'
             }}>
-              Sign In
+              Create Account
             </h2>
             <p style={{
               fontSize: '1rem',
               color: '#666',
               lineHeight: '1.5'
             }}>
-              Access your premium member experience
+              Join thousands of outdoor athletes improving their performance
             </p>
           </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleLogin}>
+          {/* Signup Form */}
+          <form onSubmit={handleSignup}>
             {error && (
               <div style={{
                 background: '#fee',
@@ -162,7 +176,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 display: 'block',
                 fontSize: '0.9rem',
@@ -176,6 +190,43 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '1rem',
+                  background: '#fff',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#1a3a2a'}
+                onBlur={(e) => e.target.style.borderColor = '#ddd'}
+              />
+              <p style={{
+                fontSize: '0.8rem',
+                color: '#666',
+                marginTop: '0.25rem'
+              }}>
+                Minimum 6 characters
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: '#1a3a2a',
+                marginBottom: '0.5rem'
+              }}>
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
                 style={{
@@ -208,7 +259,7 @@ export default function LoginPage() {
                 transition: 'all 0.2s'
               }}
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
@@ -224,10 +275,10 @@ export default function LoginPage() {
               color: '#666',
               marginBottom: '1rem'
             }}>
-              Don&apos;t have an account yet?
+              Already have an account?
             </p>
             <a
-              href="/signup"
+              href="/login"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -246,7 +297,7 @@ export default function LoginPage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H19V9Z" fill="currentColor"/>
               </svg>
-              Create Account
+              Sign In
             </a>
           </div>
 

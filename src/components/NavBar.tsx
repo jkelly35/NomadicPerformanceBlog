@@ -3,9 +3,18 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase';
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setIsMenuOpen(false);
+  };
 
   return (
     <nav style={{
@@ -82,14 +91,51 @@ export default function NavBar() {
           fontWeight: 600,
           transition: 'color 0.2s'
         }} className="nav-link">Contact</Link>
-        <Link href="/login" style={{
-          margin: '0 1rem',
-          fontSize: '1.1rem',
-          color: '#fff',
-          textDecoration: 'none',
-          fontWeight: 600,
-          transition: 'color 0.2s'
-        }} className="nav-link">Log In</Link>
+        {user ? (
+          <>
+            <Link href="/dashboard" style={{
+              margin: '0 1rem',
+              fontSize: '1.1rem',
+              color: '#fff',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.2s'
+            }} className="nav-link">Dashboard</Link>
+            <Link href="/profile" style={{
+              margin: '0 1rem',
+              fontSize: '1.1rem',
+              color: '#fff',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.2s'
+            }} className="nav-link">Profile</Link>
+            <button
+              onClick={handleSignOut}
+              style={{
+                margin: '0 1rem',
+                fontSize: '1.1rem',
+                color: '#fff',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'color 0.2s'
+              }}
+              className="nav-link"
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <Link href="/login" style={{
+            margin: '0 1rem',
+            fontSize: '1.1rem',
+            color: '#fff',
+            textDecoration: 'none',
+            fontWeight: 600,
+            transition: 'color 0.2s'
+          }} className="nav-link">Log In</Link>
+        )}
       </div>
 
       {/* Mobile Menu Button */}
@@ -170,21 +216,72 @@ export default function NavBar() {
           >
             Contact
           </Link>
-          <Link
-            href="/login"
-            style={{
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              padding: '0.5rem 1rem',
-              width: '100%',
-              textAlign: 'center'
-            }}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Log In
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                style={{
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 1rem',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/profile"
+                style={{
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 1rem',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Profile
+              </Link>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  color: '#fff',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 1rem',
+                  width: '100%',
+                  textAlign: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              style={{
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: '1.2rem',
+                fontWeight: 600,
+                padding: '0.5rem 1rem',
+                width: '100%',
+                textAlign: 'center'
+              }}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Log In
+            </Link>
+          )}
         </div>
       )}
     </nav>
