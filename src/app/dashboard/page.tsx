@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import DashboardClient from './DashboardClient'
+import DashboardClient from '@/components/DashboardClient'
 import {
   getRecentWorkouts,
   getHealthMetrics,
@@ -10,7 +10,12 @@ import {
   Workout,
   HealthMetric,
   Goal,
-  UserStat
+  UserStat,
+  getMealsByDate,
+  getNutritionGoals,
+  getDailyNutritionStats,
+  Meal,
+  NutritionGoal
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -19,16 +24,31 @@ interface DashboardData {
   goals: Goal[]
   userStats: UserStat[]
   weeklyStats: { count: number; totalMinutes: number }
+  meals: Meal[]
+  nutritionGoals: NutritionGoal[]
+  dailyNutritionStats: {
+    total_calories: number
+    total_protein: number
+    total_carbs: number
+    total_fat: number
+    total_fiber: number
+    meals_count: number
+  }
 }
 
 async function getDashboardData(): Promise<DashboardData> {
+  const today = new Date().toISOString().split('T')[0]
+
   // Fetch all dashboard data
-  const [workouts, healthMetrics, goals, userStats, weeklyStats] = await Promise.all([
+  const [workouts, healthMetrics, goals, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats] = await Promise.all([
     getRecentWorkouts(5),
     getHealthMetrics(),
     getActiveGoals(),
     getUserStats(),
-    getWeeklyWorkoutStats()
+    getWeeklyWorkoutStats(),
+    getMealsByDate(today),
+    getNutritionGoals(),
+    getDailyNutritionStats(today)
   ])
 
   return {
@@ -36,7 +56,10 @@ async function getDashboardData(): Promise<DashboardData> {
     healthMetrics,
     goals,
     userStats,
-    weeklyStats
+    weeklyStats,
+    meals,
+    nutritionGoals,
+    dailyNutritionStats
   }
 }
 
