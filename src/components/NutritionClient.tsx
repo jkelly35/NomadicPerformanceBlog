@@ -6,13 +6,13 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
-import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems } from '@/lib/fitness-data'
+import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal } from '@/lib/fitness-data'
 
 interface NutritionData {
-  foodItems: any[]
-  meals: any[]
-  nutritionGoals: any[]
-  mealTemplates: any[]
+  foodItems: FoodItem[]
+  meals: Meal[]
+  nutritionGoals: NutritionGoal[]
+  mealTemplates: MealTemplate[]
   dailyNutritionStats: {
     total_calories: number
     total_protein: number
@@ -21,22 +21,6 @@ interface NutritionData {
     total_fiber: number
     meals_count: number
   }
-}
-
-interface FoodItem {
-  id: string
-  name: string
-  brand?: string
-  serving_size: number
-  serving_unit: string
-  calories_per_serving: number
-  protein_grams: number
-  carbs_grams: number
-  fat_grams: number
-  fiber_grams: number
-  sugar_grams?: number
-  sodium_mg?: number
-  created_at: string
 }
 
 interface NutritionClientProps {
@@ -363,7 +347,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
-  const handleEditMeal = async (meal: any) => {
+  const handleEditMeal = async (meal: Meal) => {
     // Switch to log meal tab
     setActiveTab('log')
     
@@ -392,7 +376,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         .eq('meal_id', meal.id)
       
       if (!error && mealItems) {
-        const foods = mealItems.map((item: any) => ({
+        const foods = mealItems.map((item: MealItem) => ({
           food: item.food_items,
           quantity: item.quantity
         }))
@@ -429,7 +413,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
-  const handleEditTemplate = async (template: any) => {
+  const handleEditTemplate = async (template: MealTemplate) => {
     setEditingTemplate(template)
     setTemplateForm({
       name: template.name,
@@ -445,7 +429,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (templateData && items) {
         setTemplateForm(prev => ({
           ...prev,
-          food_items: items.map((item: any) => ({
+          food_items: items.map((item: MealTemplateItem) => ({
             food_item_id: item.food_item_id,
             quantity: item.quantity
           }))
@@ -615,7 +599,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   fontSize: '0.8rem',
                   color: '#666'
                 }}>
-                  Goal: {data.nutritionGoals.find((g: any) => g.goal_type === 'daily_calories')?.target_value || 2200}
+                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200}
                 </p>
               </div>
 
@@ -654,7 +638,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   fontSize: '0.8rem',
                   color: '#666'
                 }}>
-                  Goal: {data.nutritionGoals.find((g: any) => g.goal_type === 'protein_target')?.target_value || 150}g
+                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150}g
                 </p>
               </div>
 
@@ -693,7 +677,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   fontSize: '0.8rem',
                   color: '#666'
                 }}>
-                  Goal: {data.nutritionGoals.find((g: any) => g.goal_type === 'carb_target')?.target_value || 250}g
+                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250}g
                 </p>
               </div>
 
@@ -732,7 +716,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   fontSize: '0.8rem',
                   color: '#666'
                 }}>
-                  Goal: {data.nutritionGoals.find((g: any) => g.goal_type === 'fat_target')?.target_value || 70}g
+                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70}g
                 </p>
               </div>
             </div>
@@ -999,7 +983,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   if (dateFilter && meal.meal_date !== dateFilter) return false
                   return true
                 })
-                .map((meal: any) => (
+                .map((meal: Meal) => (
                   <div key={meal.id} style={{
                     background: '#f8f9fa',
                     borderRadius: '12px',
@@ -1545,7 +1529,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '1.5rem'
             }}>
-              {data.mealTemplates.map((template: any) => (
+              {data.mealTemplates.map((template: MealTemplate) => (
                 <div key={template.id} style={{
                   background: '#f8f9fa',
                   borderRadius: '12px',
@@ -1683,7 +1667,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <input
                     type="number"
-                    value={goalChanges.daily_calories ?? data.nutritionGoals.find((g: any) => g.goal_type === 'daily_calories')?.target_value ?? 2200}
+                    value={goalChanges.daily_calories ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value ?? 2200}
                     onChange={(e) => handleGoalChange('daily_calories', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
@@ -1711,7 +1695,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <input
                     type="number"
-                    value={goalChanges.protein_target ?? data.nutritionGoals.find((g: any) => g.goal_type === 'protein_target')?.target_value ?? 150}
+                    value={goalChanges.protein_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value ?? 150}
                     onChange={(e) => handleGoalChange('protein_target', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
@@ -1739,7 +1723,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <input
                     type="number"
-                    value={goalChanges.carb_target ?? data.nutritionGoals.find((g: any) => g.goal_type === 'carb_target')?.target_value ?? 250}
+                    value={goalChanges.carb_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value ?? 250}
                     onChange={(e) => handleGoalChange('carb_target', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
@@ -1767,7 +1751,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <input
                     type="number"
-                    value={goalChanges.fat_target ?? data.nutritionGoals.find((g: any) => g.goal_type === 'fat_target')?.target_value ?? 70}
+                    value={goalChanges.fat_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value ?? 70}
                     onChange={(e) => handleGoalChange('fat_target', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
