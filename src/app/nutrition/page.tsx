@@ -17,11 +17,13 @@ export default async function NutritionPage() {
     { data: foodItems },
     { data: meals },
     { data: nutritionGoals },
+    { data: mealTemplates },
     { data: dailyNutritionStats }
   ] = await Promise.all([
     supabase.from('food_items').select('*').order('name'),
     supabase.from('meals').select('*').order('meal_date', { ascending: false }).limit(10),
     supabase.from('nutrition_goals').select('*').eq('is_active', true),
+    supabase.from('meal_templates').select('*').order('created_at', { ascending: false }),
     // Calculate daily nutrition stats
     supabase.from('meals')
       .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
@@ -61,6 +63,7 @@ export default async function NutritionPage() {
         foodItems: foodItems || [],
         meals: meals || [],
         nutritionGoals: nutritionGoals || [],
+        mealTemplates: mealTemplates || [],
         dailyNutritionStats: dailyStats
       }}
     />

@@ -101,14 +101,6 @@ export default function NavBar() {
               fontWeight: 600,
               transition: 'color 0.2s'
             }} className="nav-link">Dashboard</Link>
-            <Link href="/nutrition" style={{
-              margin: '0 1rem',
-              fontSize: '1.1rem',
-              color: '#fff',
-              textDecoration: 'none',
-              fontWeight: 600,
-              transition: 'color 0.2s'
-            }} className="nav-link">🍎 Nutrition</Link>
             <Link href="/profile" style={{
               margin: '0 1rem',
               fontSize: '1.1rem',
@@ -240,21 +232,6 @@ export default function NavBar() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Dashboard
-              </Link>
-              <Link
-                href="/nutrition"
-                style={{
-                  color: '#fff',
-                  textDecoration: 'none',
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  padding: '0.5rem 1rem',
-                  width: '100%',
-                  textAlign: 'center'
-                }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                🍎 Nutrition
               </Link>
               <Link
                 href="/profile"

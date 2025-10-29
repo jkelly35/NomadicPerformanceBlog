@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
@@ -553,116 +554,45 @@ function DashboardContent({
                   Goal: {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
                 </p>
               </div>
-
-              {/* Meals Logged */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {data.dailyNutritionStats.meals_count}
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Meals Today
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Logged meals
-                </p>
-              </div>
             </div>
 
-            {/* Recent Meals */}
+            {/* Nutrition Access */}
             <div style={{
               background: '#f8f9fa',
               borderRadius: '12px',
               padding: '2rem',
               boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
+              border: '1px solid #e9ecef',
+              textAlign: 'center'
             }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🍎</div>
               <h3 style={{
                 fontSize: '1.5rem',
                 fontWeight: 600,
                 color: '#1a3a2a',
+                marginBottom: '1rem'
+              }}>
+                Nutrition Tracking
+              </h3>
+              <p style={{
+                color: '#666',
                 marginBottom: '1.5rem'
               }}>
-                Today&apos;s Meals
-              </h3>
-              {data.meals.length > 0 ? (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {data.meals.map((meal) => (
-                    <div key={meal.id} style={{
-                      background: '#fff',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      border: '1px solid #e9ecef',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <div style={{
-                          fontWeight: 600,
-                          color: '#1a3a2a',
-                          textTransform: 'capitalize',
-                          marginBottom: '0.25rem'
-                        }}>
-                          {meal.meal_type}
-                        </div>
-                        {meal.notes && (
-                          <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                            {meal.notes}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{
-                          fontWeight: 600,
-                          color: '#ff6b35',
-                          fontSize: '1.1rem'
-                        }}>
-                          {meal.total_calories} cal
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          P:{meal.total_protein}g C:{meal.total_carbs}g F:{meal.total_fat}g
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '2rem',
-                  color: '#666'
-                }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🍽️</div>
-                  <p>No meals logged today. Start tracking your nutrition!</p>
-                </div>
-              )}
+                Track your meals, manage your food database, and monitor your nutrition goals.
+              </p>
+              <Link href="/nutrition" style={{
+                display: 'inline-block',
+                padding: '0.75rem 1.5rem',
+                background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                color: '#fff',
+                textDecoration: 'none',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s'
+              }}>
+                Manage Nutrition
+              </Link>
             </div>
           </div>
 

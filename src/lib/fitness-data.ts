@@ -87,6 +87,30 @@ export interface NutritionGoal {
   is_active: boolean
 }
 
+export interface MealTemplate {
+  id: string
+  user_id: string
+  name: string
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  description?: string
+  total_calories: number
+  total_protein: number
+  total_carbs: number
+  total_fat: number
+  total_fiber: number
+  is_public: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface MealTemplateItem {
+  id: string
+  meal_template_id: string
+  food_item_id: string
+  quantity: number
+  created_at: string
+}
+
 // Fetch recent workouts
 export async function getRecentWorkouts(limit: number = 5): Promise<Workout[]> {
   try {
@@ -398,6 +422,70 @@ export async function getNutritionGoals(): Promise<NutritionGoal[]> {
   }
 }
 
+// Create or update nutrition goal
+export async function upsertNutritionGoal(goalData: {
+  goal_type: string
+  target_value: number
+  period?: string
+  is_active?: boolean
+}): Promise<{ success: boolean; error?: string; data?: NutritionGoal }> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    // Check if goal already exists
+    const { data: existingGoal } = await supabase
+      .from('nutrition_goals')
+      .select('id')
+      .eq('goal_type', goalData.goal_type)
+      .eq('user_id', user.id)
+      .single()
+
+    const goalPayload = {
+      user_id: user.id,
+      goal_type: goalData.goal_type,
+      target_value: goalData.target_value,
+      period: goalData.period || 'daily',
+      is_active: goalData.is_active !== undefined ? goalData.is_active : true
+    }
+
+    let result
+    if (existingGoal) {
+      // Update existing goal
+      result = await supabase
+        .from('nutrition_goals')
+        .update(goalPayload)
+        .eq('id', existingGoal.id)
+        .select()
+        .single()
+    } else {
+      // Create new goal
+      result = await supabase
+        .from('nutrition_goals')
+        .insert([goalPayload])
+        .select()
+        .single()
+    }
+
+    if (result.error) {
+      console.error('Error upserting nutrition goal:', result.error)
+      return { success: false, error: result.error.message }
+    }
+
+    revalidatePath('/nutrition')
+    revalidatePath('/dashboard')
+    return { success: true, data: result.data }
+  } catch (error) {
+    console.error('Error in upsertNutritionGoal:', error)
+    return { success: false, error: 'Failed to save nutrition goal' }
+  }
+}
+
 // Get daily nutrition stats
 export async function getDailyNutritionStats(date: string): Promise<{
   total_calories: number
@@ -472,34 +560,166 @@ export async function logMeal(formData: FormData): Promise<{ success: boolean; e
   try {
     const supabase = await createClient()
 
-    const mealData = {
-      meal_type: formData.get('meal_type') as string,
-      meal_date: formData.get('meal_date') as string || new Date().toISOString().split('T')[0],
-      meal_time: formData.get('meal_time') as string || null,
-      total_calories: parseInt(formData.get('total_calories') as string) || 0,
-      total_protein: parseFloat(formData.get('total_protein') as string) || 0,
-      total_carbs: parseFloat(formData.get('total_carbs') as string) || 0,
-      total_fat: parseFloat(formData.get('total_fat') as string) || 0,
-      total_fiber: parseFloat(formData.get('total_fiber') as string) || 0,
-      notes: formData.get('notes') as string || null
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
     }
 
-    const { data, error } = await supabase
+    // Parse meal data
+    const mealType = formData.get('meal_type') as string
+    const mealDate = formData.get('meal_date') as string || new Date().toISOString().split('T')[0]
+    const mealTime = formData.get('meal_time') as string || null
+    const notes = formData.get('notes') as string || null
+
+    // Parse food items from FormData
+    const foodItems: Array<{ foodId: string; quantity: number }> = []
+    let index = 0
+    while (true) {
+      const foodId = formData.get(`food_${index}`) as string
+      const quantity = formData.get(`quantity_${index}`) as string
+
+      if (!foodId || !quantity) break
+
+      foodItems.push({
+        foodId,
+        quantity: parseFloat(quantity)
+      })
+      index++
+    }
+
+    if (foodItems.length === 0) {
+      return { success: false, error: 'No food items provided' }
+    }
+
+    // Fetch food details for calculation
+    const { data: foods, error: foodsError } = await supabase
+      .from('food_items')
+      .select('*')
+      .in('id', foodItems.map(item => item.foodId))
+
+    if (foodsError || !foods) {
+      console.error('Error fetching food details:', foodsError)
+      return { success: false, error: 'Failed to fetch food details' }
+    }
+
+    // Calculate total nutrition
+    let totalCalories = 0
+    let totalProtein = 0
+    let totalCarbs = 0
+    let totalFat = 0
+    let totalFiber = 0
+
+    const mealItems = foodItems.map(item => {
+      const food = foods.find(f => f.id === item.foodId)
+      if (!food) return null
+
+      const multiplier = item.quantity / food.serving_size
+      const calories = food.calories_per_serving * multiplier
+      const protein = food.protein_grams * multiplier
+      const carbs = food.carbs_grams * multiplier
+      const fat = food.fat_grams * multiplier
+      const fiber = food.fiber_grams * multiplier
+
+      totalCalories += calories
+      totalProtein += protein
+      totalCarbs += carbs
+      totalFat += fat
+      totalFiber += fiber
+
+      return {
+        food_item_id: item.foodId,
+        quantity: item.quantity
+      }
+    }).filter(Boolean)
+
+    // Insert meal
+    const { data: meal, error: mealError } = await supabase
       .from('meals')
-      .insert([mealData])
+      .insert([{
+        user_id: user.id,
+        meal_type: mealType,
+        meal_date: mealDate,
+        meal_time: mealTime,
+        total_calories: totalCalories,
+        total_protein: totalProtein,
+        total_carbs: totalCarbs,
+        total_fat: totalFat,
+        total_fiber: totalFiber,
+        notes
+      }])
       .select()
       .single()
 
-    if (error) {
-      console.error('Error logging meal:', error)
+    if (mealError) {
+      console.error('Error logging meal:', mealError)
       return { success: false, error: 'Failed to log meal' }
     }
 
+    // Insert meal items
+    const mealItemsWithMealId = mealItems.map(item => ({
+      ...item,
+      meal_id: meal.id
+    }))
+
+    const { error: itemsError } = await supabase
+      .from('meal_items')
+      .insert(mealItemsWithMealId)
+
+    if (itemsError) {
+      console.error('Error logging meal items:', itemsError)
+      // Don't fail the whole operation if meal items fail, but log it
+    }
+
     revalidatePath('/dashboard')
-    return { success: true, data }
+    revalidatePath('/nutrition')
+    return { success: true, data: meal }
   } catch (error) {
     console.error('Error in logMeal:', error)
     return { success: false, error: 'Failed to log meal' }
+  }
+}
+
+// Delete a meal
+export async function deleteMeal(mealId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    // Delete meal items first (due to foreign key constraint)
+    const { error: itemsError } = await supabase
+      .from('meal_items')
+      .delete()
+      .eq('meal_id', mealId)
+
+    if (itemsError) {
+      console.error('Error deleting meal items:', itemsError)
+      return { success: false, error: 'Failed to delete meal items' }
+    }
+
+    // Delete the meal
+    const { error: mealError } = await supabase
+      .from('meals')
+      .delete()
+      .eq('id', mealId)
+      .eq('user_id', user.id) // Ensure user can only delete their own meals
+
+    if (mealError) {
+      console.error('Error deleting meal:', mealError)
+      return { success: false, error: 'Failed to delete meal' }
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath('/nutrition')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteMeal:', error)
+    return { success: false, error: 'Failed to delete meal' }
   }
 }
 
@@ -629,5 +849,323 @@ export async function deleteFoodItem(foodId: string): Promise<{ success: boolean
   } catch (error) {
     console.error('Error in deleteFoodItem:', error)
     return { success: false, error: 'Failed to delete food item' }
+  }
+}
+
+// Meal Template Functions
+
+// Get all meal templates for the current user
+export async function getMealTemplates(): Promise<MealTemplate[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('meal_templates')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching meal templates:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getMealTemplates:', error)
+    return []
+  }
+}
+
+// Get a specific meal template with its items
+export async function getMealTemplateWithItems(templateId: string): Promise<{ template: MealTemplate | null; items: MealTemplateItem[] }> {
+  try {
+    const supabase = await createClient()
+
+    const { data: template, error: templateError } = await supabase
+      .from('meal_templates')
+      .select('*')
+      .eq('id', templateId)
+      .single()
+
+    if (templateError) {
+      console.error('Error fetching meal template:', templateError)
+      return { template: null, items: [] }
+    }
+
+    const { data: items, error: itemsError } = await supabase
+      .from('meal_template_items')
+      .select('*')
+      .eq('meal_template_id', templateId)
+
+    if (itemsError) {
+      console.error('Error fetching meal template items:', itemsError)
+      return { template, items: [] }
+    }
+
+    return { template, items: items || [] }
+  } catch (error) {
+    console.error('Error in getMealTemplateWithItems:', error)
+    return { template: null, items: [] }
+  }
+}
+
+// Create a new meal template
+export async function createMealTemplate(formData: FormData): Promise<{ success: boolean; error?: string; data?: MealTemplate }> {
+  try {
+    const supabase = await createClient()
+
+    const name = formData.get('name') as string
+    const mealType = formData.get('meal_type') as string
+    const description = formData.get('description') as string
+    const foodItems = JSON.parse(formData.get('food_items') as string) as Array<{ food_item_id: string; quantity: number }>
+
+    if (!name || name.trim() === '') {
+      return { success: false, error: 'Template name is required' }
+    }
+
+    if (!mealType) {
+      return { success: false, error: 'Meal type is required' }
+    }
+
+    if (!foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
+      return { success: false, error: 'At least one food item is required' }
+    }
+
+    // Calculate totals from food items
+    let totalCalories = 0
+    let totalProtein = 0
+    let totalCarbs = 0
+    let totalFat = 0
+    let totalFiber = 0
+
+    for (const item of foodItems) {
+      const { data: foodItem } = await supabase
+        .from('food_items')
+        .select('calories_per_serving, protein_grams, carbs_grams, fat_grams, fiber_grams')
+        .eq('id', item.food_item_id)
+        .single()
+
+      if (foodItem) {
+        totalCalories += Math.round(foodItem.calories_per_serving * item.quantity)
+        totalProtein += foodItem.protein_grams * item.quantity
+        totalCarbs += foodItem.carbs_grams * item.quantity
+        totalFat += foodItem.fat_grams * item.quantity
+        totalFiber += foodItem.fiber_grams * item.quantity
+      }
+    }
+
+    // Create the meal template
+    const { data: template, error: templateError } = await supabase
+      .from('meal_templates')
+      .insert({
+        name,
+        meal_type: mealType,
+        description,
+        total_calories: totalCalories,
+        total_protein: totalProtein,
+        total_carbs: totalCarbs,
+        total_fat: totalFat,
+        total_fiber: totalFiber,
+      })
+      .select()
+      .single()
+
+    if (templateError) {
+      console.error('Error creating meal template:', templateError)
+      return { success: false, error: templateError.message }
+    }
+
+    // Create the meal template items
+    const templateItems = foodItems.map(item => ({
+      meal_template_id: template.id,
+      food_item_id: item.food_item_id,
+      quantity: item.quantity,
+    }))
+
+    const { error: itemsError } = await supabase
+      .from('meal_template_items')
+      .insert(templateItems)
+
+    if (itemsError) {
+      console.error('Error creating meal template items:', itemsError)
+      // Clean up the template if items failed
+      await supabase.from('meal_templates').delete().eq('id', template.id)
+      return { success: false, error: itemsError.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true, data: template }
+  } catch (error) {
+    console.error('Error in createMealTemplate:', error)
+    return { success: false, error: 'Failed to create meal template' }
+  }
+}
+
+// Update a meal template
+export async function updateMealTemplate(templateId: string, formData: FormData): Promise<{ success: boolean; error?: string; data?: MealTemplate }> {
+  try {
+    const supabase = await createClient()
+
+    const name = formData.get('name') as string
+    const mealType = formData.get('meal_type') as string
+    const description = formData.get('description') as string
+    const foodItems = JSON.parse(formData.get('food_items') as string) as Array<{ food_item_id: string; quantity: number }>
+
+    if (!name || !mealType || !foodItems) {
+      return { success: false, error: 'Missing required fields' }
+    }
+
+    // Calculate totals from food items
+    let totalCalories = 0
+    let totalProtein = 0
+    let totalCarbs = 0
+    let totalFat = 0
+    let totalFiber = 0
+
+    for (const item of foodItems) {
+      const { data: foodItem } = await supabase
+        .from('food_items')
+        .select('calories_per_serving, protein_grams, carbs_grams, fat_grams, fiber_grams')
+        .eq('id', item.food_item_id)
+        .single()
+
+      if (foodItem) {
+        totalCalories += Math.round(foodItem.calories_per_serving * item.quantity)
+        totalProtein += foodItem.protein_grams * item.quantity
+        totalCarbs += foodItem.carbs_grams * item.quantity
+        totalFat += foodItem.fat_grams * item.quantity
+        totalFiber += foodItem.fiber_grams * item.quantity
+      }
+    }
+
+    // Update the meal template
+    const { data: template, error: templateError } = await supabase
+      .from('meal_templates')
+      .update({
+        name,
+        meal_type: mealType,
+        description,
+        total_calories: totalCalories,
+        total_protein: totalProtein,
+        total_carbs: totalCarbs,
+        total_fat: totalFat,
+        total_fiber: totalFiber,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', templateId)
+      .select()
+      .single()
+
+    if (templateError) {
+      console.error('Error updating meal template:', templateError)
+      return { success: false, error: templateError.message }
+    }
+
+    // Delete existing items and create new ones
+    await supabase.from('meal_template_items').delete().eq('meal_template_id', templateId)
+
+    const templateItems = foodItems.map(item => ({
+      meal_template_id: templateId,
+      food_item_id: item.food_item_id,
+      quantity: item.quantity,
+    }))
+
+    const { error: itemsError } = await supabase
+      .from('meal_template_items')
+      .insert(templateItems)
+
+    if (itemsError) {
+      console.error('Error updating meal template items:', itemsError)
+      return { success: false, error: itemsError.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true, data: template }
+  } catch (error) {
+    console.error('Error in updateMealTemplate:', error)
+    return { success: false, error: 'Failed to update meal template' }
+  }
+}
+
+// Delete a meal template
+export async function deleteMealTemplate(templateId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+      .from('meal_templates')
+      .delete()
+      .eq('id', templateId)
+
+    if (error) {
+      console.error('Error deleting meal template:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteMealTemplate:', error)
+    return { success: false, error: 'Failed to delete meal template' }
+  }
+}
+
+// Log a meal from a template
+export async function logMealFromTemplate(templateId: string, mealDate: string, mealTime?: string): Promise<{ success: boolean; error?: string; data?: Meal }> {
+  try {
+    const supabase = await createClient()
+
+    // Get the template with items
+    const { template, items } = await getMealTemplateWithItems(templateId)
+
+    if (!template || items.length === 0) {
+      return { success: false, error: 'Meal template not found or empty' }
+    }
+
+    // Create the meal
+    const { data: meal, error: mealError } = await supabase
+      .from('meals')
+      .insert({
+        meal_type: template.meal_type,
+        meal_date: mealDate,
+        meal_time: mealTime,
+        total_calories: template.total_calories,
+        total_protein: template.total_protein,
+        total_carbs: template.total_carbs,
+        total_fat: template.total_fat,
+        total_fiber: template.total_fiber,
+        notes: `From template: ${template.name}`,
+      })
+      .select()
+      .single()
+
+    if (mealError) {
+      console.error('Error creating meal from template:', mealError)
+      return { success: false, error: mealError.message }
+    }
+
+    // Create the meal items
+    const mealItems = items.map(item => ({
+      meal_id: meal.id,
+      food_item_id: item.food_item_id,
+      quantity: item.quantity,
+    }))
+
+    const { error: itemsError } = await supabase
+      .from('meal_items')
+      .insert(mealItems)
+
+    if (itemsError) {
+      console.error('Error creating meal items from template:', itemsError)
+      // Clean up the meal if items failed
+      await supabase.from('meals').delete().eq('id', meal.id)
+      return { success: false, error: itemsError.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true, data: meal }
+  } catch (error) {
+    console.error('Error in logMealFromTemplate:', error)
+    return { success: false, error: 'Failed to log meal from template' }
   }
 }

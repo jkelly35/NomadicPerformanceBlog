@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS food_items (
   sodium_mg DECIMAL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  UNIQUE(name)
+  UNIQUE(name, brand)
 );
 
 -- Meals table (user's logged meals)
@@ -101,6 +101,32 @@ CREATE TABLE IF NOT EXISTS meal_items (
   custom_protein DECIMAL,
   custom_carbs DECIMAL,
   custom_fat DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Meal templates table (reusable meal presets)
+CREATE TABLE IF NOT EXISTS meal_templates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
+  description TEXT,
+  total_calories INTEGER DEFAULT 0,
+  total_protein DECIMAL DEFAULT 0,
+  total_carbs DECIMAL DEFAULT 0,
+  total_fat DECIMAL DEFAULT 0,
+  total_fiber DECIMAL DEFAULT 0,
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Meal template items table (foods in each meal template)
+CREATE TABLE IF NOT EXISTS meal_template_items (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  meal_template_id UUID REFERENCES meal_templates(id) ON DELETE CASCADE,
+  food_item_id UUID REFERENCES food_items(id) ON DELETE CASCADE,
+  quantity DECIMAL NOT NULL, -- multiplier for serving size
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -215,6 +241,39 @@ CREATE POLICY "Users can view own nutrition goals" ON nutrition_goals
 DROP POLICY IF EXISTS "Users can manage own nutrition goals" ON nutrition_goals;
 CREATE POLICY "Users can manage own nutrition goals" ON nutrition_goals
   FOR ALL USING (auth.uid() = user_id);
+
+-- Enable RLS for meal templates tables
+ALTER TABLE meal_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meal_template_items ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for meal templates
+DROP POLICY IF EXISTS "Users can view own meal templates" ON meal_templates;
+CREATE POLICY "Users can view own meal templates" ON meal_templates
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage own meal templates" ON meal_templates;
+CREATE POLICY "Users can manage own meal templates" ON meal_templates
+  FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can view own meal template items" ON meal_template_items;
+CREATE POLICY "Users can view own meal template items" ON meal_template_items
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM meal_templates
+      WHERE meal_templates.id = meal_template_items.meal_template_id
+      AND meal_templates.user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "Users can manage own meal template items" ON meal_template_items;
+CREATE POLICY "Users can manage own meal template items" ON meal_template_items
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM meal_templates
+      WHERE meal_templates.id = meal_template_items.meal_template_id
+      AND meal_templates.user_id = auth.uid()
+    )
+  );
 
 -- Create indexes for better performance
 DROP INDEX IF EXISTS idx_workouts_user_date;
