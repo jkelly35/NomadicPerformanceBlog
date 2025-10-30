@@ -182,6 +182,47 @@ function DashboardContent({
             </div>
           </div>
 
+          {/* Quick Navigation */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '2rem'
+          }}>
+            <Link href="/nutrition" style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              borderRadius: '12px',
+              padding: '2rem',
+              textDecoration: 'none',
+              color: '#fff',
+              display: 'block',
+              transition: 'transform 0.2s ease',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🥗</div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Nutrition Tracking</h3>
+                <p style={{ opacity: 0.9 }}>Log meals, track macros, and monitor your nutrition goals</p>
+              </div>
+            </Link>
+            <Link href="/training" style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              borderRadius: '12px',
+              padding: '2rem',
+              textDecoration: 'none',
+              color: '#fff',
+              display: 'block',
+              transition: 'transform 0.2s ease',
+              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💪</div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Training Log</h3>
+                <p style={{ opacity: 0.9 }}>Track workouts, monitor progress, and achieve your fitness goals</p>
+              </div>
+            </Link>
+          </div>
+
           {/* Key Metrics Row */}
           <div style={{
             display: 'grid',
