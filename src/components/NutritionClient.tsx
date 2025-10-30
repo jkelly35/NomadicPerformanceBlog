@@ -376,7 +376,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         .eq('meal_id', meal.id)
       
       if (!error && mealItems) {
-        const foods = mealItems.map((item: MealItem) => ({
+        const foods = mealItems.map((item: any) => ({
           food: item.food_items,
           quantity: item.quantity
         }))
