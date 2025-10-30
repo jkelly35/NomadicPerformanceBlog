@@ -1,0 +1,18 @@
+npm verb cli /usr/local/bin/node /usr/local/bin/npm
+npm info using npm@10.2.3
+npm info using node@v20.10.0
+npm verb title npm install next@14.2.0
+npm verb argv "install" "next@14.2.0" "--ignore-scripts" "--no-audit" "--no-fund" "--loglevel" "verbose"
+npm verb logfile logs-max:10 dir:/Users/joeymlk35/.npm/_logs/2025-10-30T04_19_25_703Z-
+npm verb logfile /Users/joeymlk35/.npm/_logs/2025-10-30T04_19_25_703Z-debug-0.log
+npm http fetch GET 200 https://registry.npmjs.org/@next%2fmdx 36ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@mdx-js%2floader 4ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/webpack 4ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@mdx-js%2freact 2ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@types%2freact 2ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/react 6ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/next 213ms (cache revalidated)
+npm http fetch GET 200 https://registry.npmjs.org/@opentelemetry%2fapi 110ms (cache revalidated)
+npm http fetch GET 200 https://registry.npmjs.org/@playwright%2ftest 84ms (cache revalidated)
+npm http fetch GET 200 https://registry.npmjs.org/react-dom 218ms (cache miss)
+npm http fetch GET 200 https://registry.npmjs.org/sass 57ms (cache revalidated)

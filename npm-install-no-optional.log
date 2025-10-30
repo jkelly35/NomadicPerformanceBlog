@@ -1,0 +1,17 @@
+npm verb cli /usr/local/bin/node /usr/local/bin/npm
+npm info using npm@10.2.3
+npm info using node@v20.10.0
+npm WARN config optional Use `--omit=optional` to exclude optional dependencies, or
+npm WARN config `--include=optional` to include them.
+npm WARN config 
+npm WARN config     Default value does install optional deps unless otherwise omitted.
+npm verb title npm install
+npm verb argv "install" "--no-optional" "--no-audit" "--no-fund" "--loglevel" "verbose"
+npm verb logfile logs-max:10 dir:/Users/joeymlk35/.npm/_logs/2025-10-30T04_16_55_657Z-
+npm verb logfile /Users/joeymlk35/.npm/_logs/2025-10-30T04_16_55_657Z-debug-0.log
+npm http fetch GET 200 https://registry.npmjs.org/@next%2fmdx 36ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@mdx-js%2floader 4ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/webpack 4ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@mdx-js%2freact 2ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@types%2freact 3ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/react 5ms (cache hit)

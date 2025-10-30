@@ -3,8 +3,6 @@ import Script from "next/script";
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 
-// Fonts removed
-
 export const metadata: Metadata = {
   title: "Nomadic Performance - Outdoor Fitness & Adventure Blog",
   description: "Helping outdoor athletes and adventurers stay strong, prevent injuries, and perform at their best—anywhere, anytime.",

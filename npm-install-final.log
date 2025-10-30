@@ -1,0 +1,13 @@
+npm verb cli /usr/local/bin/node /usr/local/bin/npm
+npm info using npm@10.2.3
+npm info using node@v20.10.0
+npm verb title npm install
+npm verb argv "install" "--prefer-offline" "--fetch-retries" "1" "--network-concurrency" "1" "--no-audit" "--no-fund" "--loglevel" "verbose"
+npm verb logfile logs-max:10 dir:/Users/joeymlk35/.npm/_logs/2025-10-30T04_20_00_689Z-
+npm verb logfile /Users/joeymlk35/.npm/_logs/2025-10-30T04_20_00_689Z-debug-0.log
+npm http fetch GET 200 https://registry.npmjs.org/@next%2fmdx 38ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@mdx-js%2floader 2ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/webpack 5ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@mdx-js%2freact 2ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/@types%2freact 3ms (cache hit)
+npm http fetch GET 200 https://registry.npmjs.org/react 6ms (cache hit)

@@ -18,7 +18,13 @@ export default async function NutritionPage() {
     { data: meals },
     { data: nutritionGoals },
     { data: mealTemplates },
-    { data: dailyNutritionStats }
+    { data: dailyNutritionStats },
+    { data: hydrationLogs },
+    { data: caffeineLogs },
+    { data: micronutrients },
+    { data: userInsights },
+    { data: habitPatterns },
+    { data: metricCorrelations }
   ] = await Promise.all([
     supabase.from('food_items').select('*').order('name'),
     supabase.from('meals').select('*').order('meal_date', { ascending: false }).limit(10),
@@ -27,7 +33,23 @@ export default async function NutritionPage() {
     // Calculate daily nutrition stats
     supabase.from('meals')
       .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
-      .eq('meal_date', new Date().toISOString().split('T')[0])
+      .eq('meal_date', new Date().toISOString().split('T')[0]),
+    // Hydration data for today
+    supabase.from('hydration_logs').select('*')
+      .gte('logged_time', new Date().toISOString().split('T')[0])
+      .order('logged_time', { ascending: false }).limit(10),
+    // Caffeine data for today
+    supabase.from('caffeine_logs').select('*')
+      .gte('logged_time', new Date().toISOString().split('T')[0])
+      .order('logged_time', { ascending: false }).limit(10),
+    // Micronutrients data
+    supabase.from('micronutrients').select('*').order('nutrient_category', { ascending: true }).order('nutrient_name', { ascending: true }),
+    // User insights
+    supabase.from('user_insights').select('*').order('created_at', { ascending: false }).limit(10),
+    // Habit patterns
+    supabase.from('habit_patterns').select('*').eq('is_active', true).order('frequency_score', { ascending: false }),
+    // Metric correlations
+    supabase.from('metric_correlations').select('*').eq('is_significant', true).order('correlation_coefficient', { ascending: false })
   ])
 
   // Calculate daily stats
@@ -64,7 +86,13 @@ export default async function NutritionPage() {
         meals: meals || [],
         nutritionGoals: nutritionGoals || [],
         mealTemplates: mealTemplates || [],
-        dailyNutritionStats: dailyStats
+        dailyNutritionStats: dailyStats,
+        hydrationLogs: hydrationLogs || [],
+        caffeineLogs: caffeineLogs || [],
+        micronutrients: micronutrients || [],
+        userInsights: userInsights || [],
+        habitPatterns: habitPatterns || [],
+        metricCorrelations: metricCorrelations || []
       }}
     />
   )

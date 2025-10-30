@@ -53,6 +53,86 @@ export interface FoodItem {
   created_at: string
 }
 
+export interface Micronutrient {
+  id: string
+  nutrient_code: string
+  nutrient_name: string
+  nutrient_category: 'vitamin' | 'mineral' | 'electrolyte' | 'other'
+  unit: string
+  rda_male?: number
+  rda_female?: number
+  upper_limit?: number
+  created_at: string
+}
+
+export interface FoodMicronutrient {
+  id: string
+  food_item_id: string
+  micronutrient_id: string
+  amount_per_serving: number
+  created_at: string
+}
+
+export interface HydrationLog {
+  id: string
+  user_id: string
+  amount_ml: number
+  beverage_type: string
+  logged_time: string
+  notes?: string
+  created_at: string
+}
+
+export interface CaffeineLog {
+  id: string
+  user_id: string
+  amount_mg: number
+  source: string
+  logged_time: string
+  notes?: string
+  created_at: string
+}
+
+export interface HabitPattern {
+  id: string
+  user_id: string
+  pattern_type: string
+  pattern_description: string
+  frequency_score: number
+  last_detected?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface UserInsight {
+  id: string
+  user_id: string
+  insight_type: 'weekly_summary' | 'recommendation' | 'correlation' | 'habit_nudge'
+  title: string
+  description: string
+  data?: any
+  priority: 1 | 2 | 3
+  is_read: boolean
+  created_at: string
+  expires_at?: string
+}
+
+export interface MetricCorrelation {
+  id: string
+  user_id: string
+  primary_metric: string
+  secondary_metric: string
+  correlation_coefficient: number
+  confidence_level: number
+  sample_size: number
+  time_window_days: number
+  last_calculated: string
+  is_significant: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface Meal {
   id: string
   meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
@@ -1167,5 +1247,425 @@ export async function logMealFromTemplate(templateId: string, mealDate: string, 
   } catch (error) {
     console.error('Error in logMealFromTemplate:', error)
     return { success: false, error: 'Failed to log meal from template' }
+  }
+}
+
+// ===== ADVANCED NUTRITION FEATURES =====
+
+// Get all micronutrients
+export async function getMicronutrients(): Promise<Micronutrient[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('micronutrients')
+      .select('*')
+      .order('nutrient_category', { ascending: true })
+      .order('nutrient_name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching micronutrients:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getMicronutrients:', error)
+    return []
+  }
+}
+
+// Get micronutrients for a specific food item
+export async function getFoodMicronutrients(foodItemId: string): Promise<FoodMicronutrient[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('food_micronutrients')
+      .select(`
+        *,
+        micronutrient:micronutrients(*)
+      `)
+      .eq('food_item_id', foodItemId)
+
+    if (error) {
+      console.error('Error fetching food micronutrients:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getFoodMicronutrients:', error)
+    return []
+  }
+}
+
+// Log hydration
+export async function logHydration(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const amount_ml = parseInt(formData.get('amount_ml') as string)
+    const beverage_type = formData.get('beverage_type') as string
+    const notes = formData.get('notes') as string
+
+    const { data, error } = await supabase
+      .from('hydration_logs')
+      .insert({
+        amount_ml,
+        beverage_type,
+        notes
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error logging hydration:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in logHydration:', error)
+    return { success: false, error: 'Failed to log hydration' }
+  }
+}
+
+// Get hydration logs for a date range
+export async function getHydrationLogs(startDate?: string, endDate?: string): Promise<HydrationLog[]> {
+  try {
+    const supabase = await createClient()
+
+    let query = supabase
+      .from('hydration_logs')
+      .select('*')
+      .order('logged_time', { ascending: false })
+
+    if (startDate) {
+      query = query.gte('logged_time', startDate)
+    }
+    if (endDate) {
+      query = query.lte('logged_time', endDate)
+    }
+
+    const { data, error } = await query.limit(100)
+
+    if (error) {
+      console.error('Error fetching hydration logs:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getHydrationLogs:', error)
+    return []
+  }
+}
+
+// Get daily hydration total
+export async function getDailyHydrationTotal(date: string): Promise<number> {
+  try {
+    const supabase = await createClient()
+
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(date)
+    endOfDay.setHours(23, 59, 59, 999)
+
+    const { data, error } = await supabase
+      .from('hydration_logs')
+      .select('amount_ml')
+      .gte('logged_time', startOfDay.toISOString())
+      .lte('logged_time', endOfDay.toISOString())
+
+    if (error) {
+      console.error('Error fetching daily hydration:', error)
+      return 0
+    }
+
+    return data?.reduce((total, log) => total + log.amount_ml, 0) || 0
+  } catch (error) {
+    console.error('Error in getDailyHydrationTotal:', error)
+    return 0
+  }
+}
+
+// Log caffeine intake
+export async function logCaffeine(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const amount_mg = parseInt(formData.get('amount_mg') as string)
+    const source = formData.get('source') as string
+    const notes = formData.get('notes') as string
+
+    const { data, error } = await supabase
+      .from('caffeine_logs')
+      .insert({
+        amount_mg,
+        source,
+        notes
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error logging caffeine:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in logCaffeine:', error)
+    return { success: false, error: 'Failed to log caffeine' }
+  }
+}
+
+// Get caffeine logs for a date range
+export async function getCaffeineLogs(startDate?: string, endDate?: string): Promise<CaffeineLog[]> {
+  try {
+    const supabase = await createClient()
+
+    let query = supabase
+      .from('caffeine_logs')
+      .select('*')
+      .order('logged_time', { ascending: false })
+
+    if (startDate) {
+      query = query.gte('logged_time', startDate)
+    }
+    if (endDate) {
+      query = query.lte('logged_time', endDate)
+    }
+
+    const { data, error } = await query.limit(100)
+
+    if (error) {
+      console.error('Error fetching caffeine logs:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getCaffeineLogs:', error)
+    return []
+  }
+}
+
+// Get daily caffeine total
+export async function getDailyCaffeineTotal(date: string): Promise<number> {
+  try {
+    const supabase = await createClient()
+
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(date)
+    endOfDay.setHours(23, 59, 59, 999)
+
+    const { data, error } = await supabase
+      .from('caffeine_logs')
+      .select('amount_mg')
+      .gte('logged_time', startOfDay.toISOString())
+      .lte('logged_time', endOfDay.toISOString())
+
+    if (error) {
+      console.error('Error fetching daily caffeine:', error)
+      return 0
+    }
+
+    return data?.reduce((total, log) => total + log.amount_mg, 0) || 0
+  } catch (error) {
+    console.error('Error in getDailyCaffeineTotal:', error)
+    return 0
+  }
+}
+
+// Get user insights
+export async function getUserInsights(limit: number = 10): Promise<UserInsight[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('user_insights')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error fetching user insights:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getUserInsights:', error)
+    return []
+  }
+}
+
+// Mark insight as read
+export async function markInsightAsRead(insightId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+      .from('user_insights')
+      .update({ is_read: true })
+      .eq('id', insightId)
+
+    if (error) {
+      console.error('Error marking insight as read:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error in markInsightAsRead:', error)
+    return { success: false, error: 'Failed to mark insight as read' }
+  }
+}
+
+// Get habit patterns
+export async function getHabitPatterns(): Promise<HabitPattern[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('habit_patterns')
+      .select('*')
+      .eq('is_active', true)
+      .order('frequency_score', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching habit patterns:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getHabitPatterns:', error)
+    return []
+  }
+}
+
+// Get metric correlations
+export async function getMetricCorrelations(): Promise<MetricCorrelation[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('metric_correlations')
+      .select('*')
+      .eq('is_significant', true)
+      .order('correlation_coefficient', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching metric correlations:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getMetricCorrelations:', error)
+    return []
+  }
+}
+
+// Generate weekly nutrition insights
+export async function generateWeeklyInsights(): Promise<{ success: boolean; insights: UserInsight[] }> {
+  try {
+    const supabase = await createClient()
+
+    // Get data for the last 7 days
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 7)
+
+    // Get nutrition data
+    const [meals, hydration, caffeine, goals] = await Promise.all([
+      supabase.from('meals').select('*').gte('meal_date', startDate.toISOString().split('T')[0]).lte('meal_date', endDate.toISOString().split('T')[0]),
+      supabase.from('hydration_logs').select('*').gte('logged_time', startDate.toISOString()).lte('logged_time', endDate.toISOString()),
+      supabase.from('caffeine_logs').select('*').gte('logged_time', startDate.toISOString()).lte('logged_time', endDate.toISOString()),
+      supabase.from('nutrition_goals').select('*').eq('is_active', true)
+    ])
+
+    const insights: Omit<UserInsight, 'id' | 'user_id' | 'created_at'>[] = []
+
+    // Analyze protein goal achievement
+    if (goals.data && goals.data.length > 0) {
+      const proteinGoal = goals.data.find(g => g.goal_type === 'protein_target')
+      if (proteinGoal) {
+        const daysWithMeals = meals.data?.length || 0
+        const daysMeetingProtein = meals.data?.filter(meal =>
+          (meal.total_protein || 0) >= proteinGoal.target_value
+        ).length || 0
+
+        if (daysWithMeals > 0) {
+          const percentage = Math.round((daysMeetingProtein / daysWithMeals) * 100)
+          insights.push({
+            insight_type: 'weekly_summary',
+            title: `Protein Goal Achievement`,
+            description: `You hit your protein goal on ${daysMeetingProtein}/${daysWithMeals} days this week (${percentage}%). ${percentage >= 80 ? 'Great job!' : 'Consider adding more protein-rich foods.'}`,
+            priority: percentage >= 80 ? 1 : 2,
+            is_read: false,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          })
+        }
+      }
+    }
+
+    // Analyze hydration patterns
+    const totalHydration = hydration.data?.reduce((sum, log) => sum + log.amount_ml, 0) || 0
+    const avgDailyHydration = Math.round(totalHydration / 7)
+
+    if (avgDailyHydration < 2000) {
+      insights.push({
+        insight_type: 'recommendation',
+        title: 'Hydration Reminder',
+        description: `Your average daily water intake is ${avgDailyHydration}ml. Aim for at least 2000-3000ml per day for optimal hydration.`,
+        priority: 2,
+        is_read: false,
+        expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      })
+    }
+
+    // Analyze caffeine patterns
+    const totalCaffeine = caffeine.data?.reduce((sum, log) => sum + log.amount_mg, 0) || 0
+    const avgDailyCaffeine = Math.round(totalCaffeine / 7)
+
+    if (avgDailyCaffeine > 400) {
+      insights.push({
+        insight_type: 'habit_nudge',
+        title: 'High Caffeine Intake',
+        description: `Your average daily caffeine intake is ${avgDailyCaffeine}mg. Consider reducing to under 400mg for better sleep quality.`,
+        priority: 2,
+        is_read: false,
+        expires_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      })
+    }
+
+    // Insert insights into database
+    if (insights.length > 0) {
+      const { data, error } = await supabase
+        .from('user_insights')
+        .insert(insights)
+        .select()
+
+      if (error) {
+        console.error('Error inserting insights:', error)
+        return { success: false, insights: [] }
+      }
+
+      return { success: true, insights: data || [] }
+    }
+
+    return { success: true, insights: [] }
+  } catch (error) {
+    console.error('Error in generateWeeklyInsights:', error)
+    return { success: false, insights: [] }
   }
 }

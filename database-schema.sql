@@ -144,6 +144,98 @@ CREATE TABLE IF NOT EXISTS nutrition_goals (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- Micronutrients table (vitamins, minerals, electrolytes)
+CREATE TABLE IF NOT EXISTS micronutrients (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  nutrient_code TEXT NOT NULL UNIQUE, -- 'VIT_A', 'IRON', 'SODIUM', etc.
+  nutrient_name TEXT NOT NULL,
+  nutrient_category TEXT NOT NULL, -- 'vitamin', 'mineral', 'electrolyte', 'other'
+  unit TEXT NOT NULL, -- 'mg', 'mcg', 'IU', 'mmol/L', etc.
+  rda_male DECIMAL, -- Recommended Daily Allowance for males
+  rda_female DECIMAL, -- Recommended Daily Allowance for females
+  upper_limit DECIMAL, -- Upper safe limit
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Food micronutrients table (micronutrient content per food item)
+CREATE TABLE IF NOT EXISTS food_micronutrients (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  food_item_id UUID REFERENCES food_items(id) ON DELETE CASCADE,
+  micronutrient_id UUID REFERENCES micronutrients(id) ON DELETE CASCADE,
+  amount_per_serving DECIMAL NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(food_item_id, micronutrient_id)
+);
+
+-- Hydration tracking table
+CREATE TABLE IF NOT EXISTS hydration_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  amount_ml INTEGER NOT NULL,
+  beverage_type TEXT NOT NULL, -- 'water', 'coffee', 'tea', 'juice', 'soda', etc.
+  logged_time TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Caffeine tracking table
+CREATE TABLE IF NOT EXISTS caffeine_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  amount_mg INTEGER NOT NULL,
+  source TEXT NOT NULL, -- 'coffee', 'tea', 'energy_drink', 'supplement', etc.
+  logged_time TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Habit patterns table (for pattern recognition)
+CREATE TABLE IF NOT EXISTS habit_patterns (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  pattern_type TEXT NOT NULL, -- 'skipped_meal', 'late_snack', 'low_hydration', etc.
+  pattern_description TEXT NOT NULL,
+  frequency_score DECIMAL DEFAULT 0, -- 0-1 score of how frequent this pattern is
+  last_detected DATE,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- User insights table (learning insights and recommendations)
+CREATE TABLE IF NOT EXISTS user_insights (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  insight_type TEXT NOT NULL, -- 'weekly_summary', 'recommendation', 'correlation', 'habit_nudge'
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  data JSONB, -- Additional structured data for the insight
+  priority INTEGER DEFAULT 1, -- 1=low, 2=medium, 3=high
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE -- When this insight becomes stale
+);
+
+-- Correlation analysis table (relationships between metrics)
+CREATE TABLE IF NOT EXISTS metric_correlations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  primary_metric TEXT NOT NULL, -- 'sleep_hours', 'calorie_intake', etc.
+  secondary_metric TEXT NOT NULL, -- 'workout_performance', 'next_day_calories', etc.
+  correlation_coefficient DECIMAL NOT NULL, -- -1 to 1 (Pearson's correlation)
+  confidence_level DECIMAL NOT NULL, -- 0-1 confidence in the correlation
+  sample_size INTEGER NOT NULL, -- Number of data points used
+  time_window_days INTEGER NOT NULL, -- Analysis window in days
+  last_calculated TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  is_significant BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, primary_metric, secondary_metric, time_window_days)
+);
+
+-- Enhanced food_items table with additional micronutrient fields
+-- Note: We'll add micronutrient columns to existing food_items via ALTER TABLE in migration
+
 -- Enable Row Level Security
 ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE health_metrics ENABLE ROW LEVEL SECURITY;
@@ -275,6 +367,50 @@ CREATE POLICY "Users can manage own meal template items" ON meal_template_items
     )
   );
 
+-- Enable RLS for new advanced nutrition tables
+ALTER TABLE micronutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE food_micronutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hydration_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE caffeine_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE habit_patterns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_insights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE metric_correlations ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for micronutrients (public read, admin write)
+DROP POLICY IF EXISTS "Anyone can view micronutrients" ON micronutrients;
+CREATE POLICY "Anyone can view micronutrients" ON micronutrients
+  FOR SELECT USING (true);
+
+-- RLS Policies for food micronutrients (public read)
+DROP POLICY IF EXISTS "Anyone can view food micronutrients" ON food_micronutrients;
+CREATE POLICY "Anyone can view food micronutrients" ON food_micronutrients
+  FOR SELECT USING (true);
+
+-- RLS Policies for hydration logs
+DROP POLICY IF EXISTS "Users can manage own hydration logs" ON hydration_logs;
+CREATE POLICY "Users can manage own hydration logs" ON hydration_logs
+  FOR ALL USING (auth.uid() = user_id);
+
+-- RLS Policies for caffeine logs
+DROP POLICY IF EXISTS "Users can manage own caffeine logs" ON caffeine_logs;
+CREATE POLICY "Users can manage own caffeine logs" ON caffeine_logs
+  FOR ALL USING (auth.uid() = user_id);
+
+-- RLS Policies for habit patterns
+DROP POLICY IF EXISTS "Users can manage own habit patterns" ON habit_patterns;
+CREATE POLICY "Users can manage own habit patterns" ON habit_patterns
+  FOR ALL USING (auth.uid() = user_id);
+
+-- RLS Policies for user insights
+DROP POLICY IF EXISTS "Users can manage own insights" ON user_insights;
+CREATE POLICY "Users can manage own insights" ON user_insights
+  FOR ALL USING (auth.uid() = user_id);
+
+-- RLS Policies for metric correlations
+DROP POLICY IF EXISTS "Users can manage own correlations" ON metric_correlations;
+CREATE POLICY "Users can manage own correlations" ON metric_correlations
+  FOR ALL USING (auth.uid() = user_id);
+
 -- Create indexes for better performance
 DROP INDEX IF EXISTS idx_workouts_user_date;
 CREATE INDEX idx_workouts_user_date ON workouts(user_id, workout_date DESC);
@@ -312,6 +448,32 @@ SELECT
   unnest(ARRAY['High', 'Medium', 'Low', 'High', 'Medium']),
   CURRENT_DATE - INTERVAL '1 day' * generate_series(0, 4)
 WHERE auth.uid() IS NOT NULL;
+
+-- Insert sample micronutrients data
+INSERT INTO micronutrients (nutrient_code, nutrient_name, nutrient_category, unit, rda_male, rda_female, upper_limit) VALUES
+  ('VIT_A', 'Vitamin A', 'vitamin', 'mcg', 900, 700, 10000),
+  ('VIT_C', 'Vitamin C', 'vitamin', 'mg', 90, 75, 2000),
+  ('VIT_D', 'Vitamin D', 'vitamin', 'IU', 600, 600, 4000),
+  ('VIT_E', 'Vitamin E', 'vitamin', 'mg', 15, 15, 1000),
+  ('VIT_K', 'Vitamin K', 'vitamin', 'mcg', 120, 90, null),
+  ('THIAMIN', 'Thiamin (B1)', 'vitamin', 'mg', 1.2, 1.1, null),
+  ('RIBOFLAVIN', 'Riboflavin (B2)', 'vitamin', 'mg', 1.3, 1.1, null),
+  ('NIACIN', 'Niacin (B3)', 'vitamin', 'mg', 16, 14, 35),
+  ('VIT_B6', 'Vitamin B6', 'vitamin', 'mg', 1.7, 1.5, 100),
+  ('FOLATE', 'Folate', 'vitamin', 'mcg', 400, 400, 1000),
+  ('VIT_B12', 'Vitamin B12', 'vitamin', 'mcg', 2.4, 2.4, null),
+  ('CALCIUM', 'Calcium', 'mineral', 'mg', 1000, 1000, 2500),
+  ('IRON', 'Iron', 'mineral', 'mg', 8, 18, 45),
+  ('MAGNESIUM', 'Magnesium', 'mineral', 'mg', 400, 310, 350),
+  ('PHOSPHORUS', 'Phosphorus', 'mineral', 'mg', 700, 700, 4000),
+  ('POTASSIUM', 'Potassium', 'mineral', 'mg', 4700, 4700, null),
+  ('SODIUM', 'Sodium', 'mineral', 'mg', 2300, 2300, null),
+  ('ZINC', 'Zinc', 'mineral', 'mg', 11, 8, 40),
+  ('COPPER', 'Copper', 'mineral', 'mcg', 900, 900, 10000),
+  ('SELENIUM', 'Selenium', 'mineral', 'mcg', 55, 55, 400),
+  ('CHLORIDE', 'Chloride', 'electrolyte', 'mg', 2300, 2300, 3600),
+  ('CAFFEINE', 'Caffeine', 'other', 'mg', null, null, 400)
+ON CONFLICT (nutrient_code) DO NOTHING;
 
 INSERT INTO health_metrics (user_id, metric_type, value, unit, recorded_date)
 SELECT
