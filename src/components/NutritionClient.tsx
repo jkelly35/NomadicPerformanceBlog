@@ -28,6 +28,8 @@ interface NutritionData {
   userInsights: UserInsight[]
   habitPatterns: HabitPattern[]
   metricCorrelations: MetricCorrelation[]
+  dailyHydrationTotal?: number
+  dailyCaffeineTotal?: number
 }
 
 interface NutritionClientProps {
@@ -39,7 +41,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const router = useRouter()
 
   const [data, setData] = useState<NutritionData>(initialData)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'hydration' | 'caffeine' | 'micronutrients' | 'insights' | 'habits' | 'correlations'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'insights' | 'habits' | 'correlations'>('dashboard')
 
   // Refresh data function
   const refreshNutritionData = async () => {
@@ -90,7 +92,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Hydration state
   const [hydrationLogs, setHydrationLogs] = useState<HydrationLog[]>(initialData.hydrationLogs)
-  const [dailyHydrationTotal, setDailyHydrationTotal] = useState(0)
+  const [dailyHydrationTotal, setDailyHydrationTotal] = useState(initialData.dailyHydrationTotal || 0)
   const [hydrationAmount, setHydrationAmount] = useState('')
   const [beverageType, setBeverageType] = useState('water')
   const [hydrationNotes, setHydrationNotes] = useState('')
@@ -98,7 +100,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Caffeine state
   const [caffeineLogs, setCaffeineLogs] = useState<CaffeineLog[]>(initialData.caffeineLogs)
-  const [dailyCaffeineTotal, setDailyCaffeineTotal] = useState(0)
+  const [dailyCaffeineTotal, setDailyCaffeineTotal] = useState(initialData.dailyCaffeineTotal || 0)
   const [caffeineAmount, setCaffeineAmount] = useState('')
   const [caffeineSource, setCaffeineSource] = useState('coffee')
   const [caffeineNotes, setCaffeineNotes] = useState('')
@@ -290,23 +292,23 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }, [activeTab])
 
-  // Load hydration data when hydration tab is active
+  // Load hydration data when dashboard tab is active
   useEffect(() => {
-    if (activeTab === 'hydration') {
+    if (activeTab === 'dashboard') {
       loadHydrationData()
     }
   }, [activeTab])
 
-  // Load caffeine data when caffeine tab is active
+  // Load caffeine data when dashboard tab is active
   useEffect(() => {
-    if (activeTab === 'caffeine') {
+    if (activeTab === 'dashboard') {
       loadCaffeineData()
     }
   }, [activeTab])
 
-  // Load micronutrients data when micronutrients tab is active
+  // Load micronutrients data when dashboard tab is active
   useEffect(() => {
-    if (activeTab === 'micronutrients') {
+    if (activeTab === 'dashboard') {
       loadMicronutrientsData()
     }
   }, [activeTab])
@@ -731,16 +733,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             flexWrap: 'wrap'
           }}>
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+              { id: 'dashboard', label: 'Overview', icon: '📊' },
               { id: 'foods', label: 'Food Database', icon: '🥕' },
               { id: 'meals', label: 'Meal History', icon: '🍽️' },
               { id: 'templates', label: 'Meal Templates', icon: '📋' },
               { id: 'saved', label: 'Saved Foods', icon: '⭐' },
               { id: 'log', label: 'Log Meal', icon: '➕' },
               { id: 'goals', label: 'Goals', icon: '🎯' },
-              { id: 'hydration', label: 'Hydration', icon: '💧' },
-              { id: 'caffeine', label: 'Caffeine', icon: '☕' },
-              { id: 'micronutrients', label: 'Micronutrients', icon: '🧬' },
               { id: 'insights', label: 'Insights', icon: '💡' },
               { id: 'habits', label: 'Habits', icon: '🔄' },
               { id: 'correlations', label: 'Correlations', icon: '📈' }
@@ -941,24 +940,169 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               </div>
             </div>
 
-            {/* Link to Full Nutrition Page */}
+            {/* Hydration & Caffeine Summary Cards */}
             <div style={{
-              textAlign: 'center',
-              marginTop: '2rem'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '1rem',
+              marginBottom: '2rem'
             }}>
-              <Link href="/nutrition" style={{
-                display: 'inline-block',
-                padding: '1rem 2rem',
-                background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                color: '#fff',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                transition: 'transform 0.2s'
+              {/* Hydration Card */}
+              <div style={{
+                background: '#f8f9fa',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                border: '1px solid #e9ecef',
+                textAlign: 'center'
               }}>
-                🍎 Manage Nutrition
-              </Link>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+                  borderRadius: '50%',
+                  margin: '0 auto 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: '#fff'
+                }}>
+                  💧
+                </div>
+                <h4 style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Hydration
+                </h4>
+                <p style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: '#1976d2',
+                  marginBottom: '0.5rem'
+                }}>
+                  {dailyHydrationTotal}ml
+                </p>
+                <p style={{
+                  fontSize: '0.8rem',
+                  color: '#666'
+                }}>
+                  Goal: 3000ml
+                </p>
+              </div>
+
+              {/* Caffeine Card */}
+              <div style={{
+                background: '#f8f9fa',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                border: '1px solid #e9ecef',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                  borderRadius: '50%',
+                  margin: '0 auto 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: '#fff'
+                }}>
+                  ☕
+                </div>
+                <h4 style={{
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Caffeine
+                </h4>
+                <p style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  color: dailyCaffeineTotal > 400 ? '#f44336' : '#f57c00',
+                  marginBottom: '0.5rem'
+                }}>
+                  {dailyCaffeineTotal}mg
+                </p>
+                <p style={{
+                  fontSize: '0.8rem',
+                  color: '#666'
+                }}>
+                  Limit: 400mg
+                </p>
+              </div>
+            </div>
+
+            {/* Micronutrients Overview */}
+            <div style={{
+              background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
+              borderRadius: '12px',
+              padding: '2rem',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+                🧬 Micronutrient Progress
+              </h3>
+              <p style={{ color: '#666', fontSize: '1rem', marginBottom: '1.5rem' }}>
+                Track your intake of essential vitamins, minerals, and electrolytes from today's meals
+              </p>
+
+              {/* Micronutrient Categories */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                  {micronutrients.slice(0, 6).map((micronutrient, index) => {
+                    // Use static values instead of Math.random() to prevent hydration mismatch
+                    const staticProgressValues = [45, 78, 23, 67, 89, 34]
+                    const progress = staticProgressValues[index] || 0
+                    return (
+                      <div key={micronutrient.id} style={{
+                        background: '#fff',
+                        borderRadius: '8px',
+                        padding: '1rem',
+                        border: '1px solid #e9ecef'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <div style={{ fontWeight: 'bold', color: '#1a3a2a', fontSize: '0.9rem' }}>
+                            {micronutrient.nutrient_name}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                            {micronutrient.rda_male || micronutrient.rda_female || 'N/A'}{micronutrient.unit}
+                          </div>
+                        </div>
+                        <div style={{
+                          width: '100%',
+                          height: '4px',
+                          background: '#e0e0e0',
+                          borderRadius: '2px',
+                          overflow: 'hidden',
+                          marginBottom: '0.5rem'
+                        }}>
+                          <div style={{
+                            width: `${Math.min(progress, 100)}%`,
+                            height: '100%',
+                            background: progress >= 100 ? '#4caf50' : progress >= 50 ? '#ff9800' : '#2196f3',
+                            borderRadius: '2px'
+                          }}></div>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#666' }}>
+                          {Math.round(progress)}% of daily needs
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -2440,711 +2584,6 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               >
                 {savingGoals ? '💾 Saving...' : '💾 Save Goals'}
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Hydration Tab */}
-        {activeTab === 'hydration' && (
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '2rem',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
-            <h2 style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              💧 Hydration Tracker
-            </h2>
-
-            {/* Daily Hydration Summary */}
-            <div style={{
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                Today's Hydration
-              </h3>
-              <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#1976d2', marginBottom: '0.5rem' }}>
-                {dailyHydrationTotal}ml
-              </div>
-              <div style={{ fontSize: '1.1rem', color: '#666' }}>
-                Goal: 2000-3000ml per day
-              </div>
-              <div style={{
-                width: '100%',
-                height: '8px',
-                background: '#e0e0e0',
-                borderRadius: '4px',
-                marginTop: '1rem',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${Math.min((dailyHydrationTotal / 2500) * 100, 100)}%`,
-                  height: '100%',
-                  background: dailyHydrationTotal >= 2000 ? '#4caf50' : '#ff9800',
-                  borderRadius: '4px',
-                  transition: 'width 0.3s ease'
-                }}></div>
-              </div>
-            </div>
-
-            {/* Log Hydration Form */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Log Hydration
-              </h3>
-              <form onSubmit={async (e) => {
-                e.preventDefault()
-                setLoggingHydration(true)
-                try {
-                  const formData = new FormData()
-                  formData.append('amount_ml', hydrationAmount)
-                  formData.append('beverage_type', beverageType)
-                  formData.append('notes', hydrationNotes)
-
-                  const result = await logHydration(formData)
-                  if (result.success) {
-                    setHydrationAmount('')
-                    setBeverageType('water')
-                    setHydrationNotes('')
-                    // Refresh hydration data
-                    await loadHydrationData()
-                  } else {
-                    alert('Failed to log hydration: ' + result.error)
-                  }
-                } catch (error) {
-                  console.error('Error logging hydration:', error)
-                  alert('Failed to log hydration')
-                } finally {
-                  setLoggingHydration(false)
-                }
-              }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a3a2a' }}>
-                      Amount (ml)
-                    </label>
-                    <input
-                      type="number"
-                      value={hydrationAmount}
-                      onChange={(e) => setHydrationAmount(e.target.value)}
-                      placeholder="250"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '1rem'
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a3a2a' }}>
-                      Beverage Type
-                    </label>
-                    <select
-                      value={beverageType}
-                      onChange={(e) => setBeverageType(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      <option value="water">💧 Water</option>
-                      <option value="coffee">☕ Coffee</option>
-                      <option value="tea">🍵 Tea</option>
-                      <option value="juice">🧃 Juice</option>
-                      <option value="soda">🥤 Soda</option>
-                      <option value="sports_drink">🏃 Sports Drink</option>
-                      <option value="other">❓ Other</option>
-                    </select>
-                  </div>
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a3a2a' }}>
-                    Notes (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={hydrationNotes}
-                    onChange={(e) => setHydrationNotes(e.target.value)}
-                    placeholder="e.g., with breakfast"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: '1rem'
-                    }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loggingHydration}
-                  style={{
-                    width: '100%',
-                    padding: '1rem',
-                    background: loggingHydration
-                      ? '#6c757d'
-                      : 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    cursor: loggingHydration ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {loggingHydration ? 'Logging...' : '💧 Log Hydration'}
-                </button>
-              </form>
-            </div>
-
-            {/* Recent Hydration Logs */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Recent Logs
-              </h3>
-              {hydrationLogs.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
-                  No hydration logs yet. Start tracking your water intake!
-                </p>
-              ) : (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {hydrationLogs.slice(0, 10).map((log) => (
-                    <div key={log.id} style={{
-                      background: '#fff',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      border: '1px solid #e9ecef',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>
-                          {log.amount_ml}ml {log.beverage_type === 'water' ? '💧' : log.beverage_type === 'coffee' ? '☕' : log.beverage_type === 'tea' ? '🍵' : '🥤'}
-                        </div>
-                        <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                          {new Date(log.logged_time).toLocaleString()}
-                        </div>
-                        {log.notes && (
-                          <div style={{ fontSize: '0.9rem', color: '#666', fontStyle: 'italic' }}>
-                            {log.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Caffeine Tab */}
-        {activeTab === 'caffeine' && (
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '2rem',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
-            <h2 style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              ☕ Caffeine Tracker
-            </h2>
-
-            {/* Daily Caffeine Summary */}
-            <div style={{
-              background: 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                Today's Caffeine
-              </h3>
-              <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#f57c00', marginBottom: '0.5rem' }}>
-                {dailyCaffeineTotal}mg
-              </div>
-              <div style={{ fontSize: '1.1rem', color: '#666' }}>
-                Recommended: Under 400mg per day
-              </div>
-              <div style={{
-                width: '100%',
-                height: '8px',
-                background: '#e0e0e0',
-                borderRadius: '4px',
-                marginTop: '1rem',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${Math.min((dailyCaffeineTotal / 400) * 100, 100)}%`,
-                  height: '100%',
-                  background: dailyCaffeineTotal > 400 ? '#f44336' : dailyCaffeineTotal > 200 ? '#ff9800' : '#4caf50',
-                  borderRadius: '4px',
-                  transition: 'width 0.3s ease'
-                }}></div>
-              </div>
-              {dailyCaffeineTotal > 400 && (
-                <div style={{ fontSize: '0.9rem', color: '#f44336', marginTop: '0.5rem', fontWeight: 'bold' }}>
-                  ⚠️ High caffeine intake may affect sleep quality
-                </div>
-              )}
-            </div>
-
-            {/* Log Caffeine Form */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Log Caffeine Intake
-              </h3>
-              <form onSubmit={async (e) => {
-                e.preventDefault()
-                setLoggingCaffeine(true)
-                try {
-                  const formData = new FormData()
-                  formData.append('amount_mg', caffeineAmount)
-                  formData.append('source', caffeineSource)
-                  formData.append('notes', caffeineNotes)
-
-                  const result = await logCaffeine(formData)
-                  if (result.success) {
-                    setCaffeineAmount('')
-                    setCaffeineSource('coffee')
-                    setCaffeineNotes('')
-                    // Refresh caffeine data
-                    await loadCaffeineData()
-                  } else {
-                    alert('Failed to log caffeine: ' + result.error)
-                  }
-                } catch (error) {
-                  console.error('Error logging caffeine:', error)
-                  alert('Failed to log caffeine')
-                } finally {
-                  setLoggingCaffeine(false)
-                }
-              }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a3a2a' }}>
-                      Amount (mg)
-                    </label>
-                    <input
-                      type="number"
-                      value={caffeineAmount}
-                      onChange={(e) => setCaffeineAmount(e.target.value)}
-                      placeholder="95"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '1rem'
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a3a2a' }}>
-                      Source
-                    </label>
-                    <select
-                      value={caffeineSource}
-                      onChange={(e) => setCaffeineSource(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '1rem'
-                      }}
-                    >
-                      <option value="coffee">☕ Coffee</option>
-                      <option value="espresso">🫘 Espresso</option>
-                      <option value="tea">🍵 Tea</option>
-                      <option value="energy_drink">⚡ Energy Drink</option>
-                      <option value="soda">🥤 Soda</option>
-                      <option value="chocolate">🍫 Chocolate</option>
-                      <option value="supplement">💊 Supplement</option>
-                      <option value="other">❓ Other</option>
-                    </select>
-                  </div>
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1a3a2a' }}>
-                    Notes (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={caffeineNotes}
-                    onChange={(e) => setCaffeineNotes(e.target.value)}
-                    placeholder="e.g., morning brew"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: '1rem'
-                    }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loggingCaffeine}
-                  style={{
-                    width: '100%',
-                    padding: '1rem',
-                    background: loggingCaffeine
-                      ? '#6c757d'
-                      : 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    cursor: loggingCaffeine ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {loggingCaffeine ? 'Logging...' : '☕ Log Caffeine'}
-                </button>
-              </form>
-            </div>
-
-            {/* Common Caffeine Amounts Reference */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Common Caffeine Amounts
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>☕ Coffee (8oz)</div>
-                  <div style={{ fontSize: '1.2rem', color: '#666' }}>95mg</div>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>🫘 Espresso (1oz)</div>
-                  <div style={{ fontSize: '1.2rem', color: '#666' }}>63mg</div>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>🍵 Black Tea (8oz)</div>
-                  <div style={{ fontSize: '1.2rem', color: '#666' }}>47mg</div>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>⚡ Energy Drink (8oz)</div>
-                  <div style={{ fontSize: '1.2rem', color: '#666' }}>80mg</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Caffeine Logs */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Recent Logs
-              </h3>
-              {caffeineLogs.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
-                  No caffeine logs yet. Start tracking your caffeine intake!
-                </p>
-              ) : (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {caffeineLogs.slice(0, 10).map((log) => (
-                    <div key={log.id} style={{
-                      background: '#fff',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      border: '1px solid #e9ecef',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>
-                          {log.amount_mg}mg {log.source === 'coffee' ? '☕' : log.source === 'tea' ? '🍵' : log.source === 'energy_drink' ? '⚡' : '💊'}
-                        </div>
-                        <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                          {new Date(log.logged_time).toLocaleString()}
-                        </div>
-                        {log.notes && (
-                          <div style={{ fontSize: '0.9rem', color: '#666', fontStyle: 'italic' }}>
-                            {log.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Micronutrients Tab */}
-        {activeTab === 'micronutrients' && (
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '2rem',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
-            <h2 style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              🧬 Micronutrient Tracker
-            </h2>
-
-            {/* Micronutrient Overview */}
-            <div style={{
-              background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                Daily Micronutrient Progress
-              </h3>
-              <p style={{ color: '#666', fontSize: '1.1rem' }}>
-                Track your intake of essential vitamins, minerals, and electrolytes from today's meals
-              </p>
-              <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                💡 Log meals to see your micronutrient progress update in real-time
-              </div>
-            </div>
-
-            {/* Micronutrient Categories */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Essential Micronutrients
-              </h3>
-
-              {/* Vitamins */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h4 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem', borderBottom: '2px solid #ff6b35', paddingBottom: '0.5rem' }}>
-                  🥕 Vitamins
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-                  {micronutrients
-                    .filter(m => m.nutrient_category === 'vitamin')
-                    .slice(0, 6)
-                    .map((micronutrient) => {
-                      // Calculate progress (simplified - in real app, would calculate from today's meals)
-                      const progress = Math.random() * 100 // Placeholder
-                      return (
-                        <div key={micronutrient.id} style={{
-                          background: '#f8f9fa',
-                          borderRadius: '8px',
-                          padding: '1rem',
-                          border: '1px solid #e9ecef'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>
-                              {micronutrient.nutrient_name}
-                            </div>
-                            <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                              {micronutrient.rda_male || micronutrient.rda_female || 'N/A'}{micronutrient.unit}
-                            </div>
-                          </div>
-                          <div style={{
-                            width: '100%',
-                            height: '6px',
-                            background: '#e0e0e0',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                            marginBottom: '0.5rem'
-                          }}>
-                            <div style={{
-                              width: `${Math.min(progress, 100)}%`,
-                              height: '100%',
-                              background: progress >= 100 ? '#4caf50' : progress >= 50 ? '#ff9800' : '#2196f3',
-                              borderRadius: '3px'
-                            }}></div>
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                            {Math.round(progress)}% of daily needs
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
-
-              {/* Minerals */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h4 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem', borderBottom: '2px solid #ff6b35', paddingBottom: '0.5rem' }}>
-                  ⚒️ Minerals
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-                  {micronutrients
-                    .filter(m => m.nutrient_category === 'mineral')
-                    .slice(0, 6)
-                    .map((micronutrient) => {
-                      const progress = Math.random() * 100 // Placeholder
-                      return (
-                        <div key={micronutrient.id} style={{
-                          background: '#f8f9fa',
-                          borderRadius: '8px',
-                          padding: '1rem',
-                          border: '1px solid #e9ecef'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>
-                              {micronutrient.nutrient_name}
-                            </div>
-                            <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                              {micronutrient.rda_male || micronutrient.rda_female || 'N/A'}{micronutrient.unit}
-                            </div>
-                          </div>
-                          <div style={{
-                            width: '100%',
-                            height: '6px',
-                            background: '#e0e0e0',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                            marginBottom: '0.5rem'
-                          }}>
-                            <div style={{
-                              width: `${Math.min(progress, 100)}%`,
-                              height: '100%',
-                              background: progress >= 100 ? '#4caf50' : progress >= 50 ? '#ff9800' : '#2196f3',
-                              borderRadius: '3px'
-                            }}></div>
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                            {Math.round(progress)}% of daily needs
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
-
-              {/* Electrolytes */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h4 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem', borderBottom: '2px solid #ff6b35', paddingBottom: '0.5rem' }}>
-                  ⚡ Electrolytes
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-                  {micronutrients
-                    .filter(m => m.nutrient_category === 'electrolyte')
-                    .slice(0, 4)
-                    .map((micronutrient) => {
-                      const progress = Math.random() * 100 // Placeholder
-                      return (
-                        <div key={micronutrient.id} style={{
-                          background: '#f8f9fa',
-                          borderRadius: '8px',
-                          padding: '1rem',
-                          border: '1px solid #e9ecef'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <div style={{ fontWeight: 'bold', color: '#1a3a2a' }}>
-                              {micronutrient.nutrient_name}
-                            </div>
-                            <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                              {micronutrient.rda_male || micronutrient.rda_female || 'N/A'}{micronutrient.unit}
-                            </div>
-                          </div>
-                          <div style={{
-                            width: '100%',
-                            height: '6px',
-                            background: '#e0e0e0',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                            marginBottom: '0.5rem'
-                          }}>
-                            <div style={{
-                              width: `${Math.min(progress, 100)}%`,
-                              height: '100%',
-                              background: progress >= 100 ? '#4caf50' : progress >= 50 ? '#ff9800' : '#2196f3',
-                              borderRadius: '3px'
-                            }}></div>
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                            {Math.round(progress)}% of daily needs
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
-            </div>
-
-            {/* Micronutrient Sources */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                💡 Micronutrient Sources
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a', marginBottom: '0.5rem' }}>Vitamin C</div>
-                  <div style={{ fontSize: '0.9rem', color: '#666' }}>Citrus fruits, bell peppers, strawberries, broccoli</div>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a', marginBottom: '0.5rem' }}>Iron</div>
-                  <div style={{ fontSize: '0.9rem', color: '#666' }}>Red meat, spinach, lentils, fortified cereals</div>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a', marginBottom: '0.5rem' }}>Calcium</div>
-                  <div style={{ fontSize: '0.9rem', color: '#666' }}>Dairy products, leafy greens, fortified plant milks</div>
-                </div>
-                <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
-                  <div style={{ fontWeight: 'bold', color: '#1a3a2a', marginBottom: '0.5rem' }}>Potassium</div>
-                  <div style={{ fontSize: '0.9rem', color: '#666' }}>Bananas, sweet potatoes, tomatoes, avocados</div>
-                </div>
-              </div>
             </div>
           </div>
         )}

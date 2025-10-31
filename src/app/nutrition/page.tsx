@@ -84,6 +84,10 @@ export default async function NutritionPage() {
     }
   )
 
+  // Calculate daily hydration and caffeine totals
+  const dailyHydrationTotal = (hydrationLogs || []).reduce((total, log) => total + log.amount_ml, 0)
+  const dailyCaffeineTotal = (caffeineLogs || []).reduce((total, log) => total + log.amount_mg, 0)
+
   return (
     <NutritionClient
       initialData={{
@@ -98,7 +102,9 @@ export default async function NutritionPage() {
         micronutrients: micronutrients || [],
         userInsights: userInsights || [],
         habitPatterns: habitPatterns || [],
-        metricCorrelations: metricCorrelations || []
+        metricCorrelations: metricCorrelations || [],
+        dailyHydrationTotal,
+        dailyCaffeineTotal
       }}
     />
   )
