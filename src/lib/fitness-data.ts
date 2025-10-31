@@ -214,6 +214,28 @@ export async function getRecentWorkouts(limit: number = 5): Promise<Workout[]> {
   }
 }
 
+// Get workouts
+export async function getWorkouts(): Promise<Workout[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('*')
+      .order('workout_date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching workouts:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getWorkouts:', error)
+    return []
+  }
+}
+
 // Fetch health metrics
 export async function getHealthMetrics(): Promise<HealthMetric[]> {
   try {

@@ -15,8 +15,7 @@ import {
   NutritionGoal,
   logWorkout,
   logMeal,
-  updateHealthMetrics,
-  createCustomGoal
+  updateHealthMetrics
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -45,12 +44,9 @@ function DashboardContent({
   setShowMealModal, 
   showHealthModal, 
   setShowHealthModal,
-  showGoalModal,
-  setShowGoalModal,
   onWorkoutSubmit,
   onMealSubmit,
   onHealthSubmit,
-  onGoalSubmit,
   isSubmitting
 }: { 
   data: DashboardData
@@ -60,12 +56,9 @@ function DashboardContent({
   setShowMealModal: (show: boolean) => void
   showHealthModal: boolean
   setShowHealthModal: (show: boolean) => void
-  showGoalModal: boolean
-  setShowGoalModal: (show: boolean) => void
   onWorkoutSubmit: (formData: FormData) => Promise<void>
   onMealSubmit: (formData: FormData) => Promise<void>
   onHealthSubmit: (formData: FormData) => Promise<void>
-  onGoalSubmit: (formData: FormData) => Promise<void>
   isSubmitting: boolean
 }) {
   const { user } = useAuth()
@@ -80,10 +73,6 @@ function DashboardContent({
   const getHealthMetric = (metricType: string) => {
     const metric = data.healthMetrics.find(m => m.metric_type === metricType)
     return metric?.value || 0
-  }
-
-  const getGoal = (goalType: string) => {
-    return data.goals.find(g => g.goal_type === goalType)
   }
 
   const formatDate = (dateString: string) => {
@@ -230,6 +219,25 @@ function DashboardContent({
                 <p className="opacity-90">Track workouts, monitor progress, and conquer new peaks</p>
               </div>
             </Link>
+          </div>
+
+
+          {/* Send Logs Section */}
+          <div className="bg-gradient-to-br from-stone-50 to-sky-50 rounded-xl p-6 mb-8 border border-stone-200">
+            <h2 className="text-2xl font-bold text-stone-800 mb-6 text-center">
+              🏔️ Send Logs
+            </h2>
+            <p className="text-stone-600 text-center mb-6">
+              Track your outdoor adventures and climbing sends in detail
+            </p>
+            <div className="text-center">
+              <button
+                onClick={() => window.location.href = '/sends'}
+                className="bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-8 py-4 rounded-lg text-lg font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
+              >
+                📝 Log Send
+              </button>
+            </div>
           </div>
 
 
@@ -406,183 +414,16 @@ function DashboardContent({
                   🎯 Goals & Targets
                 </span>
                 <button
-                  onClick={() => setShowGoalModal(true)}
+                  onClick={() => window.location.href = '/goals'}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
-                  + Create Goal
+                  ⚙️ Manage Goals
                 </button>
               </h3>
 
               <div className="space-y-6">
-                {/* Weekly Workout Goal */}
-                <div className="bg-white rounded-lg p-4 border border-stone-200">
-                  <div className="flex justify-between items-center mb-3">
-                    <div>
-                      <div className="font-semibold text-stone-800 text-lg">
-                        🏃 Weekly Workouts
-                      </div>
-                      <div className="text-sm text-stone-600 mt-1">
-                        {(() => {
-                          const goal = getGoal('weekly_workouts');
-                          const current = goal ? Math.round(goal.current_value) : 0;
-                          const target = goal ? Math.round(goal.target_value) : 6;
-                          return `${current} of ${target} completed`;
-                        })()}
-                      </div>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      (() => {
-                        const goal = getGoal('weekly_workouts');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return 'bg-green-100 text-green-800';
-                        if (progress >= 75) return 'bg-yellow-100 text-yellow-800';
-                        return 'bg-red-100 text-red-800';
-                      })()
-                    }`}>
-                      {(() => {
-                        const goal = getGoal('weekly_workouts');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '✅ Complete';
-                        if (progress >= 75) return '🚀 Almost there';
-                        return '🎯 In progress';
-                      })()}
-                    </div>
-                  </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
-                    <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full" style={{ width: `${(() => {
-                      const goal = getGoal('weekly_workouts');
-                      return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
-                    })()}%` }}></div>
-                  </div>
-                  <div className="flex justify-between text-sm text-stone-600">
-                    <span>{(() => {
-                      const goal = getGoal('weekly_workouts');
-                      const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
-                      return `${progress}% complete`;
-                    })()}</span>
-                    <span>{(() => {
-                      const goal = getGoal('weekly_workouts');
-                      const remaining = goal ? Math.max(0, Math.round(goal.target_value - goal.current_value)) : 6;
-                      return `${remaining} workouts to go`;
-                    })()}</span>
-                  </div>
-                </div>
-
-                {/* Monthly Active Minutes */}
-                <div className="bg-white rounded-lg p-4 border border-stone-200">
-                  <div className="flex justify-between items-center mb-3">
-                    <div>
-                      <div className="font-semibold text-stone-800 text-lg">
-                        ⏱️ Monthly Active Minutes
-                      </div>
-                      <div className="text-sm text-stone-600 mt-1">
-                        {(() => {
-                          const goal = getGoal('monthly_minutes');
-                          const current = goal ? Math.round(goal.current_value) : 0;
-                          const target = goal ? Math.round(goal.target_value) : 2000;
-                          return `${current.toLocaleString()} of ${target.toLocaleString()} min`;
-                        })()}
-                      </div>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      (() => {
-                        const goal = getGoal('monthly_minutes');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return 'bg-green-100 text-green-800';
-                        if (progress >= 75) return 'bg-yellow-100 text-yellow-800';
-                        return 'bg-red-100 text-red-800';
-                      })()
-                    }`}>
-                      {(() => {
-                        const goal = getGoal('monthly_minutes');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '✅ Complete';
-                        if (progress >= 75) return '🚀 Almost there';
-                        return '🎯 In progress';
-                      })()}
-                    </div>
-                  </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
-                    <div className="bg-gradient-to-r from-sky-400 to-blue-500 h-full rounded-full" style={{ width: `${(() => {
-                      const goal = getGoal('monthly_minutes');
-                      return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
-                    })()}%` }}></div>
-                  </div>
-                  <div className="flex justify-between text-sm text-stone-600">
-                    <span>{(() => {
-                      const goal = getGoal('monthly_minutes');
-                      const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
-                      return `${progress}% complete`;
-                    })()}</span>
-                    <span>{(() => {
-                      const goal = getGoal('monthly_minutes');
-                      const remaining = goal ? Math.max(0, Math.round(goal.target_value - goal.current_value)) : 2000;
-                      return `${remaining.toLocaleString()} min to go`;
-                    })()}</span>
-                  </div>
-                </div>
-
-                {/* Strength Improvement */}
-                <div className="bg-white rounded-lg p-4 border border-stone-200">
-                  <div className="flex justify-between items-center mb-3">
-                    <div>
-                      <div className="font-semibold text-stone-800 text-lg">
-                        💪 Strength Goals
-                      </div>
-                      <div className="text-sm text-stone-600 mt-1">
-                        {(() => {
-                          const goal = getGoal('strength_goals');
-                          const current = goal ? Math.round(goal.current_value) : 0;
-                          const target = goal ? Math.round(goal.target_value) : 4;
-                          return `${current} of ${target} achieved`;
-                        })()}
-                      </div>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      (() => {
-                        const goal = getGoal('strength_goals');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return 'bg-green-100 text-green-800';
-                        if (progress >= 75) return 'bg-yellow-100 text-yellow-800';
-                        return 'bg-red-100 text-red-800';
-                      })()
-                    }`}>
-                      {(() => {
-                        const goal = getGoal('strength_goals');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '✅ Complete';
-                        if (progress >= 75) return '🚀 Almost there';
-                        return '🎯 In progress';
-                      })()}
-                    </div>
-                  </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
-                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full" style={{ width: `${(() => {
-                      const goal = getGoal('strength_goals');
-                      return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
-                    })()}%` }}></div>
-                  </div>
-                  <div className="flex justify-between text-sm text-stone-600">
-                    <span>{(() => {
-                      const goal = getGoal('strength_goals');
-                      const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
-                      return `${progress}% complete`;
-                    })()}</span>
-                    <span>{(() => {
-                      const goal = getGoal('strength_goals');
-                      const remaining = goal ? Math.max(0, Math.round(goal.target_value - goal.current_value)) : 4;
-                      return `${remaining} goals to go`;
-                    })()}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Custom Goals */}
-              {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
-                <div className="mt-6 pt-6 border-t border-stone-300">
-                  <h4 className="text-lg font-semibold text-stone-800 mb-4">
-                    Your Custom Goals
-                  </h4>
+                {/* Goals */}
+                {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 ? (
                   <div className="grid gap-4">
                     {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).map((goal) => (
                       <div key={goal.id} className="bg-white rounded-lg p-4 border border-stone-200">
@@ -615,8 +456,20 @@ function DashboardContent({
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="bg-white rounded-lg p-8 text-center border border-stone-200">
+                    <div className="text-4xl mb-4">🎯</div>
+                    <h3 className="text-lg font-semibold text-stone-800 mb-2">No Goals Yet</h3>
+                    <p className="text-stone-600 mb-4">Create your first goal to start tracking your fitness objectives.</p>
+                    <button
+                      onClick={() => window.location.href = '/goals'}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Create Your First Goal
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Upcoming Challenges */}
               <div className="mt-6 pt-6 border-t border-stone-300">
@@ -665,7 +518,7 @@ function DashboardContent({
             maxHeight: '90vh',
             overflow: 'auto'
           }}>
-            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>Log Workout</h2>
+            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>Log Your Send</h2>
             <form action={onWorkoutSubmit}>
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
@@ -683,13 +536,16 @@ function DashboardContent({
                   }}
                 >
                   <option value="">Select activity...</option>
-                  <option value="Trail Running">Trail Running</option>
-                  <option value="Strength Training">Strength Training</option>
-                  <option value="Yoga & Mobility">Yoga & Mobility</option>
-                  <option value="Hiking">Hiking</option>
-                  <option value="Core Workout">Core Workout</option>
-                  <option value="Cycling">Cycling</option>
-                  <option value="Swimming">Swimming</option>
+                  <option value="Rock Climbing">🧗 Rock Climbing</option>
+                  <option value="Trail Running">🏃 Trail Running</option>
+                  <option value="Hiking">🥾 Hiking</option>
+                  <option value="Skiing">🎿 Skiing</option>
+                  <option value="Snowboarding">🏂 Snowboarding</option>
+                  <option value="Cycling">🚴 Cycling</option>
+                  <option value="Strength Training">💪 Strength Training</option>
+                  <option value="Yoga & Mobility">🧘 Yoga & Mobility</option>
+                  <option value="Core Workout">🏋️ Core Workout</option>
+                  <option value="Swimming">🏊 Swimming</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -797,7 +653,7 @@ function DashboardContent({
                     fontWeight: 'bold'
                   }}
                 >
-                  {isSubmitting ? 'Logging...' : 'Log Workout'}
+                  {isSubmitting ? 'Logging...' : 'Log Send'}
                 </button>
               </div>
             </form>
@@ -1127,129 +983,6 @@ function DashboardContent({
           </div>
         </div>
       )}
-
-      {/* Goal Creation Modal */}
-      {showGoalModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto'
-          }}>
-            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>Create New Goal</h2>
-            <form action={onGoalSubmit}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Goal Type
-                </label>
-                <input
-                  type="text"
-                  name="goal_type"
-                  required
-                  placeholder="e.g., Monthly Hiking Miles, Weekly Yoga Sessions"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Target Value
-                </label>
-                <input
-                  type="number"
-                  name="target_value"
-                  required
-                  min="1"
-                  step="0.1"
-                  placeholder="e.g., 50, 10, 1000"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Period
-                </label>
-                <select
-                  name="period"
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                >
-                  <option value="">Select period...</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowGoalModal(false)}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    background: '#f8f9fa',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    border: 'none',
-                    borderRadius: '6px',
-                    background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                    color: '#fff',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Goal'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
@@ -1262,7 +995,6 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [showWorkoutModal, setShowWorkoutModal] = useState(false)
   const [showMealModal, setShowMealModal] = useState(false)
   const [showHealthModal, setShowHealthModal] = useState(false)
-  const [showGoalModal, setShowGoalModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -1281,10 +1013,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         // Refresh the page to show new data
         window.location.reload()
       } else {
-        alert('Error logging workout: ' + result.error)
+        alert('Error logging activity: ' + result.error)
       }
     } catch (error) {
-      alert('Error logging workout')
+      alert('Error logging activity')
     } finally {
       setIsSubmitting(false)
     }
@@ -1321,38 +1053,6 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       }
     } catch (error) {
       alert('Error updating health metrics')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleGoalSubmit = async (formData: FormData) => {
-    setIsSubmitting(true)
-    try {
-      const goalType = formData.get('goal_type') as string
-      const targetValue = parseFloat(formData.get('target_value') as string)
-      const period = formData.get('period') as string
-
-      if (!goalType || !targetValue || !period) {
-        alert('Please fill in all required fields')
-        return
-      }
-
-      const result = await createCustomGoal({
-        goal_type: goalType,
-        target_value: targetValue,
-        period: period
-      })
-
-      if (result.success) {
-        setShowGoalModal(false)
-        // Refresh the page to show new data
-        window.location.reload()
-      } else {
-        alert('Error creating goal: ' + result.error)
-      }
-    } catch (error) {
-      alert('Error creating goal')
     } finally {
       setIsSubmitting(false)
     }
@@ -1401,12 +1101,9 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     setShowMealModal={setShowMealModal}
     showHealthModal={showHealthModal}
     setShowHealthModal={setShowHealthModal}
-    showGoalModal={showGoalModal}
-    setShowGoalModal={setShowGoalModal}
     onWorkoutSubmit={handleWorkoutSubmit}
     onMealSubmit={handleMealSubmit}
     onHealthSubmit={handleHealthSubmit}
-    onGoalSubmit={handleGoalSubmit}
     isSubmitting={isSubmitting}
   />
 }
