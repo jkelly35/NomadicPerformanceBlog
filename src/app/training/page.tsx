@@ -23,14 +23,15 @@ export default async function TrainingPage() {
   ])
 
   // Calculate weekly workout stats
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const weeklyStats = await supabase
     .from('workouts')
     .select('duration_minutes')
-    .gte('workout_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+    .gte('workout_date', sevenDaysAgo)
 
   const weeklyWorkoutStats = {
     count: weeklyStats.data?.length || 0,
-    totalMinutes: weeklyStats.data?.reduce((sum, workout) => sum + (workout.duration_minutes || 0), 0) || 0
+    totalMinutes: weeklyStats.data?.reduce((sum: number, workout: any) => sum + (workout.duration_minutes || 0), 0) || 0
   }
 
   return (

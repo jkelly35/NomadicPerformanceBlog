@@ -16,7 +16,6 @@ type PostMeta = {
 };
 
 export default function TagFilter({ posts }: TagFilterProps) {
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -29,13 +28,10 @@ export default function TagFilter({ posts }: TagFilterProps) {
     return Array.from(tagSet).sort();
   }, [posts]);
 
-  // Initialize selected tags from URL params
-  useEffect(() => {
+  // Derive selected tags from URL params
+  const selectedTags = useMemo(() => {
     const tagsParam = searchParams.get('tags');
-    if (tagsParam) {
-      const tags = tagsParam.split(',').filter(tag => tag.trim());
-      setSelectedTags(tags);
-    }
+    return tagsParam ? tagsParam.split(',').filter((tag: string) => tag.trim()) : [];
   }, [searchParams]);
 
   const handleTagClick = (tag: string) => {
@@ -43,18 +39,16 @@ export default function TagFilter({ posts }: TagFilterProps) {
 
     if (selectedTags.includes(tag)) {
       // Remove tag if already selected
-      newSelectedTags = selectedTags.filter(t => t !== tag);
+      newSelectedTags = selectedTags.filter((t: string) => t !== tag);
     } else {
       // Add tag if not selected
       newSelectedTags = [...selectedTags, tag];
     }
 
-    setSelectedTags(newSelectedTags);
     updateURL(newSelectedTags);
   };
 
   const clearAllTags = () => {
-    setSelectedTags([]);
     updateURL([]);
   };
 
@@ -108,7 +102,7 @@ export default function TagFilter({ posts }: TagFilterProps) {
         maxWidth: '800px',
         margin: '0 auto'
       }}>
-        {allTags.map(tag => {
+        {allTags.map((tag: string) => {
           const isSelected = selectedTags.includes(tag);
           return (
             <button

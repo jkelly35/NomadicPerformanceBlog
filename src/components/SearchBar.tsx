@@ -10,19 +10,9 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ placeholder = "Search articles...", className = "", enableSearchParams = true }: SearchBarProps) {
-  const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // Initialize search term from URL params only if enabled
-  useEffect(() => {
-    if (enableSearchParams) {
-      const query = searchParams.get('q');
-      if (query) {
-        setSearchTerm(query);
-      }
-    }
-  }, [searchParams, enableSearchParams]);
+  const [searchTerm, setSearchTerm] = useState(() => enableSearchParams ? searchParams.get('q') || '' : '');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

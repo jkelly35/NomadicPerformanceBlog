@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useMemo } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import PostCard from './PostCard';
 
 type PostMeta = {
@@ -17,27 +17,15 @@ interface BlogContentProps {
 }
 
 export default function BlogContent({ posts }: BlogContentProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Initialize search term and selected tags from URL params
-  useEffect(() => {
-    const query = searchParams.get('q');
+  // Derive search term and selected tags from URL params
+  const searchTerm = searchParams.get('q') || '';
+  const selectedTags = useMemo(() => {
     const tagsParam = searchParams.get('tags');
-
-    if (query) {
-      setSearchTerm(query);
-    } else {
-      setSearchTerm('');
-    }
-
-    if (tagsParam) {
-      const tags = tagsParam.split(',').filter(tag => tag.trim());
-      setSelectedTags(tags);
-    } else {
-      setSelectedTags([]);
-    }
+    return tagsParam ? tagsParam.split(',').filter((tag: string) => tag.trim()) : [];
   }, [searchParams]);
 
   // Filter posts based on search term and selected tags
@@ -57,7 +45,7 @@ export default function BlogContent({ posts }: BlogContentProps) {
     // Apply tag filter
     if (selectedTags.length > 0) {
       filtered = filtered.filter(post =>
-        post.tags && selectedTags.some(selectedTag =>
+        post.tags && selectedTags.some((selectedTag: string) =>
           post.tags!.some(postTag => postTag.toLowerCase() === selectedTag.toLowerCase())
         )
       );
@@ -67,9 +55,7 @@ export default function BlogContent({ posts }: BlogContentProps) {
   }, [posts, searchTerm, selectedTags]);
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedTags([]);
-    // This will trigger the useEffect to update URL params
+    router.push(pathname);
   };
 
   const getFilterDescription = () => {
@@ -113,7 +99,7 @@ export default function BlogContent({ posts }: BlogContentProps) {
           )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-          {filteredPosts.map((p) => (
+          {filteredPosts.map((p: PostMeta) => (
             <PostCard key={p.slug} post={p} />
           ))}
         </div>
