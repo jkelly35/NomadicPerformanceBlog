@@ -222,25 +222,6 @@ function DashboardContent({
           </div>
 
 
-          {/* Send Logs Section */}
-          <div className="bg-gradient-to-br from-stone-50 to-sky-50 rounded-xl p-6 mb-8 border border-stone-200">
-            <h2 className="text-2xl font-bold text-stone-800 mb-6 text-center">
-              🏔️ Send Logs
-            </h2>
-            <p className="text-stone-600 text-center mb-6">
-              Track your outdoor adventures and climbing sends in detail
-            </p>
-            <div className="text-center">
-              <button
-                onClick={() => window.location.href = '/sends'}
-                className="bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-8 py-4 rounded-lg text-lg font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
-              >
-                📝 Log Send
-              </button>
-            </div>
-          </div>
-
-
           {/* Nutrition Section */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-stone-800 mb-6 text-center">
@@ -340,9 +321,17 @@ function DashboardContent({
 
             {/* Send Logs */}
             <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
-              <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
-                📝 Send Logs
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-stone-800 flex items-center gap-2">
+                  📝 Send Logs
+                </h3>
+                <button
+                  onClick={() => setShowWorkoutModal(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
+                >
+                  ➕ Log Send
+                </button>
+              </div>
 
               {/* Activity Filter */}
               <div className="mb-6">
@@ -404,6 +393,16 @@ function DashboardContent({
                     </div>
                   );
                 })()}
+              </div>
+
+              {/* View All Sends Button */}
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => window.location.href = '/sends'}
+                  className="bg-gradient-to-br from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
+                >
+                  📊 View All Sends
+                </button>
               </div>
             </div>
 
