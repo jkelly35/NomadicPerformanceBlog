@@ -8,7 +8,7 @@ export default async function TrainingPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/auth')
+    redirect('/login')
   }
 
   // Fetch initial data for the training page

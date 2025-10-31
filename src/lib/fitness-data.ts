@@ -53,6 +53,14 @@ export interface FoodItem {
   created_at: string
 }
 
+export interface SavedFood {
+  id: string
+  user_id: string
+  food_item_id: string
+  created_at: string
+  food_item?: FoodItem
+}
+
 export interface Micronutrient {
   id: string
   nutrient_code: string
@@ -1056,9 +1064,11 @@ export async function getMealTemplateWithItems(templateId: string): Promise<{ te
 }
 
 // Create a new meal template
-export async function createMealTemplate(formData: FormData): Promise<{ success: boolean; error?: string; data?: MealTemplate }> {
+export async function createMealTemplate(formData: FormData, userId: string): Promise<{ success: boolean; error?: string; data?: MealTemplate }> {
   try {
     const supabase = await createClient()
+
+    console.log('Creating meal template for user:', userId)
 
     const name = formData.get('name') as string
     const mealType = formData.get('meal_type') as string
@@ -1104,6 +1114,7 @@ export async function createMealTemplate(formData: FormData): Promise<{ success:
     const { data: template, error: templateError } = await supabase
       .from('meal_templates')
       .insert({
+        user_id: userId,
         name,
         meal_type: mealType,
         description,
@@ -1257,9 +1268,19 @@ export async function deleteMealTemplate(templateId: string): Promise<{ success:
 }
 
 // Log a meal from a template
-export async function logMealFromTemplate(templateId: string, mealDate: string, mealTime?: string): Promise<{ success: boolean; error?: string; data?: Meal }> {
+export async function logMealFromTemplate(templateId: string, mealDate: string, mealTime?: string, userId?: string): Promise<{ success: boolean; error?: string; data?: Meal }> {
   try {
     const supabase = await createClient()
+
+    // Use provided userId or get current user
+    let currentUserId = userId
+    if (!currentUserId) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        return { success: false, error: 'User not authenticated' }
+      }
+      currentUserId = user.id
+    }
 
     // Get the template with items
     const { template, items } = await getMealTemplateWithItems(templateId)
@@ -1272,6 +1293,7 @@ export async function logMealFromTemplate(templateId: string, mealDate: string, 
     const { data: meal, error: mealError } = await supabase
       .from('meals')
       .insert({
+        user_id: currentUserId,
         meal_type: template.meal_type,
         meal_date: mealDate,
         meal_time: mealTime,
@@ -1733,5 +1755,77 @@ export async function generateWeeklyInsights(): Promise<{ success: boolean; insi
   } catch (error) {
     console.error('Error in generateWeeklyInsights:', error)
     return { success: false, insights: [] }
+  }
+}
+
+// Saved Foods functions
+export async function getSavedFoods(userId: string): Promise<{ success: boolean; error?: string; data?: SavedFood[] }> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('saved_foods')
+      .select(`
+        *,
+        food_item:food_items(*)
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching saved foods:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Error in getSavedFoods:', error)
+    return { success: false, error: 'Failed to fetch saved foods' }
+  }
+}
+
+export async function saveFood(userId: string, foodItemId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+      .from('saved_foods')
+      .insert({
+        user_id: userId,
+        food_item_id: foodItemId,
+      })
+
+    if (error) {
+      console.error('Error saving food:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in saveFood:', error)
+    return { success: false, error: 'Failed to save food' }
+  }
+}
+
+export async function removeSavedFood(savedFoodId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+      .from('saved_foods')
+      .delete()
+      .eq('id', savedFoodId)
+
+    if (error) {
+      console.error('Error removing saved food:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/nutrition')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in removeSavedFood:', error)
+    return { success: false, error: 'Failed to remove saved food' }
   }
 }

@@ -9,7 +9,7 @@ export default async function NutritionPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/auth')
+    redirect('/login')
   }
 
   // Fetch initial data for the nutrition page
@@ -18,6 +18,7 @@ export default async function NutritionPage() {
     { data: meals },
     { data: nutritionGoals },
     { data: mealTemplates },
+    { data: savedFoods },
     { data: dailyNutritionStats },
     { data: hydrationLogs },
     { data: caffeineLogs },
@@ -30,6 +31,10 @@ export default async function NutritionPage() {
     supabase.from('meals').select('*').order('meal_date', { ascending: false }).limit(10),
     supabase.from('nutrition_goals').select('*').eq('is_active', true),
     supabase.from('meal_templates').select('*').order('created_at', { ascending: false }),
+    supabase.from('saved_foods').select(`
+      *,
+      food_item:food_items(*)
+    `).eq('user_id', user.id).order('created_at', { ascending: false }),
     // Calculate daily nutrition stats
     supabase.from('meals')
       .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
@@ -86,6 +91,7 @@ export default async function NutritionPage() {
         meals: meals || [],
         nutritionGoals: nutritionGoals || [],
         mealTemplates: mealTemplates || [],
+        savedFoods: savedFoods || [],
         dailyNutritionStats: dailyStats,
         hydrationLogs: hydrationLogs || [],
         caffeineLogs: caffeineLogs || [],

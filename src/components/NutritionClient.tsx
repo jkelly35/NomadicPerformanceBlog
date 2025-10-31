@@ -6,13 +6,14 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
-import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights } from '@/lib/fitness-data'
+import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood } from '@/lib/fitness-data'
 
 interface NutritionData {
   foodItems: FoodItem[]
   meals: Meal[]
   nutritionGoals: NutritionGoal[]
   mealTemplates: MealTemplate[]
+  savedFoods: SavedFood[]
   dailyNutritionStats: {
     total_calories: number
     total_protein: number
@@ -38,7 +39,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const router = useRouter()
 
   const [data, setData] = useState<NutritionData>(initialData)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'log' | 'goals' | 'hydration' | 'caffeine' | 'micronutrients' | 'insights' | 'habits' | 'correlations'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'hydration' | 'caffeine' | 'micronutrients' | 'insights' | 'habits' | 'correlations'>('dashboard')
 
   // Refresh data function
   const refreshNutritionData = async () => {
@@ -332,7 +333,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Meal logging functions
   const addFoodToMeal = (food: FoodItem) => {
-    setSelectedFoods(prev => [...prev, { food, quantity: food.serving_size }])
+    setSelectedFoods(prev => [...prev, { food, quantity: 1 }])
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
   }
@@ -340,7 +341,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const addFoodToTemplate = (food: FoodItem) => {
     setTemplateForm(prev => ({
       ...prev,
-      food_items: [...prev.food_items, { food_item_id: food.id, quantity: food.serving_size }]
+      food_items: [...prev.food_items, { food_item_id: food.id, quantity: 1 }]
     }))
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
@@ -543,7 +544,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const handleQuickLog = async (templateId: string) => {
     const today = new Date().toISOString().split('T')[0]
     try {
-      const result = await logMealFromTemplate(templateId, today)
+      const result = await logMealFromTemplate(templateId, today, undefined, user!.id)
       if (result.success) {
         alert('Meal logged successfully!')
         // Refresh data
@@ -637,6 +638,46 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
+  // Saved Foods handlers
+  const handleSaveFood = async (foodId: string) => {
+    try {
+      const result = await saveFood(user!.id, foodId)
+      if (result.success) {
+        // Refresh saved foods
+        const savedFoodsResult = await getSavedFoods(user!.id)
+        if (savedFoodsResult.success) {
+          setData(prev => ({
+            ...prev,
+            savedFoods: savedFoodsResult.data || []
+          }))
+        }
+      } else {
+        alert('Failed to save food: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error saving food:', error)
+      alert('Failed to save food')
+    }
+  }
+
+  const handleRemoveSavedFood = async (savedFoodId: string) => {
+    try {
+      const result = await removeSavedFood(savedFoodId)
+      if (result.success) {
+        // Update local data
+        setData(prev => ({
+          ...prev,
+          savedFoods: prev.savedFoods.filter(saved => saved.id !== savedFoodId)
+        }))
+      } else {
+        alert('Failed to remove saved food: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error removing saved food:', error)
+      alert('Failed to remove saved food')
+    }
+  }
+
   return (
     <main style={{ minHeight: '100vh', background: '#f9f9f9' }}>
       <NavBar />
@@ -666,6 +707,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               { id: 'foods', label: 'Food Database', icon: '🥕' },
               { id: 'meals', label: 'Meal History', icon: '🍽️' },
               { id: 'templates', label: 'Meal Templates', icon: '📋' },
+              { id: 'saved', label: 'Saved Foods', icon: '⭐' },
               { id: 'log', label: 'Log Meal', icon: '➕' },
               { id: 'goals', label: 'Goals', icon: '🎯' },
               { id: 'hydration', label: 'Hydration', icon: '💧' },
@@ -963,6 +1005,25 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     display: 'flex',
                     gap: '0.5rem'
                   }}>
+                    {(() => {
+                      const isSaved = data.savedFoods.some(saved => saved.food_item_id === food.id)
+                      return (
+                        <button
+                          onClick={() => isSaved ? handleRemoveSavedFood(data.savedFoods.find(saved => saved.food_item_id === food.id)!.id) : handleSaveFood(food.id)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            background: isSaved ? '#28a745' : '#6c757d',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {isSaved ? '⭐' : '☆'}
+                        </button>
+                      )
+                    })()}
                     <button
                       onClick={() => setEditingFood(food)}
                       style={{
@@ -1786,6 +1847,98 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No meal templates yet</h3>
                 <p>Create reusable meal templates to speed up your logging!</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Saved Foods Tab */}
+        {activeTab === 'saved' && (
+          <div>
+            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '2rem' }}>
+              ⭐ Saved Foods
+            </h2>
+
+            <div style={{
+              display: 'grid',
+              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))'
+            }}>
+              {data.savedFoods.map((savedFood: SavedFood) => (
+                <div key={savedFood.id} style={{
+                  background: '#fff',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                  border: '1px solid #e9ecef',
+                  position: 'relative'
+                }}>
+                  <button
+                    onClick={() => handleRemoveSavedFood(savedFood.id)}
+                    style={{
+                      position: 'absolute',
+                      top: '0.5rem',
+                      right: '0.5rem',
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Remove from saved foods"
+                  >
+                    ×
+                  </button>
+
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
+                    {savedFood.food_item?.name}
+                  </h3>
+                  {savedFood.food_item?.brand && (
+                    <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                      {savedFood.food_item.brand}
+                    </p>
+                  )}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
+                    <div>
+                      <strong>Calories:</strong> {savedFood.food_item?.calories_per_serving} kcal
+                    </div>
+                    <div>
+                      <strong>Protein:</strong> {savedFood.food_item?.protein_grams}g
+                    </div>
+                    <div>
+                      <strong>Carbs:</strong> {savedFood.food_item?.carbs_grams}g
+                    </div>
+                    <div>
+                      <strong>Fat:</strong> {savedFood.food_item?.fat_grams}g
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                    Serving: {savedFood.food_item?.serving_size} {savedFood.food_item?.serving_unit}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {data.savedFoods.length === 0 && (
+              <div style={{
+                textAlign: 'center',
+                padding: '3rem',
+                color: '#666',
+                background: '#f8f9fa',
+                borderRadius: '12px',
+                border: '2px dashed #dee2e6'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⭐</div>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No saved foods yet</h3>
+                <p>Browse the food database and save your favorite foods for quick access!</p>
               </div>
             )}
           </div>
@@ -3619,7 +3772,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
+            zIndex: 1100,
             padding: '2rem'
           }}>
             <div style={{
@@ -3820,7 +3973,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 try {
                   const result = editingTemplate
                     ? await updateMealTemplate(editingTemplate.id, formData)
-                    : await createMealTemplate(formData)
+                    : await createMealTemplate(formData, user!.id)
 
                   if (result.success) {
                     setShowTemplateModal(false)

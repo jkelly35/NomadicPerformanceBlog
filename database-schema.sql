@@ -167,6 +167,15 @@ CREATE TABLE IF NOT EXISTS food_micronutrients (
   UNIQUE(food_item_id, micronutrient_id)
 );
 
+-- Saved foods table (user's favorite/quick access foods)
+CREATE TABLE IF NOT EXISTS saved_foods (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  food_item_id UUID REFERENCES food_items(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, food_item_id)
+);
+
 -- Hydration tracking table
 CREATE TABLE IF NOT EXISTS hydration_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -370,6 +379,7 @@ CREATE POLICY "Users can manage own meal template items" ON meal_template_items
 -- Enable RLS for new advanced nutrition tables
 ALTER TABLE micronutrients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE food_micronutrients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_foods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hydration_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE caffeine_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE habit_patterns ENABLE ROW LEVEL SECURITY;
@@ -385,6 +395,11 @@ CREATE POLICY "Anyone can view micronutrients" ON micronutrients
 DROP POLICY IF EXISTS "Anyone can view food micronutrients" ON food_micronutrients;
 CREATE POLICY "Anyone can view food micronutrients" ON food_micronutrients
   FOR SELECT USING (true);
+
+-- RLS Policies for saved foods
+DROP POLICY IF EXISTS "Users can manage own saved foods" ON saved_foods;
+CREATE POLICY "Users can manage own saved foods" ON saved_foods
+  FOR ALL USING (auth.uid() = user_id);
 
 -- RLS Policies for hydration logs
 DROP POLICY IF EXISTS "Users can manage own hydration logs" ON hydration_logs;
