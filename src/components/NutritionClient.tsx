@@ -1149,6 +1149,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               padding: '2rem',
               marginBottom: '2rem'
             }}>
+              {(() => {
+                const today = new Date()
+                const monday = new Date(today)
+                monday.setDate(today.getDate() - today.getDay() + 1)
+                const sunday = new Date(monday)
+                sunday.setDate(monday.getDate() + 6)
+                return (
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
+                    {monday.toLocaleDateString()} - {sunday.toLocaleDateString()}
+                  </h3>
+                )
+              })()}
               <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
                 � Weekly Nutrition Trends
               </h3>
@@ -1329,6 +1341,220 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       </div>
 
                       {/* Legend */}
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1rem',
+                        justifyContent: 'center',
+                        marginTop: '1rem',
+                        padding: '1rem',
+                        background: '#f8f9fa',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#ff6b35', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>🔥 Calories</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#667eea', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>💪 Protein</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#f093fb', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>🌾 Carbs</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#4ecdc4', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>🥑 Fat</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#2196f3', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>💧 Hydration</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Monthly Nutrition Trends Chart */}
+                    <div style={{ marginBottom: '2rem' }}>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
+                        {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </h3>
+                      <h4 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+                        📅 Monthly Nutrition Overview (% of Daily Goals)
+                      </h4>
+                      <div style={{ position: 'relative', width: '100%', maxWidth: '800px' }}>
+                        {(() => {
+                          // Calculate current month data
+                          const today = new Date()
+                          const currentMonth = today.getMonth()
+                          const currentYear = today.getFullYear()
+                          const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+
+                          // Get goals (same as weekly)
+                          const calorieGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200
+                          const proteinGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150
+                          const carbGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250
+                          const fatGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70
+                          const hydrationGoal = 3000 // ml per day
+
+                          // Calculate daily totals for each day of the month
+                          const monthlyData = Array.from({ length: daysInMonth }, (_, i) => {
+                            const dayNumber = i + 1
+                            const dayDate = new Date(currentYear, currentMonth, dayNumber)
+
+                            const dayMeals = data.meals.filter(meal => {
+                              // Parse meal date as local date, not UTC
+                              const [year, month, day] = meal.meal_date.split('-').map(Number)
+                              const mealLocalDate = new Date(year, month - 1, day)
+                              return mealLocalDate.toDateString() === dayDate.toDateString()
+                            })
+
+                            const dayTotals = dayMeals.reduce((acc, meal) => ({
+                              calories: acc.calories + (meal.total_calories || 0),
+                              protein: acc.protein + (meal.total_protein || 0),
+                              carbs: acc.carbs + (meal.total_carbs || 0),
+                              fat: acc.fat + (meal.total_fat || 0)
+                            }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
+
+                            // Get hydration for the day
+                            const dayHydration = hydrationLogs
+                              .filter(log => {
+                                const logDate = new Date(log.logged_time)
+                                return logDate.toDateString() === dayDate.toDateString()
+                              })
+                              .reduce((sum, log) => sum + (log.amount_ml || 0), 0)
+
+                            return {
+                              day: dayNumber,
+                              date: dayDate,
+                              ...dayTotals,
+                              hydration: dayHydration
+                            }
+                          })
+
+                          // Chart dimensions (wider for monthly view)
+                          const chartWidth = 800
+                          const chartHeight = 300
+                          const padding = 60
+                          const innerWidth = chartWidth - (padding * 2)
+                          const innerHeight = chartHeight - (padding * 2)
+
+                          // Calculate percentages for each nutrient
+                          const monthlyChartData = monthlyData.map(day => ({
+                            day: day.day,
+                            calories: Math.min(Math.round((day.calories / calorieGoal) * 100), 200),
+                            protein: Math.min(Math.round((day.protein / proteinGoal) * 100), 200),
+                            carbs: Math.min(Math.round((day.carbs / carbGoal) * 100), 200),
+                            fat: Math.min(Math.round((day.fat / fatGoal) * 100), 200),
+                            hydration: Math.min(Math.round((day.hydration / hydrationGoal) * 100), 200)
+                          }))
+
+                          // Helper function to create line path
+                          const createMonthlyLinePath = (data: number[]) => {
+                            return data.map((d, i) => {
+                              const x = padding + (i * (innerWidth / (daysInMonth - 1)))
+                              const y = padding + innerHeight - ((d / 200) * innerHeight)
+                              return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+                            }).join(' ')
+                          }
+
+                          return (
+                            <svg width="100%" height="300" viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ border: '1px solid #e9ecef', borderRadius: '8px', background: '#fff' }}>
+                              {/* Grid lines */}
+                              {[0, 25, 50, 75, 100, 125, 150, 175, 200].map(value => {
+                                const y = padding + innerHeight - ((value / 200) * innerHeight)
+                                return (
+                                  <g key={value}>
+                                    <line x1={padding} y1={y} x2={chartWidth - padding} y2={y} stroke="#f0f0f0" strokeWidth="1" />
+                                    <text x={padding - 15} y={y + 4} textAnchor="end" fontSize="10" fill="#666">{value}%</text>
+                                  </g>
+                                )
+                              })}
+
+                              {/* Goal line at 100% */}
+                              <line x1={padding} y1={padding + innerHeight - ((100 / 200) * innerHeight)} x2={chartWidth - padding} y2={padding + innerHeight - ((100 / 200) * innerHeight)} stroke="#4caf50" strokeWidth="2" strokeDasharray="5,5" />
+                              <text x={chartWidth - padding + 10} y={padding + innerHeight - ((100 / 200) * innerHeight) + 4} fontSize="11" fill="#4caf50" fontWeight="bold">Goal</text>
+
+                              {/* Data lines */}
+                              <path d={createMonthlyLinePath(monthlyChartData.map(d => d.calories))} fill="none" stroke="#ff6b35" strokeWidth="2" />
+                              <path d={createMonthlyLinePath(monthlyChartData.map(d => d.protein))} fill="none" stroke="#667eea" strokeWidth="2" />
+                              <path d={createMonthlyLinePath(monthlyChartData.map(d => d.carbs))} fill="none" stroke="#f093fb" strokeWidth="2" />
+                              <path d={createMonthlyLinePath(monthlyChartData.map(d => d.fat))} fill="none" stroke="#4ecdc4" strokeWidth="2" />
+                              <path d={createMonthlyLinePath(monthlyChartData.map(d => d.hydration))} fill="none" stroke="#2196f3" strokeWidth="2" />
+
+                              {/* Data points (only show every 3rd day to avoid overcrowding) */}
+                              {monthlyChartData.filter((_, i) => i % 3 === 0 || i === daysInMonth - 1).map((day, i) => {
+                                const originalIndex = monthlyChartData.findIndex(d => d.day === day.day)
+                                const x = padding + (originalIndex * (innerWidth / (daysInMonth - 1)))
+                                return (
+                                  <g key={day.day}>
+                                    {/* Calories point */}
+                                    <circle
+                                      cx={x}
+                                      cy={padding + innerHeight - ((day.calories / 200) * innerHeight)}
+                                      r="3"
+                                      fill={day.calories >= 100 ? "#4caf50" : "#ff6b35"}
+                                      stroke="#fff"
+                                      strokeWidth="1"
+                                    />
+                                    {/* Protein point */}
+                                    <circle
+                                      cx={x}
+                                      cy={padding + innerHeight - ((day.protein / 200) * innerHeight)}
+                                      r="3"
+                                      fill={day.protein >= 100 ? "#4caf50" : "#667eea"}
+                                      stroke="#fff"
+                                      strokeWidth="1"
+                                    />
+                                    {/* Carbs point */}
+                                    <circle
+                                      cx={x}
+                                      cy={padding + innerHeight - ((day.carbs / 200) * innerHeight)}
+                                      r="3"
+                                      fill={day.carbs >= 100 ? "#4caf50" : "#f093fb"}
+                                      stroke="#fff"
+                                      strokeWidth="1"
+                                    />
+                                    {/* Fat point */}
+                                    <circle
+                                      cx={x}
+                                      cy={padding + innerHeight - ((day.fat / 200) * innerHeight)}
+                                      r="3"
+                                      fill={day.fat >= 100 ? "#4caf50" : "#4ecdc4"}
+                                      stroke="#fff"
+                                      strokeWidth="1"
+                                    />
+                                    {/* Hydration point */}
+                                    <circle
+                                      cx={x}
+                                      cy={padding + innerHeight - ((day.hydration / 200) * innerHeight)}
+                                      r="3"
+                                      fill={day.hydration >= 100 ? "#4caf50" : "#2196f3"}
+                                      stroke="#fff"
+                                      strokeWidth="1"
+                                    />
+                                  </g>
+                                )
+                              })}
+
+                              {/* X-axis labels (show every 5th day) */}
+                              {Array.from({ length: Math.ceil(daysInMonth / 5) }, (_, i) => i * 5 + 1)
+                                .filter(day => day <= daysInMonth)
+                                .map(day => {
+                                  const dayIndex = day - 1
+                                  const x = padding + (dayIndex * (innerWidth / (daysInMonth - 1)))
+                                  return (
+                                    <text key={day} x={x} y={chartHeight - 15} textAnchor="middle" fontSize="10" fill="#666" fontWeight="bold">
+                                      {day}
+                                    </text>
+                                  )
+                                })}
+                            </svg>
+                          )
+                        })()}
+                      </div>
+
+                      {/* Legend (reuse the same legend) */}
                       <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
