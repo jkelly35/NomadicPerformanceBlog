@@ -124,62 +124,83 @@ function DashboardContent({
       <section className="py-12 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
 
-          {/* Welcome Header */}
-          <div className="bg-gradient-to-r from-stone-100 to-emerald-50 rounded-2xl p-8 mb-8 text-center border border-stone-200">
-            <h2 className="text-3xl font-bold text-stone-800 mb-3">
-              Ready for Today's Adventure?
-            </h2>
-            <p className="text-lg text-stone-600">
-              Track your progress, log your activities, and stay fueled for the trail ahead.
-            </p>
-          </div>
-
-          {/* Weekly Overview */}
+          {/* Today's Overview */}
           <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl p-8 mb-8 border border-stone-200 shadow-lg">
             <h2 className="text-2xl font-bold text-stone-800 mb-6 text-center">
-              📊 Weekly Performance
+              📊 Today's Overview
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Workouts This Week */}
+              {/* Readiness Score */}
               <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
-                  {data.weeklyStats.count}
+                  {(() => {
+                    // Calculate readiness score based on recent activity (last 3 days)
+                    const today = new Date();
+                    const threeDaysAgo = new Date(today);
+                    threeDaysAgo.setDate(today.getDate() - 3);
+                    
+                    const recentWorkouts = data.workouts.filter(w => {
+                      const workoutDate = new Date(w.workout_date);
+                      return workoutDate >= threeDaysAgo;
+                    });
+                    
+                    // Base score from recent activity (0-50 points)
+                    const activityScore = Math.min(recentWorkouts.length * 10, 50);
+                    
+                    // Add recovery bonus if available (0-30 points)
+                    const recoveryScore = getStatValue('recovery_score') || 0;
+                    const recoveryBonus = Math.min(recoveryScore * 0.3, 30);
+                    
+                    // Add fitness level bonus (0-20 points)
+                    const fitnessScore = getStatValue('fitness_score') || 0;
+                    const fitnessBonus = Math.min(fitnessScore * 0.2, 20);
+                    
+                    return Math.round(activityScore + recoveryBonus + fitnessBonus);
+                  })()}
                 </div>
                 <h3 className="text-lg font-semibold text-stone-800 mb-2">
-                  Trail Sessions
+                  Readiness Score
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-semibold">
-                  <span>↗️</span>
-                  <span>+23% vs last week</span>
+                  <span>⚡</span>
+                  <span>Training ready</span>
                 </div>
               </div>
 
-              {/* Active Minutes */}
+              {/* Today's Active Minutes */}
               <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
                 <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white">
-                  {data.weeklyStats.totalMinutes}
+                  {data.workouts.filter(w => {
+                    const workoutDate = new Date(w.workout_date);
+                    const today = new Date();
+                    return workoutDate.toDateString() === today.toDateString();
+                  }).reduce((total, w) => total + w.duration_minutes, 0)}
                 </div>
                 <h3 className="text-lg font-semibold text-stone-800 mb-2">
-                  Active Minutes
+                  Today's Minutes
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-sky-600 font-semibold">
-                  <span>↗️</span>
-                  <span>+18% vs last week</span>
+                  <span>⏱️</span>
+                  <span>Time active</span>
                 </div>
               </div>
 
-              {/* Fitness Score */}
+              {/* Today's Calories */}
               <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
-                  {Math.round(getStatValue('fitness_score'))}
+                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white">
+                  {data.workouts.filter(w => {
+                    const workoutDate = new Date(w.workout_date);
+                    const today = new Date();
+                    return workoutDate.toDateString() === today.toDateString();
+                  }).reduce((total, w) => total + (w.calories_burned || 0), 0)}
                 </div>
                 <h3 className="text-lg font-semibold text-stone-800 mb-2">
-                  Peak Fitness
+                  Today's Calories
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-amber-600 font-semibold">
-                  <span>↗️</span>
-                  <span>+5 pts vs last week</span>
+                  <span>🔥</span>
+                  <span>Energy burned</span>
                 </div>
               </div>
             </div>
@@ -528,83 +549,6 @@ function DashboardContent({
       </section>
 
       <Footer />
-
-      {/* Floating Action Button */}
-      <div style={{
-        position: 'fixed',
-        bottom: '2rem',
-        right: '2rem',
-        zIndex: 1000
-      }}>
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowWorkoutModal(true)}
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-              border: 'none',
-              color: '#fff',
-              fontSize: '24px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Log Workout"
-          >
-            🏃‍♂️
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Action Buttons */}
-      <div style={{
-        position: 'fixed',
-        bottom: '2rem',
-        left: '2rem',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem'
-      }}>
-        <button
-          onClick={() => setShowMealModal(true)}
-          style={{
-            padding: '0.75rem 1rem',
-            borderRadius: '25px',
-            background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-            border: 'none',
-            color: '#fff',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          🍎 Log Meal
-        </button>
-        <button
-          onClick={() => setShowHealthModal(true)}
-          style={{
-            padding: '0.75rem 1rem',
-            borderRadius: '25px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            color: '#fff',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          ❤️ Update Health
-        </button>
-      </div>
 
       {/* Workout Logging Modal */}
       {showWorkoutModal && (
