@@ -46,12 +46,43 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   // Refresh data function
   const refreshNutritionData = async () => {
     try {
-      // This would ideally call the server to get fresh data
-      // For now, we'll update the local state when meals are logged
-      // In a full implementation, you'd revalidate the page data
-      window.location.reload() // Simple refresh for now
+      // Fetch fresh data from server
+      const [mealsResult, hydrationResult, caffeineResult] = await Promise.all([
+        // Note: We don't have a direct getMeals function, so we'll rely on router.refresh for now
+        // In a full implementation, you'd fetch fresh meals data here
+        Promise.resolve(null),
+        getHydrationLogs(),
+        getCaffeineLogs()
+      ])
+
+      // Update hydration and caffeine logs if we got fresh data
+      if (hydrationResult) {
+        setHydrationLogs(hydrationResult)
+        // Recalculate daily hydration total
+        const today = new Date().toISOString().split('T')[0]
+        const todayHydration = hydrationResult
+          .filter(log => log.logged_time.startsWith(today))
+          .reduce((sum, log) => sum + (log.amount_ml || 0), 0)
+        setDailyHydrationTotal(todayHydration)
+      }
+
+      if (caffeineResult) {
+        setCaffeineLogs(caffeineResult)
+        // Recalculate daily caffeine total
+        const today = new Date().toISOString().split('T')[0]
+        const todayCaffeine = caffeineResult
+          .filter(log => log.logged_time.startsWith(today))
+          .reduce((sum, log) => sum + (log.amount_mg || 0), 0)
+        setDailyCaffeineTotal(todayCaffeine)
+      }
+
+      // For meals, we rely on the local state updates and router.refresh
+      // In a production app, you'd want a getMeals function to fetch fresh meal data
+      router.refresh()
     } catch (error) {
       console.error('Error refreshing data:', error)
+      // Fallback to page reload if something goes wrong
+      window.location.reload()
     }
   }
 
@@ -69,7 +100,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Log Meal state
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast')
-  const [mealDate, setMealDate] = useState(new Date().toISOString().split('T')[0])
+  const [mealDate, setMealDate] = useState(() => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
   const [mealTime, setMealTime] = useState('')
   const [mealNotes, setMealNotes] = useState('')
   const [selectedFoods, setSelectedFoods] = useState<Array<{food: FoodItem, quantity: number}>>([])
@@ -93,18 +130,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   // Hydration state
   const [hydrationLogs, setHydrationLogs] = useState<HydrationLog[]>(initialData.hydrationLogs)
   const [dailyHydrationTotal, setDailyHydrationTotal] = useState(initialData.dailyHydrationTotal || 0)
-  const [hydrationAmount, setHydrationAmount] = useState('')
-  const [beverageType, setBeverageType] = useState('water')
-  const [hydrationNotes, setHydrationNotes] = useState('')
-  const [loggingHydration, setLoggingHydration] = useState(false)
 
   // Caffeine state
   const [caffeineLogs, setCaffeineLogs] = useState<CaffeineLog[]>(initialData.caffeineLogs)
   const [dailyCaffeineTotal, setDailyCaffeineTotal] = useState(initialData.dailyCaffeineTotal || 0)
-  const [caffeineAmount, setCaffeineAmount] = useState('')
-  const [caffeineSource, setCaffeineSource] = useState('coffee')
-  const [caffeineNotes, setCaffeineNotes] = useState('')
-  const [loggingCaffeine, setLoggingCaffeine] = useState(false)
 
   // Micronutrients state
   const [micronutrients, setMicronutrients] = useState<Micronutrient[]>(initialData.micronutrients)
@@ -471,8 +500,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         // Switch to meals tab to show the updated meal
         setActiveTab('meals')
         alert(editingMealId ? 'Meal updated successfully!' : 'Meal logged successfully!')
-        // Refresh the page to get updated server data
-        router.refresh()
+        
+        // Refresh data to update weekly chart and other displays
+        await refreshNutritionData()
       } else {
         alert(result.error || 'Failed to log meal')
       }
@@ -495,7 +525,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         // Update local data by removing the deleted meal
         setData(prev => {
           const mealToDelete = prev.meals.find(meal => meal.id === mealId)
-          const isToday = mealToDelete && mealToDelete.meal_date === new Date().toISOString().split('T')[0]
+          const today = (() => {
+            const d = new Date()
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          })()
+          const isToday = mealToDelete && mealToDelete.meal_date === today
           
           return {
             ...prev,
@@ -514,8 +551,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       } else {
         alert('Failed to delete meal: ' + result.error)
       }
-      // Refresh the page to get updated server data
-      router.refresh()
+      // Refresh data to update weekly chart
+      await refreshNutritionData()
     } catch (error) {
       console.error('Error deleting meal:', error)
       alert('Failed to delete meal')
@@ -577,8 +614,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       const result = await logMealFromTemplate(templateId, today, undefined, user!.id)
       if (result.success) {
         alert('Meal logged successfully!')
-        // Refresh data
-        router.refresh()
+        // Refresh data to update weekly chart
+        await refreshNutritionData()
       } else {
         alert('Failed to log meal: ' + result.error)
       }
@@ -1104,6 +1141,230 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 </div>
               </div>
             </div>
+
+            {/* Weekly Nutrition Summary */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+              borderRadius: '12px',
+              padding: '2rem',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+                � Weekly Nutrition Trends
+              </h3>
+              <p style={{ color: '#666', fontSize: '1rem', marginBottom: '1.5rem' }}>
+                Daily intake vs goals for the current week (Monday - Sunday)
+              </p>
+
+              {(() => {
+                // Calculate current week (Monday to Sunday)
+                const today = new Date()
+                const monday = new Date(today)
+                monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+
+                // Get goals
+                const calorieGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200
+                const proteinGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150
+                const carbGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250
+                const fatGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70
+                const hydrationGoal = 3000 // ml per day
+
+                // Calculate daily totals for each day of the week
+                const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                const dailyData = weekDays.map((day, index) => {
+                  const dayDate = new Date(monday)
+                  dayDate.setDate(monday.getDate() + index)
+
+                  const dayMeals = data.meals.filter(meal => {
+                    // Parse meal date as local date, not UTC
+                    const [year, month, day] = meal.meal_date.split('-').map(Number)
+                    const mealLocalDate = new Date(year, month - 1, day)
+                    return mealLocalDate.toDateString() === dayDate.toDateString()
+                  })
+
+                  const dayTotals = dayMeals.reduce((acc, meal) => ({
+                    calories: acc.calories + (meal.total_calories || 0),
+                    protein: acc.protein + (meal.total_protein || 0),
+                    carbs: acc.carbs + (meal.total_carbs || 0),
+                    fat: acc.fat + (meal.total_fat || 0)
+                  }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
+
+                  // Get hydration for the day
+                  const dayHydration = hydrationLogs
+                    .filter(log => {
+                      const logDate = new Date(log.logged_time)
+                      return logDate.toDateString() === dayDate.toDateString()
+                    })
+                    .reduce((sum, log) => sum + (log.amount_ml || 0), 0)
+
+                  return {
+                    day,
+                    date: dayDate,
+                    ...dayTotals,
+                    hydration: dayHydration
+                  }
+                })
+
+                // Chart dimensions and settings
+                const chartWidth = 600
+                const chartHeight = 300
+                const padding = 60
+                const innerWidth = chartWidth - (padding * 2)
+                const innerHeight = chartHeight - (padding * 2)
+
+                // Calculate percentages for each nutrient
+                const weeklyData = dailyData.map(day => ({
+                  day: day.day,
+                  calories: Math.min(Math.round((day.calories / calorieGoal) * 100), 200),
+                  protein: Math.min(Math.round((day.protein / proteinGoal) * 100), 200),
+                  carbs: Math.min(Math.round((day.carbs / carbGoal) * 100), 200),
+                  fat: Math.min(Math.round((day.fat / fatGoal) * 100), 200),
+                  hydration: Math.min(Math.round((day.hydration / hydrationGoal) * 100), 200)
+                }))
+
+                // Helper function to create line path
+                const createLinePath = (data: number[]) => {
+                  return data.map((d, i) => {
+                    const x = padding + (i * (innerWidth / 6))
+                    const y = padding + innerHeight - ((d / 200) * innerHeight)
+                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+                  }).join(' ')
+                }
+
+                return (
+                  <div>
+                    {/* Combined Weekly Trends Chart */}
+                    <div style={{ marginBottom: '2rem' }}>
+                      <h4 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+                        📊 Weekly Nutrition Overview (% of Daily Goals)
+                      </h4>
+                      <div style={{ position: 'relative', width: '100%', maxWidth: '600px' }}>
+                        <svg width="100%" height="300" viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ border: '1px solid #e9ecef', borderRadius: '8px', background: '#fff' }}>
+                          {/* Grid lines */}
+                          {[0, 25, 50, 75, 100, 125, 150, 175, 200].map(value => {
+                            const y = padding + innerHeight - ((value / 200) * innerHeight)
+                            return (
+                              <g key={value}>
+                                <line x1={padding} y1={y} x2={chartWidth - padding} y2={y} stroke="#f0f0f0" strokeWidth="1" />
+                                <text x={padding - 15} y={y + 4} textAnchor="end" fontSize="10" fill="#666">{value}%</text>
+                              </g>
+                            )
+                          })}
+
+                          {/* Goal line at 100% */}
+                          <line x1={padding} y1={padding + innerHeight - ((100 / 200) * innerHeight)} x2={chartWidth - padding} y2={padding + innerHeight - ((100 / 200) * innerHeight)} stroke="#4caf50" strokeWidth="2" strokeDasharray="5,5" />
+                          <text x={chartWidth - padding + 10} y={padding + innerHeight - ((100 / 200) * innerHeight) + 4} fontSize="11" fill="#4caf50" fontWeight="bold">Goal</text>
+
+                          {/* Data lines */}
+                          <path d={createLinePath(weeklyData.map(d => d.calories))} fill="none" stroke="#ff6b35" strokeWidth="3" />
+                          <path d={createLinePath(weeklyData.map(d => d.protein))} fill="none" stroke="#667eea" strokeWidth="3" />
+                          <path d={createLinePath(weeklyData.map(d => d.carbs))} fill="none" stroke="#f093fb" strokeWidth="3" />
+                          <path d={createLinePath(weeklyData.map(d => d.fat))} fill="none" stroke="#4ecdc4" strokeWidth="3" />
+                          <path d={createLinePath(weeklyData.map(d => d.hydration))} fill="none" stroke="#2196f3" strokeWidth="3" />
+
+                          {/* Data points and labels */}
+                          {weeklyData.map((day, i) => {
+                            const x = padding + (i * (innerWidth / 6))
+                            return (
+                              <g key={day.day}>
+                                {/* Calories point */}
+                                <circle
+                                  cx={x}
+                                  cy={padding + innerHeight - ((day.calories / 200) * innerHeight)}
+                                  r="4"
+                                  fill={day.calories >= 100 ? "#4caf50" : "#ff6b35"}
+                                  stroke="#fff"
+                                  strokeWidth="2"
+                                />
+                                {/* Protein point */}
+                                <circle
+                                  cx={x}
+                                  cy={padding + innerHeight - ((day.protein / 200) * innerHeight)}
+                                  r="4"
+                                  fill={day.protein >= 100 ? "#4caf50" : "#667eea"}
+                                  stroke="#fff"
+                                  strokeWidth="2"
+                                />
+                                {/* Carbs point */}
+                                <circle
+                                  cx={x}
+                                  cy={padding + innerHeight - ((day.carbs / 200) * innerHeight)}
+                                  r="4"
+                                  fill={day.carbs >= 100 ? "#4caf50" : "#f093fb"}
+                                  stroke="#fff"
+                                  strokeWidth="2"
+                                />
+                                {/* Fat point */}
+                                <circle
+                                  cx={x}
+                                  cy={padding + innerHeight - ((day.fat / 200) * innerHeight)}
+                                  r="4"
+                                  fill={day.fat >= 100 ? "#4caf50" : "#4ecdc4"}
+                                  stroke="#fff"
+                                  strokeWidth="2"
+                                />
+                                {/* Hydration point */}
+                                <circle
+                                  cx={x}
+                                  cy={padding + innerHeight - ((day.hydration / 200) * innerHeight)}
+                                  r="4"
+                                  fill={day.hydration >= 100 ? "#4caf50" : "#2196f3"}
+                                  stroke="#fff"
+                                  strokeWidth="2"
+                                />
+                              </g>
+                            )
+                          })}
+
+                          {/* X-axis labels */}
+                          {weekDays.map((day, i) => {
+                            const x = padding + (i * (innerWidth / 6))
+                            return (
+                              <text key={day} x={x} y={chartHeight - 15} textAnchor="middle" fontSize="11" fill="#666" fontWeight="bold">
+                                {day}
+                              </text>
+                            )
+                          })}
+                        </svg>
+                      </div>
+
+                      {/* Legend */}
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1rem',
+                        justifyContent: 'center',
+                        marginTop: '1rem',
+                        padding: '1rem',
+                        background: '#f8f9fa',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#ff6b35', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>🔥 Calories</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#667eea', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>💪 Protein</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#f093fb', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>🌾 Carbs</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#4ecdc4', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>🥑 Fat</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '12px', height: '3px', background: '#2196f3', borderRadius: '2px' }}></div>
+                          <span style={{ fontSize: '0.9rem', color: '#1a3a2a' }}>💧 Hydration</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
           </div>
         )}
 
@@ -1391,12 +1652,17 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           {meal.meal_type}
                         </h3>
                         <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                          {new Date(meal.meal_date).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
+                          {(() => {
+                            // Parse the date string as local date, not UTC
+                            const [year, month, day] = meal.meal_date.split('-').map(Number)
+                            const localDate = new Date(year, month - 1, day)
+                            return localDate.toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
+                          })()}
                           {meal.meal_time && ` at ${meal.meal_time}`}
                         </div>
                       </div>
@@ -1722,7 +1988,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                               setMealNotes('')
                               setMealTime('')
                               setSelectedMealType('breakfast')
-                              setMealDate(new Date().toISOString().split('T')[0])
+                              setMealDate(() => {
+                                const today = new Date()
+                                const year = today.getFullYear()
+                                const month = String(today.getMonth() + 1).padStart(2, '0')
+                                const day = String(today.getDate()).padStart(2, '0')
+                                return `${year}-${month}-${day}`
+                              })
                             }}
                             style={{
                               flex: 1,

@@ -28,7 +28,22 @@ export default async function NutritionPage() {
     { data: metricCorrelations }
   ] = await Promise.all([
     supabase.from('food_items').select('*').order('name'),
-    supabase.from('meals').select('*').order('meal_date', { ascending: false }).limit(10),
+    // Get meals for the current week (Monday to Sunday)
+    (() => {
+      const today = new Date()
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+      monday.setHours(0, 0, 0, 0)
+      
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6) // Sunday of current week
+      sunday.setHours(23, 59, 59, 999)
+      
+      return supabase.from('meals').select('*')
+        .gte('meal_date', monday.toISOString().split('T')[0])
+        .lte('meal_date', sunday.toISOString().split('T')[0])
+        .order('meal_date', { ascending: false })
+    })(),
     supabase.from('nutrition_goals').select('*').eq('is_active', true),
     supabase.from('meal_templates').select('*').order('created_at', { ascending: false }),
     supabase.from('saved_foods').select(`
@@ -39,14 +54,28 @@ export default async function NutritionPage() {
     supabase.from('meals')
       .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
       .eq('meal_date', new Date().toISOString().split('T')[0]),
-    // Hydration data for today
-    supabase.from('hydration_logs').select('*')
-      .gte('logged_time', new Date().toISOString().split('T')[0])
-      .order('logged_time', { ascending: false }).limit(10),
-    // Caffeine data for today
-    supabase.from('caffeine_logs').select('*')
-      .gte('logged_time', new Date().toISOString().split('T')[0])
-      .order('logged_time', { ascending: false }).limit(10),
+    // Hydration data for the current week
+    (() => {
+      const today = new Date()
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+      monday.setHours(0, 0, 0, 0)
+      
+      return supabase.from('hydration_logs').select('*')
+        .gte('logged_time', monday.toISOString())
+        .order('logged_time', { ascending: false })
+    })(),
+    // Caffeine data for the current week
+    (() => {
+      const today = new Date()
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+      monday.setHours(0, 0, 0, 0)
+      
+      return supabase.from('caffeine_logs').select('*')
+        .gte('logged_time', monday.toISOString())
+        .order('logged_time', { ascending: false })
+    })(),
     // Micronutrients data
     supabase.from('micronutrients').select('*').order('nutrient_category', { ascending: true }).order('nutrient_name', { ascending: true }),
     // User insights
