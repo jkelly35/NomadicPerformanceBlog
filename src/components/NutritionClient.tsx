@@ -122,6 +122,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Food selector context
   const [foodSelectorContext, setFoodSelectorContext] = useState<'meal' | 'template'>('meal')
+  const [foodSelectorFilter, setFoodSelectorFilter] = useState<'database' | 'templates' | 'saved'>('database')
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -343,6 +344,33 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       ...prev,
       food_items: [...prev.food_items, { food_item_id: food.id, quantity: 1 }]
     }))
+    setFoodSelectorOpen(false)
+    setFoodSelectorSearch('')
+  }
+
+  const addMealTemplateToMeal = async (template: MealTemplate) => {
+    try {
+      const result = await getMealTemplateWithItems(template.id)
+      if (result.template && result.items) {
+        // Add all foods from the template to the meal
+        const newFoods = result.items.map(item => ({
+          food: item.food_item!,
+          quantity: item.quantity
+        }))
+        setSelectedFoods(prev => [...prev, ...newFoods])
+      }
+      setFoodSelectorOpen(false)
+      setFoodSelectorSearch('')
+    } catch (error) {
+      console.error('Error adding meal template to meal:', error)
+      alert('Failed to add meal template')
+    }
+  }
+
+  const addSavedFoodToMeal = (savedFood: SavedFood) => {
+    if (savedFood.food_item) {
+      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: 1 }])
+    }
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
   }
@@ -3823,6 +3851,61 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 </button>
               </div>
 
+              {/* Filter Tabs */}
+              <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginBottom: '1.5rem',
+                borderBottom: '1px solid #e9ecef',
+                paddingBottom: '1rem'
+              }}>
+                <button
+                  onClick={() => setFoodSelectorFilter('database')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: foodSelectorFilter === 'database' ? '#ff6b35' : '#f8f9fa',
+                    color: foodSelectorFilter === 'database' ? '#fff' : '#1a3a2a',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  🍎 Food Database
+                </button>
+                <button
+                  onClick={() => setFoodSelectorFilter('templates')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: foodSelectorFilter === 'templates' ? '#ff6b35' : '#f8f9fa',
+                    color: foodSelectorFilter === 'templates' ? '#fff' : '#1a3a2a',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  📋 Meal Templates
+                </button>
+                <button
+                  onClick={() => setFoodSelectorFilter('saved')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: foodSelectorFilter === 'saved' ? '#ff6b35' : '#f8f9fa',
+                    color: foodSelectorFilter === 'saved' ? '#fff' : '#1a3a2a',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  ⭐ Saved Foods
+                </button>
+              </div>
+
               {/* Search */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <input
@@ -3848,7 +3931,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 display: 'grid',
                 gap: '0.5rem'
               }}>
-                {foodItems
+                {foodSelectorFilter === 'database' && foodItems
                   .filter(food =>
                     food.name.toLowerCase().includes(foodSelectorSearch.toLowerCase()) ||
                     (food.brand && food.brand.toLowerCase().includes(foodSelectorSearch.toLowerCase()))
@@ -3909,15 +3992,124 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       </div>
                     </div>
                   ))}
+
+                {foodSelectorFilter === 'templates' && data.mealTemplates
+                  .filter(template =>
+                    template.name.toLowerCase().includes(foodSelectorSearch.toLowerCase())
+                  )
+                  .map((template) => (
+                    <div
+                      key={template.id}
+                      onClick={() => addMealTemplateToMeal(template)}
+                      style={{
+                        padding: '1rem',
+                        border: '1px solid #e9ecef',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: '#f8f9fa',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontWeight: '600',
+                            color: '#1a3a2a',
+                            marginBottom: '0.25rem'
+                          }}>
+                            📋 {template.name}
+                          </div>
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#666'
+                          }}>
+                            {template.total_calories} cal total
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                {foodSelectorFilter === 'saved' && data.savedFoods
+                  .filter(savedFood =>
+                    savedFood.food_item?.name.toLowerCase().includes(foodSelectorSearch.toLowerCase()) ||
+                    (savedFood.food_item?.brand && savedFood.food_item.brand.toLowerCase().includes(foodSelectorSearch.toLowerCase()))
+                  )
+                  .map((savedFood) => (
+                    <div
+                      key={savedFood.id}
+                      onClick={() => addSavedFoodToMeal(savedFood)}
+                      style={{
+                        padding: '1rem',
+                        border: '1px solid #e9ecef',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: '#f8f9fa',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontWeight: '600',
+                            color: '#1a3a2a',
+                            marginBottom: '0.25rem'
+                          }}>
+                            ⭐ {savedFood.food_item?.name}
+                          </div>
+                          {savedFood.food_item?.brand && (
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#666',
+                              marginBottom: '0.5rem'
+                            }}>
+                              {savedFood.food_item.brand}
+                            </div>
+                          )}
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#666'
+                          }}>
+                            {savedFood.food_item?.serving_size} {savedFood.food_item?.serving_unit} • {savedFood.food_item?.calories_per_serving} cal
+                          </div>
+                        </div>
+                        <div style={{
+                          textAlign: 'right',
+                          fontSize: '0.9rem',
+                          color: '#666'
+                        }}>
+                          <div>P: {savedFood.food_item?.protein_grams}g</div>
+                          <div>C: {savedFood.food_item?.carbs_grams}g</div>
+                          <div>F: {savedFood.food_item?.fat_grams}g</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
               </div>
 
-              {foodItems.length === 0 && (
+              {((foodSelectorFilter === 'database' && foodItems.length === 0) ||
+                (foodSelectorFilter === 'templates' && data.mealTemplates.length === 0) ||
+                (foodSelectorFilter === 'saved' && data.savedFoods.length === 0)) && (
                 <div style={{
                   textAlign: 'center',
                   padding: '2rem',
                   color: '#666'
                 }}>
-                  No foods found. Try a different search term.
+                  {foodSelectorFilter === 'database' && 'No foods found. Try a different search term.'}
+                  {foodSelectorFilter === 'templates' && 'No meal templates found. Create some templates first.'}
+                  {foodSelectorFilter === 'saved' && 'No saved foods found. Save some foods from the database first.'}
                 </div>
               )}
             </div>

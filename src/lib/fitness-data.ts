@@ -197,6 +197,7 @@ export interface MealTemplateItem {
   food_item_id: string
   quantity: number
   created_at: string
+  food_item?: FoodItem
 }
 
 // Fetch recent workouts
@@ -1048,7 +1049,10 @@ export async function getMealTemplateWithItems(templateId: string): Promise<{ te
 
     const { data: items, error: itemsError } = await supabase
       .from('meal_template_items')
-      .select('*')
+      .select(`
+        *,
+        food_item:food_items(*)
+      `)
       .eq('meal_template_id', templateId)
 
     if (itemsError) {
