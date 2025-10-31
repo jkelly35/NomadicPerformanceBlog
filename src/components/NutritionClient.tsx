@@ -334,7 +334,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Meal logging functions
   const addFoodToMeal = (food: FoodItem) => {
-    setSelectedFoods(prev => [...prev, { food, quantity: 1 }])
+    setSelectedFoods(prev => [...prev, { food, quantity: food.serving_size }])
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
   }
@@ -342,7 +342,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const addFoodToTemplate = (food: FoodItem) => {
     setTemplateForm(prev => ({
       ...prev,
-      food_items: [...prev.food_items, { food_item_id: food.id, quantity: 1 }]
+      food_items: [...prev.food_items, { food_item_id: food.id, quantity: food.serving_size }]
     }))
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
@@ -369,7 +369,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   const addSavedFoodToMeal = (savedFood: SavedFood) => {
     if (savedFood.food_item) {
-      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: 1 }])
+      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: savedFood.food_item!.serving_size }])
     }
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
@@ -1686,7 +1686,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           {food.name}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          {food.brand && `${food.brand} • `}{quantity} {food.serving_unit}
+                          {food.brand && `${food.brand} • `}{quantity} {food.serving_unit} ({(quantity / food.serving_size).toFixed(1)} servings)
                         </div>
                       </div>
 
@@ -1700,20 +1700,27 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           <div>{Math.round(food.protein_grams * quantity / food.serving_size)}g protein</div>
                         </div>
 
-                        <input
-                          type="number"
-                          step="0.1"
-                          min="0.1"
-                          value={quantity}
-                          onChange={(e) => updateFoodQuantity(index, parseFloat(e.target.value) || 0.1)}
-                          style={{
-                            width: '80px',
-                            padding: '0.5rem',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            textAlign: 'center'
-                          }}
-                        />
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            value={quantity}
+                            onChange={(e) => updateFoodQuantity(index, parseFloat(e.target.value) || 0.1)}
+                            style={{
+                              width: '80px',
+                              padding: '0.5rem',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              textAlign: 'center'
+                            }}
+                          />
+                          <span style={{ fontSize: '0.8rem', color: '#666' }}>{food.serving_unit}</span>
+                        </div>
 
                         <button
                           onClick={() => removeFoodFromMeal(index)}
@@ -4583,7 +4590,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                             background: '#f8f9fa',
                             borderRadius: '6px'
                           }}>
-                            <span style={{ flex: 1 }}>{food?.name || 'Unknown food'}</span>
+                            <span style={{ flex: 1 }}>
+                              {food?.name || 'Unknown food'} 
+                              <span style={{ fontSize: '0.8rem', color: '#666', marginLeft: '0.5rem' }}>
+                                ({(item.quantity / (food?.serving_size || 1)).toFixed(1)} servings)
+                              </span>
+                            </span>
                             <input
                               type="number"
                               step="0.1"

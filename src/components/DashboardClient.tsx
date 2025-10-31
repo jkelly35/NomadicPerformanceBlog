@@ -83,6 +83,9 @@ function DashboardContent({
   const [savedFoods, setSavedFoods] = useState<SavedFood[]>([])
   const [isLoadingFoods, setIsLoadingFoods] = useState(false)
 
+  // Local state for immediate UI updates
+  const [localNutritionStats, setLocalNutritionStats] = useState(data.dailyNutritionStats)
+
   // Helper functions to get data
   const getStatValue = (statType: string) => {
     const stat = data.userStats.find(s => s.stat_type === statType)
@@ -113,28 +116,43 @@ function DashboardContent({
 
   // Food selector functions
   const loadFoodData = async () => {
+    if (!user) {
+      return
+    }
     setIsLoadingFoods(true)
     try {
       const [foodItemsResult, templatesResult, savedFoodsResult] = await Promise.all([
         getFoodItems(),
         getMealTemplates(),
-        getSavedFoods(user!.id)
+        getSavedFoods(user.id)
       ])
 
-      setFoodItems(foodItemsResult)
-      setMealTemplates(templatesResult)
-      if (savedFoodsResult.success) {
-        setSavedFoods(savedFoodsResult.data || [])
+      console.log('Food data results:', {
+        foodItems: Array.isArray(foodItemsResult) ? foodItemsResult.length : 'not array',
+        templates: Array.isArray(templatesResult) ? templatesResult.length : 'not array',
+        savedFoods: savedFoodsResult
+      })
+
+      setFoodItems(Array.isArray(foodItemsResult) ? foodItemsResult : [])
+      setMealTemplates(Array.isArray(templatesResult) ? templatesResult : [])
+      if (savedFoodsResult.success && Array.isArray(savedFoodsResult.data)) {
+        setSavedFoods(savedFoodsResult.data)
+      } else {
+        setSavedFoods([])
       }
     } catch (error) {
       console.error('Error loading food data:', error)
+      // Set empty arrays on error
+      setFoodItems([])
+      setMealTemplates([])
+      setSavedFoods([])
     } finally {
       setIsLoadingFoods(false)
     }
   }
 
   const addFoodToMeal = (food: FoodItem) => {
-    setSelectedFoods(prev => [...prev, { food, quantity: 1 }])
+    setSelectedFoods(prev => [...prev, { food, quantity: food.serving_size }])
   }
 
   const addMealTemplateToMeal = async (template: MealTemplate) => {
@@ -154,7 +172,7 @@ function DashboardContent({
 
   const addSavedFoodToMeal = (savedFood: SavedFood) => {
     if (savedFood.food_item) {
-      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: 1 }])
+      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: savedFood.food_item!.serving_size }])
     }
   }
 
@@ -175,11 +193,35 @@ function DashboardContent({
 
       const result = await logMeal(mealData)
       if (result.success) {
+        // Update local nutrition stats immediately for better UX
+        const newStats = selectedFoods.reduce(
+          (acc, { food, quantity }) => {
+            const multiplier = quantity / food.serving_size
+            return {
+              total_calories: acc.total_calories + (food.calories_per_serving * multiplier),
+              total_protein: acc.total_protein + (food.protein_grams * multiplier),
+              total_carbs: acc.total_carbs + (food.carbs_grams * multiplier),
+              total_fat: acc.total_fat + (food.fat_grams * multiplier),
+              total_fiber: acc.total_fiber + (food.fiber_grams * multiplier),
+              meals_count: acc.meals_count + 1
+            }
+          },
+          {
+            total_calories: localNutritionStats.total_calories,
+            total_protein: localNutritionStats.total_protein,
+            total_carbs: localNutritionStats.total_carbs,
+            total_fat: localNutritionStats.total_fat,
+            total_fiber: localNutritionStats.total_fiber,
+            meals_count: localNutritionStats.meals_count
+          }
+        )
+        setLocalNutritionStats(newStats)
+
         alert('Meal logged successfully!')
         setSelectedFoods([])
         setFoodSelectorOpen(false)
         setFoodSelectorSearch('')
-        // Refresh the page to update stats
+        // Refresh the page to sync with server data
         router.refresh()
       } else {
         alert('Failed to log meal: ' + result.error)
@@ -190,12 +232,17 @@ function DashboardContent({
     }
   }
 
-  // Load food data when food selector opens
+  // Sync local stats with server data when it changes
   useEffect(() => {
-    if (foodSelectorOpen && foodItems.length === 0) {
+    setLocalNutritionStats(data.dailyNutritionStats)
+  }, [data.dailyNutritionStats])
+
+  // Load food data when component mounts
+  useEffect(() => {
+    if (user && foodItems.length === 0) {
       loadFoodData()
     }
-  }, [foodSelectorOpen, foodItems.length])
+  }, [user, foodItems.length])
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -343,14 +390,14 @@ function DashboardContent({
                       Calories
                     </span>
                     <span className="text-sm text-stone-600">
-                      {data.dailyNutritionStats.total_calories} / {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
+                      {localNutritionStats.total_calories} / {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
                     </span>
                   </div>
                   <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
+                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
                   </div>
                   <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100)}% of goal
+                    {Math.round((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100)}% of goal
                   </div>
                 </div>
 
@@ -361,14 +408,14 @@ function DashboardContent({
                       Protein
                     </span>
                     <span className="text-sm text-stone-600">
-                      {Math.round(data.dailyNutritionStats.total_protein)}g / {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
+                      {Math.round(localNutritionStats.total_protein)}g / {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
                     </span>
                   </div>
                   <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
+                    <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
                   </div>
                   <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100)}% of goal
+                    {Math.round((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100)}% of goal
                   </div>
                 </div>
 
@@ -379,14 +426,14 @@ function DashboardContent({
                       Carbs
                     </span>
                     <span className="text-sm text-stone-600">
-                      {Math.round(data.dailyNutritionStats.total_carbs)}g / {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
+                      {Math.round(localNutritionStats.total_carbs)}g / {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
                     </span>
                   </div>
                   <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
+                    <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
                   </div>
                   <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100)}% of goal
+                    {Math.round((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100)}% of goal
                   </div>
                 </div>
 
@@ -397,14 +444,14 @@ function DashboardContent({
                       Fat
                     </span>
                     <span className="text-sm text-stone-600">
-                      {Math.round(data.dailyNutritionStats.total_fat)}g / {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
+                      {Math.round(localNutritionStats.total_fat)}g / {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
                     </span>
                   </div>
                   <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
+                    <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
                   </div>
                   <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100)}% of goal
+                    {Math.round((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100)}% of goal
                   </div>
                 </div>
               </div>
@@ -412,10 +459,10 @@ function DashboardContent({
               {/* Meals Summary */}
               <div className="mt-6 pt-6 border-t border-stone-300 flex justify-between items-center">
                 <div className="text-sm text-stone-600">
-                  Meals logged today: <strong>{data.dailyNutritionStats.meals_count}</strong>
+                  Meals logged today: <strong>{localNutritionStats.meals_count}</strong>
                 </div>
                 <div className="text-sm text-stone-600">
-                  Fiber: <strong>{Math.round(data.dailyNutritionStats.total_fiber)}g</strong>
+                  Fiber: <strong>{Math.round(localNutritionStats.total_fiber)}g</strong>
                 </div>
               </div>
 
@@ -1433,11 +1480,24 @@ function DashboardContent({
                   Selected Foods ({selectedFoods.length})
                 </div>
                 <div style={{
+                  fontSize: '0.8rem',
+                  color: '#666',
+                  marginBottom: '0.5rem',
+                  maxHeight: '60px',
+                  overflow: 'auto'
+                }}>
+                  {selectedFoods.map(({ food, quantity }, index) => (
+                    <div key={index} style={{ marginBottom: '0.25rem' }}>
+                      {food.name} - {quantity} {food.serving_unit} ({(quantity / food.serving_size).toFixed(1)} servings)
+                    </div>
+                  ))}
+                </div>
+                <div style={{
                   fontSize: '0.9rem',
                   color: '#666',
                   marginBottom: '1rem'
                 }}>
-                  Total: {selectedFoods.reduce((sum, { food, quantity }) => sum + (food.calories_per_serving * quantity), 0)} cal
+                  Total: {selectedFoods.reduce((sum, { food, quantity }) => sum + (food.calories_per_serving * (quantity / food.serving_size)), 0).toFixed(0)} cal
                 </div>
                 <button
                   onClick={handleQuickLogMeal}
