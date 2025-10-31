@@ -70,6 +70,7 @@ function DashboardContent({
   isSubmitting: boolean
 }) {
   const { user } = useAuth()
+  const router = useRouter()
   const [activityFilter, setActivityFilter] = useState<string>('All')
 
   // Food selector state
@@ -179,7 +180,7 @@ function DashboardContent({
         setFoodSelectorOpen(false)
         setFoodSelectorSearch('')
         // Refresh the page to update stats
-        window.location.reload()
+        router.refresh()
       } else {
         alert('Failed to log meal: ' + result.error)
       }
@@ -422,7 +423,7 @@ function DashboardContent({
               <div className="mt-4 flex justify-center">
                 <button
                   onClick={() => setFoodSelectorOpen(true)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                   ⚡ Quick Add Food
                 </button>
