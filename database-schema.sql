@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS food_items (
   brand TEXT,
   serving_size DECIMAL NOT NULL,
   serving_unit TEXT NOT NULL, -- 'g', 'ml', 'cup', 'piece', etc.
-  calories_per_serving INTEGER NOT NULL,
+  calories_per_serving DECIMAL NOT NULL,
   protein_grams DECIMAL DEFAULT 0,
   carbs_grams DECIMAL DEFAULT 0,
   fat_grams DECIMAL DEFAULT 0,
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS meals (
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
   meal_date DATE NOT NULL DEFAULT CURRENT_DATE,
   meal_time TIME,
-  total_calories INTEGER DEFAULT 0,
+  total_calories DECIMAL DEFAULT 0,
   total_protein DECIMAL DEFAULT 0,
   total_carbs DECIMAL DEFAULT 0,
   total_fat DECIMAL DEFAULT 0,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS meal_items (
   meal_id UUID REFERENCES meals(id) ON DELETE CASCADE,
   food_item_id UUID REFERENCES food_items(id) ON DELETE CASCADE,
   quantity DECIMAL NOT NULL, -- multiplier for serving size
-  custom_calories INTEGER,
+  custom_calories DECIMAL,
   custom_protein DECIMAL,
   custom_carbs DECIMAL,
   custom_fat DECIMAL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS meal_templates (
   name TEXT NOT NULL,
   meal_type TEXT NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
   description TEXT,
-  total_calories INTEGER DEFAULT 0,
+  total_calories DECIMAL DEFAULT 0,
   total_protein DECIMAL DEFAULT 0,
   total_carbs DECIMAL DEFAULT 0,
   total_fat DECIMAL DEFAULT 0,
@@ -518,7 +518,11 @@ SELECT
 WHERE auth.uid() IS NOT NULL
 ON CONFLICT (user_id, stat_type, calculated_date) DO NOTHING;
 
--- Insert sample food items (only if they don't exist)
+-- Fix data types for nutrition fields (change INTEGER to DECIMAL)
+ALTER TABLE meals ALTER COLUMN total_calories TYPE DECIMAL;
+ALTER TABLE meal_templates ALTER COLUMN total_calories TYPE DECIMAL;
+ALTER TABLE food_items ALTER COLUMN calories_per_serving TYPE DECIMAL;
+ALTER TABLE meal_items ALTER COLUMN custom_calories TYPE DECIMAL;
 INSERT INTO food_items (name, brand, serving_size, serving_unit, calories_per_serving, protein_grams, carbs_grams, fat_grams, fiber_grams)
 VALUES
   ('Greek Yogurt', 'Chobani', 170, 'g', 120, 12, 8, 5, 0),

@@ -15,7 +15,15 @@ import {
   NutritionGoal,
   logWorkout,
   logMeal,
-  updateHealthMetrics
+  updateHealthMetrics,
+  getFoodItems,
+  FoodItem,
+  getMealTemplates,
+  MealTemplate,
+  getSavedFoods,
+  SavedFood,
+  logMealFromTemplate,
+  getMealTemplateWithItems
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -64,6 +72,16 @@ function DashboardContent({
   const { user } = useAuth()
   const [activityFilter, setActivityFilter] = useState<string>('All')
 
+  // Food selector state
+  const [foodSelectorOpen, setFoodSelectorOpen] = useState(false)
+  const [foodSelectorSearch, setFoodSelectorSearch] = useState('')
+  const [foodSelectorFilter, setFoodSelectorFilter] = useState<'database' | 'templates' | 'saved'>('database')
+  const [selectedFoods, setSelectedFoods] = useState<Array<{food: FoodItem, quantity: number}>>([])
+  const [foodItems, setFoodItems] = useState<FoodItem[]>([])
+  const [mealTemplates, setMealTemplates] = useState<MealTemplate[]>([])
+  const [savedFoods, setSavedFoods] = useState<SavedFood[]>([])
+  const [isLoadingFoods, setIsLoadingFoods] = useState(false)
+
   // Helper functions to get data
   const getStatValue = (statType: string) => {
     const stat = data.userStats.find(s => s.stat_type === statType)
@@ -91,6 +109,92 @@ function DashboardContent({
       return `${diffDays} days ago`
     }
   }
+
+  // Food selector functions
+  const loadFoodData = async () => {
+    setIsLoadingFoods(true)
+    try {
+      const [foodItemsResult, templatesResult, savedFoodsResult] = await Promise.all([
+        getFoodItems(),
+        getMealTemplates(),
+        getSavedFoods(user!.id)
+      ])
+
+      setFoodItems(foodItemsResult)
+      setMealTemplates(templatesResult)
+      if (savedFoodsResult.success) {
+        setSavedFoods(savedFoodsResult.data || [])
+      }
+    } catch (error) {
+      console.error('Error loading food data:', error)
+    } finally {
+      setIsLoadingFoods(false)
+    }
+  }
+
+  const addFoodToMeal = (food: FoodItem) => {
+    setSelectedFoods(prev => [...prev, { food, quantity: 1 }])
+  }
+
+  const addMealTemplateToMeal = async (template: MealTemplate) => {
+    try {
+      const result = await getMealTemplateWithItems(template.id)
+      if (result.template && result.items) {
+        const newFoods = result.items.map(item => ({
+          food: item.food_item!,
+          quantity: item.quantity
+        }))
+        setSelectedFoods(prev => [...prev, ...newFoods])
+      }
+    } catch (error) {
+      console.error('Error adding meal template to meal:', error)
+    }
+  }
+
+  const addSavedFoodToMeal = (savedFood: SavedFood) => {
+    if (savedFood.food_item) {
+      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: 1 }])
+    }
+  }
+
+  const handleQuickLogMeal = async () => {
+    if (selectedFoods.length === 0) return
+
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const mealData = new FormData()
+      mealData.append('meal_type', 'snack')
+      mealData.append('meal_date', today)
+
+      // Add meal items
+      selectedFoods.forEach(({ food, quantity }, index) => {
+        mealData.append(`food_${index}`, food.id)
+        mealData.append(`quantity_${index}`, quantity.toString())
+      })
+
+      const result = await logMeal(mealData)
+      if (result.success) {
+        alert('Meal logged successfully!')
+        setSelectedFoods([])
+        setFoodSelectorOpen(false)
+        setFoodSelectorSearch('')
+        // Refresh the page to update stats
+        window.location.reload()
+      } else {
+        alert('Failed to log meal: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error logging meal:', error)
+      alert('Failed to log meal: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  // Load food data when food selector opens
+  useEffect(() => {
+    if (foodSelectorOpen && foodItems.length === 0) {
+      loadFoodData()
+    }
+  }, [foodSelectorOpen, foodItems.length])
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -312,6 +416,16 @@ function DashboardContent({
                 <div className="text-sm text-stone-600">
                   Fiber: <strong>{Math.round(data.dailyNutritionStats.total_fiber)}g</strong>
                 </div>
+              </div>
+
+              {/* Quick Add Button */}
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => setFoodSelectorOpen(true)}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
+                >
+                  ⚡ Quick Add Food
+                </button>
               </div>
             </div>
           </div>
@@ -979,6 +1093,368 @@ function DashboardContent({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Food Selector Modal */}
+      {foodSelectorOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '2rem'
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '80vh',
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 600,
+                color: '#1a3a2a'
+              }}>
+                Quick Add Food
+              </h3>
+              <button
+                onClick={() => {
+                  setFoodSelectorOpen(false)
+                  setFoodSelectorSearch('')
+                }}
+                style={{
+                  padding: '0.5rem',
+                  background: '#6c757d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  width: '30px',
+                  height: '30px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Filter Tabs */}
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              marginBottom: '1.5rem',
+              borderBottom: '1px solid #e9ecef',
+              paddingBottom: '1rem'
+            }}>
+              <button
+                onClick={() => setFoodSelectorFilter('database')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: foodSelectorFilter === 'database' ? '#ff6b35' : '#f8f9fa',
+                  color: foodSelectorFilter === 'database' ? '#fff' : '#1a3a2a',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                🍎 Food Database
+              </button>
+              <button
+                onClick={() => setFoodSelectorFilter('templates')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: foodSelectorFilter === 'templates' ? '#ff6b35' : '#f8f9fa',
+                  color: foodSelectorFilter === 'templates' ? '#fff' : '#1a3a2a',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                📋 Meal Templates
+              </button>
+              <button
+                onClick={() => setFoodSelectorFilter('saved')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: foodSelectorFilter === 'saved' ? '#ff6b35' : '#f8f9fa',
+                  color: foodSelectorFilter === 'saved' ? '#fff' : '#1a3a2a',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                ⭐ Saved Foods
+              </button>
+            </div>
+
+            {/* Search */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <input
+                type="text"
+                placeholder="Search foods..."
+                value={foodSelectorSearch}
+                onChange={(e) => setFoodSelectorSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '25px',
+                  fontSize: '1rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            {/* Food List */}
+            <div style={{
+              flex: 1,
+              overflow: 'auto',
+              display: 'grid',
+              gap: '0.5rem'
+            }}>
+              {isLoadingFoods ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+                  Loading foods...
+                </div>
+              ) : (
+                <>
+                  {foodSelectorFilter === 'database' && foodItems
+                    .filter(food =>
+                      food.name.toLowerCase().includes(foodSelectorSearch.toLowerCase()) ||
+                      (food.brand && food.brand.toLowerCase().includes(foodSelectorSearch.toLowerCase()))
+                    )
+                    .map((food) => (
+                      <div
+                        key={food.id}
+                        onClick={() => addFoodToMeal(food)}
+                        style={{
+                          padding: '1rem',
+                          border: '1px solid #e9ecef',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          background: '#f8f9fa',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start'
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontWeight: '600',
+                              color: '#1a3a2a',
+                              marginBottom: '0.25rem'
+                            }}>
+                              {food.name}
+                            </div>
+                            {food.brand && (
+                              <div style={{
+                                fontSize: '0.8rem',
+                                color: '#666',
+                                marginBottom: '0.5rem'
+                              }}>
+                                {food.brand}
+                              </div>
+                            )}
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#666'
+                            }}>
+                              {food.serving_size} {food.serving_unit} • {food.calories_per_serving} cal
+                            </div>
+                          </div>
+                          <div style={{
+                            textAlign: 'right',
+                            fontSize: '0.9rem',
+                            color: '#666'
+                          }}>
+                            <div>P: {food.protein_grams}g</div>
+                            <div>C: {food.carbs_grams}g</div>
+                            <div>F: {food.fat_grams}g</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {foodSelectorFilter === 'templates' && mealTemplates
+                    .filter(template =>
+                      template.name.toLowerCase().includes(foodSelectorSearch.toLowerCase())
+                    )
+                    .map((template) => (
+                      <div
+                        key={template.id}
+                        onClick={() => addMealTemplateToMeal(template)}
+                        style={{
+                          padding: '1rem',
+                          border: '1px solid #e9ecef',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          background: '#f8f9fa',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                      >
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start'
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontWeight: '600',
+                              color: '#1a3a2a',
+                              marginBottom: '0.25rem'
+                            }}>
+                              📋 {template.name}
+                            </div>
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#666'
+                            }}>
+                              {template.total_calories} cal total
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                  {foodSelectorFilter === 'saved' && savedFoods
+                    .filter(savedFood =>
+                      savedFood.food_item?.name.toLowerCase().includes(foodSelectorSearch.toLowerCase()) ||
+                      (savedFood.food_item?.brand && savedFood.food_item.brand.toLowerCase().includes(foodSelectorSearch.toLowerCase()))
+                    )
+                    .map((savedFood) => (
+                      <div
+                        key={savedFood.id}
+                        onClick={() => addSavedFoodToMeal(savedFood)}
+                        style={{
+                          padding: '1rem',
+                          border: '1px solid #e9ecef',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          background: '#f8f9fa',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontWeight: '600',
+                            color: '#1a3a2a',
+                            marginBottom: '0.25rem'
+                          }}>
+                            ⭐ {savedFood.food_item?.name}
+                          </div>
+                          {savedFood.food_item?.brand && (
+                            <div style={{
+                              fontSize: '0.8rem',
+                              color: '#666',
+                              marginBottom: '0.5rem'
+                            }}>
+                              {savedFood.food_item.brand}
+                            </div>
+                          )}
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#666'
+                          }}>
+                            {savedFood.food_item?.serving_size} {savedFood.food_item?.serving_unit} • {savedFood.food_item?.calories_per_serving} cal
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </>
+              )}
+
+              {((foodSelectorFilter === 'database' && foodItems.length === 0 && !isLoadingFoods) ||
+                (foodSelectorFilter === 'templates' && mealTemplates.length === 0 && !isLoadingFoods) ||
+                (foodSelectorFilter === 'saved' && savedFoods.length === 0 && !isLoadingFoods)) && (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '2rem',
+                  color: '#666'
+                }}>
+                  {foodSelectorFilter === 'database' && 'No foods found. Try a different search term.'}
+                  {foodSelectorFilter === 'templates' && 'No meal templates found. Create some templates first.'}
+                  {foodSelectorFilter === 'saved' && 'No saved foods found. Save some foods from the database first.'}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Foods Summary */}
+            {selectedFoods.length > 0 && (
+              <div style={{
+                marginTop: '1.5rem',
+                padding: '1rem',
+                background: '#f0f8ff',
+                borderRadius: '8px',
+                border: '1px solid #b3d9ff'
+              }}>
+                <div style={{
+                  fontWeight: '600',
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Selected Foods ({selectedFoods.length})
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: '#666',
+                  marginBottom: '1rem'
+                }}>
+                  Total: {selectedFoods.reduce((sum, { food, quantity }) => sum + (food.calories_per_serving * quantity), 0)} cal
+                </div>
+                <button
+                  onClick={handleQuickLogMeal}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Log This Meal
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
