@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase'
 
@@ -19,9 +19,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+      } catch (error) {
+        console.error('Error getting session:', error)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getInitialSession()
@@ -29,8 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
+        try {
+          setUser(session?.user ?? null)
+        } catch (error) {
+          console.error('Error in auth state change:', error)
+          setUser(null)
+        } finally {
+          setLoading(false)
+        }
       }
     )
 

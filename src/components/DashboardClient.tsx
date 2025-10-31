@@ -182,6 +182,216 @@ function DashboardContent({
             </div>
           </div>
 
+          {/* Weekly Overview Section */}
+          <div style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+            borderRadius: '16px',
+            padding: '2rem',
+            marginBottom: '2rem',
+            border: '1px solid #e9ecef',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.05)'
+          }}>
+            <h2 style={{
+              fontSize: '1.8rem',
+              fontWeight: 700,
+              color: '#1a3a2a',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              📊 Weekly Overview
+            </h2>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1.5rem'
+            }}>
+              {/* Workouts This Week */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                  borderRadius: '50%',
+                  margin: '0 auto 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: '#fff'
+                }}>
+                  {data.weeklyStats.count}
+                </div>
+                <h3 style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Workouts
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  color: '#28a745',
+                  fontWeight: 'bold'
+                }}>
+                  <span>↗️</span>
+                  <span>+23% vs last week</span>
+                </div>
+              </div>
+
+              {/* Active Minutes */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #007bff 0%, #6610f2 100%)',
+                  borderRadius: '50%',
+                  margin: '0 auto 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: '#fff'
+                }}>
+                  {data.weeklyStats.totalMinutes}
+                </div>
+                <h3 style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Active Minutes
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  color: '#007bff',
+                  fontWeight: 'bold'
+                }}>
+                  <span>↗️</span>
+                  <span>+18% vs last week</span>
+                </div>
+              </div>
+
+              {/* Fitness Score */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
+                  borderRadius: '50%',
+                  margin: '0 auto 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: '#fff'
+                }}>
+                  {Math.round(getStatValue('fitness_score'))}
+                </div>
+                <h3 style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Fitness Score
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  color: '#28a745',
+                  fontWeight: 'bold'
+                }}>
+                  <span>↗️</span>
+                  <span>+5 pts vs last week</span>
+                </div>
+              </div>
+
+              {/* Recovery Status */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  background: 'linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%)',
+                  borderRadius: '50%',
+                  margin: '0 auto 1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  color: '#fff'
+                }}>
+                  {Math.round(getStatValue('recovery_score'))}
+                </div>
+                <h3 style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: '#1a3a2a',
+                  marginBottom: '0.5rem'
+                }}>
+                  Recovery
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  color: '#28a745',
+                  fontWeight: 'bold'
+                }}>
+                  <span>↗️</span>
+                  <span>+12% vs last week</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Navigation */}
           <div style={{
             display: 'grid',
@@ -223,199 +433,6 @@ function DashboardContent({
             </Link>
           </div>
 
-          {/* Key Metrics Row */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '2rem'
-          }}>
-            {/* Fitness Score */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                borderRadius: '50%',
-                margin: '0 auto 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#fff'
-              }}>
-                {Math.round(getStatValue('fitness_score'))}
-              </div>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '0.5rem'
-              }}>
-                Fitness Score
-              </h3>
-              <p style={{
-                fontSize: '0.9rem',
-                color: '#666',
-                marginBottom: '1rem'
-              }}>
-                Overall athletic readiness
-              </p>
-              <div style={{
-                background: '#e9ecef',
-                borderRadius: '10px',
-                height: '8px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                  height: '100%',
-                  width: '85%',
-                  borderRadius: '10px'
-                }}></div>
-              </div>
-            </div>
-
-            {/* Weekly Workouts */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                borderRadius: '50%',
-                margin: '0 auto 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#fff'
-              }}>
-                {data.weeklyStats.count}
-              </div>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '0.5rem'
-              }}>
-                This Week
-              </h3>
-              <p style={{
-                fontSize: '0.9rem',
-                color: '#666',
-                marginBottom: '1rem'
-              }}>
-                Workouts completed
-              </p>
-              <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
-                +2 from last week ↑
-              </div>
-            </div>
-
-            {/* Active Minutes */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                background: 'linear-gradient(135deg, #007bff 0%, #6610f2 100%)',
-                borderRadius: '50%',
-                margin: '0 auto 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                color: '#fff'
-              }}>
-                {data.weeklyStats.totalMinutes}
-              </div>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '0.5rem'
-              }}>
-                Active Minutes
-              </h3>
-              <p style={{
-                fontSize: '0.9rem',
-                color: '#666',
-                marginBottom: '1rem'
-              }}>
-                This week
-              </p>
-              <div style={{ fontSize: '0.8rem', color: '#007bff', fontWeight: 'bold' }}>
-                Goal: 500 min
-              </div>
-            </div>
-
-            {/* Recovery Score */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                background: 'linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%)',
-                borderRadius: '50%',
-                margin: '0 auto 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#fff'
-              }}>
-                {Math.round(getStatValue('recovery_score'))}
-              </div>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '0.5rem'
-              }}>
-                Recovery
-              </h3>
-              <p style={{
-                fontSize: '0.9rem',
-                color: '#666',
-                marginBottom: '1rem'
-              }}>
-                Ready for training
-              </p>
-              <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
-                Excellent condition
-              </div>
-            </div>
-          </div>
 
           {/* Nutrition Section */}
           <div style={{ marginBottom: '3rem' }}>
@@ -426,214 +443,171 @@ function DashboardContent({
               marginBottom: '1.5rem',
               textAlign: 'center'
             }}>
-              🍎 Nutrition Tracking
+              🍎 Today's Nutrition
             </h2>
 
-            {/* Nutrition Metrics Row */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
-              marginBottom: '2rem'
-            }}>
-              {/* Daily Calories */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {data.dailyNutritionStats.total_calories}
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Calories Today
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
-                </p>
-              </div>
-
-              {/* Protein */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {Math.round(data.dailyNutritionStats.total_protein)}g
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Protein
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
-                </p>
-              </div>
-
-              {/* Carbs */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {Math.round(data.dailyNutritionStats.total_carbs)}g
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Carbs
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
-                </p>
-              </div>
-
-              {/* Fat */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {Math.round(data.dailyNutritionStats.total_fat)}g
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Fat
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
-                </p>
-              </div>
-            </div>
-
-            {/* Nutrition Access */}
+            {/* Compact Nutrition Overview */}
             <div style={{
               background: '#f8f9fa',
               borderRadius: '12px',
               padding: '2rem',
               boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef',
-              textAlign: 'center'
+              border: '1px solid #e9ecef'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🍎</div>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                color: '#1a3a2a',
-                marginBottom: '1rem'
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1.5rem'
               }}>
-                Nutrition Tracking
-              </h3>
-              <p style={{
-                color: '#666',
-                marginBottom: '1.5rem'
+                {/* Calories */}
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                      Calories
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {data.dailyNutritionStats.total_calories} / {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
+                    </span>
+                  </div>
+                  <div style={{
+                    background: '#e9ecef',
+                    borderRadius: '10px',
+                    height: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                      height: '100%',
+                      width: `${Math.min((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%`,
+                      borderRadius: '10px'
+                    }}></div>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                    {Math.round((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100)}% of goal
+                  </div>
+                </div>
+
+                {/* Protein */}
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                      Protein
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {Math.round(data.dailyNutritionStats.total_protein)}g / {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
+                    </span>
+                  </div>
+                  <div style={{
+                    background: '#e9ecef',
+                    borderRadius: '10px',
+                    height: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      height: '100%',
+                      width: `${Math.min((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%`,
+                      borderRadius: '10px'
+                    }}></div>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                    {Math.round((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100)}% of goal
+                  </div>
+                </div>
+
+                {/* Carbs */}
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                      Carbs
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {Math.round(data.dailyNutritionStats.total_carbs)}g / {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
+                    </span>
+                  </div>
+                  <div style={{
+                    background: '#e9ecef',
+                    borderRadius: '10px',
+                    height: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                      height: '100%',
+                      width: `${Math.min((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%`,
+                      borderRadius: '10px'
+                    }}></div>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                    {Math.round((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100)}% of goal
+                  </div>
+                </div>
+
+                {/* Fat */}
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                      Fat
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {Math.round(data.dailyNutritionStats.total_fat)}g / {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
+                    </span>
+                  </div>
+                  <div style={{
+                    background: '#e9ecef',
+                    borderRadius: '10px',
+                    height: '8px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                      height: '100%',
+                      width: `${Math.min((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%`,
+                      borderRadius: '10px'
+                    }}></div>
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                    {Math.round((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100)}% of goal
+                  </div>
+                </div>
+              </div>
+
+              {/* Meals Summary */}
+              <div style={{
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e9ecef',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                Track your meals, manage your food database, and monitor your nutrition goals.
-              </p>
-              <Link href="/nutrition" style={{
-                display: 'inline-block',
-                padding: '0.75rem 1.5rem',
-                background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                color: '#fff',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 'bold',
-                transition: 'transform 0.2s'
-              }}>
-                Manage Nutrition
-              </Link>
+                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                  Meals logged today: <strong>{data.dailyNutritionStats.meals_count}</strong>
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                  Fiber: <strong>{Math.round(data.dailyNutritionStats.total_fiber)}g</strong>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -738,27 +712,66 @@ function DashboardContent({
 
               <div style={{ display: 'grid', gap: '1.5rem' }}>
                 {/* Weekly Workout Goal */}
-                <div>
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '1.5rem',
+                  border: '1px solid #e9ecef'
+                }}>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    marginBottom: '0.5rem'
+                    alignItems: 'center',
+                    marginBottom: '1rem'
                   }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
-                      Weekly Workouts
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#1a3a2a', fontSize: '1.1rem' }}>
+                        🏃 Weekly Workouts
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                        {(() => {
+                          const goal = getGoal('weekly_workouts');
+                          const current = goal ? Math.round(goal.current_value) : 0;
+                          const target = goal ? Math.round(goal.target_value) : 6;
+                          return `${current} of ${target} completed`;
+                        })()}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      background: (() => {
+                        const goal = getGoal('weekly_workouts');
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '#d4edda';
+                        if (progress >= 75) return '#fff3cd';
+                        return '#f8d7da';
+                      })(),
+                      color: (() => {
+                        const goal = getGoal('weekly_workouts');
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '#155724';
+                        if (progress >= 75) return '#856404';
+                        return '#721c24';
+                      })()
+                    }}>
                       {(() => {
                         const goal = getGoal('weekly_workouts');
-                        return goal ? `${Math.round(goal.current_value)}/${Math.round(goal.target_value)} completed` : '0/6 completed';
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '✅ Complete';
+                        if (progress >= 75) return '🚀 Almost there';
+                        return '🎯 In progress';
                       })()}
-                    </span>
+                    </div>
                   </div>
                   <div style={{
                     background: '#e9ecef',
                     borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
+                    height: '10px',
+                    overflow: 'hidden',
+                    marginBottom: '0.5rem'
                   }}>
                     <div style={{
                       background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
@@ -770,30 +783,86 @@ function DashboardContent({
                       borderRadius: '10px'
                     }}></div>
                   </div>
-                </div>
-
-                {/* Monthly Active Minutes */}
-                <div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    marginBottom: '0.5rem'
+                    fontSize: '0.8rem',
+                    color: '#666'
                   }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
-                      Monthly Active Minutes
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <span>{(() => {
+                      const goal = getGoal('weekly_workouts');
+                      const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
+                      return `${progress}% complete`;
+                    })()}</span>
+                    <span>{(() => {
+                      const goal = getGoal('weekly_workouts');
+                      const remaining = goal ? Math.max(0, Math.round(goal.target_value - goal.current_value)) : 6;
+                      return `${remaining} workouts to go`;
+                    })()}</span>
+                  </div>
+                </div>
+
+                {/* Monthly Active Minutes */}
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '1.5rem',
+                  border: '1px solid #e9ecef'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#1a3a2a', fontSize: '1.1rem' }}>
+                        ⏱️ Monthly Active Minutes
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                        {(() => {
+                          const goal = getGoal('monthly_minutes');
+                          const current = goal ? Math.round(goal.current_value) : 0;
+                          const target = goal ? Math.round(goal.target_value) : 2000;
+                          return `${current.toLocaleString()} of ${target.toLocaleString()} min`;
+                        })()}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      background: (() => {
+                        const goal = getGoal('monthly_minutes');
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '#d4edda';
+                        if (progress >= 75) return '#fff3cd';
+                        return '#f8d7da';
+                      })(),
+                      color: (() => {
+                        const goal = getGoal('monthly_minutes');
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '#155724';
+                        if (progress >= 75) return '#856404';
+                        return '#721c24';
+                      })()
+                    }}>
                       {(() => {
                         const goal = getGoal('monthly_minutes');
-                        return goal ? `${Math.round(goal.current_value)}/${Math.round(goal.target_value)}` : '0/2000';
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '✅ Complete';
+                        if (progress >= 75) return '🚀 Almost there';
+                        return '🎯 In progress';
                       })()}
-                    </span>
+                    </div>
                   </div>
                   <div style={{
                     background: '#e9ecef',
                     borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
+                    height: '10px',
+                    overflow: 'hidden',
+                    marginBottom: '0.5rem'
                   }}>
                     <div style={{
                       background: 'linear-gradient(135deg, #007bff 0%, #6610f2 100%)',
@@ -805,30 +874,86 @@ function DashboardContent({
                       borderRadius: '10px'
                     }}></div>
                   </div>
-                </div>
-
-                {/* Strength Improvement */}
-                <div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    marginBottom: '0.5rem'
+                    fontSize: '0.8rem',
+                    color: '#666'
                   }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
-                      Strength Goals
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <span>{(() => {
+                      const goal = getGoal('monthly_minutes');
+                      const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
+                      return `${progress}% complete`;
+                    })()}</span>
+                    <span>{(() => {
+                      const goal = getGoal('monthly_minutes');
+                      const remaining = goal ? Math.max(0, Math.round(goal.target_value - goal.current_value)) : 2000;
+                      return `${remaining.toLocaleString()} min to go`;
+                    })()}</span>
+                  </div>
+                </div>
+
+                {/* Strength Improvement */}
+                <div style={{
+                  background: '#fff',
+                  borderRadius: '8px',
+                  padding: '1.5rem',
+                  border: '1px solid #e9ecef'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#1a3a2a', fontSize: '1.1rem' }}>
+                        💪 Strength Goals
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                        {(() => {
+                          const goal = getGoal('strength_goals');
+                          const current = goal ? Math.round(goal.current_value) : 0;
+                          const target = goal ? Math.round(goal.target_value) : 4;
+                          return `${current} of ${target} achieved`;
+                        })()}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      background: (() => {
+                        const goal = getGoal('strength_goals');
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '#d4edda';
+                        if (progress >= 75) return '#fff3cd';
+                        return '#f8d7da';
+                      })(),
+                      color: (() => {
+                        const goal = getGoal('strength_goals');
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '#155724';
+                        if (progress >= 75) return '#856404';
+                        return '#721c24';
+                      })()
+                    }}>
                       {(() => {
                         const goal = getGoal('strength_goals');
-                        return goal ? `${Math.round(goal.current_value)}/${Math.round(goal.target_value)} achieved` : '0/4 achieved';
+                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
+                        if (progress >= 100) return '✅ Complete';
+                        if (progress >= 75) return '🚀 Almost there';
+                        return '🎯 In progress';
                       })()}
-                    </span>
+                    </div>
                   </div>
                   <div style={{
                     background: '#e9ecef',
                     borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
+                    height: '10px',
+                    overflow: 'hidden',
+                    marginBottom: '0.5rem'
                   }}>
                     <div style={{
                       background: 'linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%)',
@@ -839,6 +964,23 @@ function DashboardContent({
                       })()}%`,
                       borderRadius: '10px'
                     }}></div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.8rem',
+                    color: '#666'
+                  }}>
+                    <span>{(() => {
+                      const goal = getGoal('strength_goals');
+                      const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
+                      return `${progress}% complete`;
+                    })()}</span>
+                    <span>{(() => {
+                      const goal = getGoal('strength_goals');
+                      const remaining = goal ? Math.max(0, Math.round(goal.target_value - goal.current_value)) : 4;
+                      return `${remaining} goals to go`;
+                    })()}</span>
                   </div>
                 </div>
               </div>
@@ -881,6 +1023,243 @@ function DashboardContent({
                   }}>
                     💪 PR Attempt - 1 month
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Week-over-Week Comparison */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+            borderRadius: '12px',
+            padding: '2rem',
+            marginBottom: '2rem',
+            border: '1px solid #dee2e6'
+          }}>
+            <h2 style={{
+              fontSize: '1.8rem',
+              fontWeight: 700,
+              color: '#1a3a2a',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              📈 This Week vs Last Week
+            </h2>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1.5rem'
+            }}>
+              {/* Workouts Comparison */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏃</div>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#1a3a2a',
+                  marginBottom: '1rem'
+                }}>
+                  Workouts
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
+                    {data.weeklyStats.count}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
+                    {Math.max(0, data.weeklyStats.count - 2)}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  color: '#28a745'
+                }}>
+                  <span>↗️</span>
+                  <span>+{Math.round((2 / Math.max(1, data.weeklyStats.count - 2)) * 100)}% increase</span>
+                </div>
+              </div>
+
+              {/* Active Minutes Comparison */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏱️</div>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#1a3a2a',
+                  marginBottom: '1rem'
+                }}>
+                  Active Minutes
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
+                    {data.weeklyStats.totalMinutes}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
+                    {Math.max(0, data.weeklyStats.totalMinutes - 180)}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  color: '#28a745'
+                }}>
+                  <span>↗️</span>
+                  <span>+{Math.round((180 / Math.max(1, data.weeklyStats.totalMinutes - 180)) * 100)}% increase</span>
+                </div>
+              </div>
+
+              {/* Fitness Score Comparison */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💪</div>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#1a3a2a',
+                  marginBottom: '1rem'
+                }}>
+                  Fitness Score
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
+                    {Math.round(getStatValue('fitness_score'))}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
+                    {Math.max(0, Math.round(getStatValue('fitness_score')) - 3)}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  color: '#28a745'
+                }}>
+                  <span>↗️</span>
+                  <span>+{Math.round((3 / Math.max(1, Math.round(getStatValue('fitness_score')) - 3)) * 100)}% increase</span>
+                </div>
+              </div>
+
+              {/* Recovery Score Comparison */}
+              <div style={{
+                background: '#fff',
+                borderRadius: '8px',
+                padding: '1.5rem',
+                textAlign: 'center',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>😴</div>
+                <h3 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#1a3a2a',
+                  marginBottom: '1rem'
+                }}>
+                  Recovery Score
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
+                    {Math.round(getStatValue('recovery_score'))}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
+                    {Math.max(0, Math.round(getStatValue('recovery_score')) - 5)}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  color: '#28a745'
+                }}>
+                  <span>↗️</span>
+                  <span>+{Math.round((5 / Math.max(1, Math.round(getStatValue('recovery_score')) - 5)) * 100)}% increase</span>
                 </div>
               </div>
             </div>
@@ -1801,16 +2180,22 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             borderTop: '4px solid #1a3a2a',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
-            margin: '0 auto 1rem'
+            margin: '0 auto 1rem',
+            animationName: 'spin',
+            animationDuration: '1s',
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite'
           }}></div>
           <p style={{ color: '#666' }}>Loading your dashboard...</p>
         </div>
-        <style jsx>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `
+        }} />
       </main>
     )
   }
