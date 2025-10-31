@@ -96,515 +96,202 @@ function DashboardContent({
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#f9f9f9' }}>
+    <main className="min-h-screen bg-stone-50">
       <NavBar />
 
       {/* Hero Section */}
-      <section style={{
-        padding: '6rem 5vw 4rem',
-        background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-        color: '#fff',
-        textAlign: 'center',
-        minHeight: '40vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ maxWidth: '600px' }}>
-          <h1 style={{
-            fontSize: '3.5rem',
-            fontWeight: 900,
-            marginBottom: '1.5rem',
-            letterSpacing: '0.05em'
-          }}>
-            Welcome Back, {user?.email?.split('@')[0]}!
+      <section className="py-16 px-6 bg-gradient-to-br from-emerald-800 via-green-700 to-teal-600 text-white text-center min-h-[50vh] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="relative z-10 max-w-4xl">
+          <h1 className="text-5xl md:text-6xl font-black mb-6 tracking-wide">
+            Welcome Back, Adventurer!
           </h1>
-          <p style={{
-            fontSize: '1.3rem',
-            opacity: 0.9,
-            lineHeight: '1.6',
-            marginBottom: '2rem'
-          }}>
-            Your personalized fitness journey awaits
+          <p className="text-xl md:text-2xl opacity-90 leading-relaxed mb-8">
+            Your nomadic fitness journey awaits. Track your trails, fuel your body, and conquer new peaks.
           </p>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full text-sm font-semibold">
+              🔥 Streak: {Math.round(getStatValue('streak_days'))} days
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full text-sm font-semibold">
+              🏔️ Next Summit: Utah Trails
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Dashboard Content */}
-      <section style={{ padding: '4rem 5vw', background: '#fff' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <section className="py-12 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
 
           {/* Welcome Header */}
-          <div style={{
-            background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-            borderRadius: '16px',
-            padding: '2rem',
-            marginBottom: '2rem',
-            color: '#fff',
-            textAlign: 'center'
-          }}>
-            <h2 style={{
-              fontSize: '2.5rem',
-              fontWeight: 700,
-              marginBottom: '0.5rem'
-            }}>
-              Welcome back, {user?.email?.split('@')[0]}! 👋
+          <div className="bg-gradient-to-r from-stone-100 to-emerald-50 rounded-2xl p-8 mb-8 text-center border border-stone-200">
+            <h2 className="text-3xl font-bold text-stone-800 mb-3">
+              Ready for Today's Adventure?
             </h2>
-            <p style={{
-              fontSize: '1.2rem',
-              opacity: 0.9,
-              marginBottom: '1rem'
-            }}>
-              Ready to crush your fitness goals today?
+            <p className="text-lg text-stone-600">
+              Track your progress, log your activities, and stay fueled for the trail ahead.
             </p>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap'
-            }}>
-              <div style={{
-                background: 'rgba(255,255,255,0.1)',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                fontSize: '0.9rem'
-              }}>
-                🔥 Streak: {Math.round(getStatValue('streak_days'))} days
-              </div>
-              <div style={{
-                background: 'rgba(255,255,255,0.1)',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                fontSize: '0.9rem'
-              }}>
-                🏔️ Next Adventure: Utah Hiking
-              </div>
-            </div>
           </div>
 
-          {/* Weekly Overview Section */}
-          <div style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-            borderRadius: '16px',
-            padding: '2rem',
-            marginBottom: '2rem',
-            border: '1px solid #e9ecef',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.05)'
-          }}>
-            <h2 style={{
-              fontSize: '1.8rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
-            }}>
-              📊 Weekly Overview
+          {/* Weekly Overview */}
+          <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl p-8 mb-8 border border-stone-200 shadow-lg">
+            <h2 className="text-2xl font-bold text-stone-800 mb-6 text-center">
+              📊 Weekly Performance
             </h2>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1.5rem'
-            }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Workouts This Week */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
+              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
+                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
                   {data.weeklyStats.count}
                 </div>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Workouts
+                <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                  Trail Sessions
                 </h3>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  color: '#28a745',
-                  fontWeight: 'bold'
-                }}>
+                <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-semibold">
                   <span>↗️</span>
                   <span>+23% vs last week</span>
                 </div>
               </div>
 
               {/* Active Minutes */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #007bff 0%, #6610f2 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
+              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
+                <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white">
                   {data.weeklyStats.totalMinutes}
                 </div>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
+                <h3 className="text-lg font-semibold text-stone-800 mb-2">
                   Active Minutes
                 </h3>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  color: '#007bff',
-                  fontWeight: 'bold'
-                }}>
+                <div className="flex items-center justify-center gap-2 text-sm text-sky-600 font-semibold">
                   <span>↗️</span>
                   <span>+18% vs last week</span>
                 </div>
               </div>
 
               {/* Fitness Score */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
+              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
+                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
                   {Math.round(getStatValue('fitness_score'))}
                 </div>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Fitness Score
+                <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                  Peak Fitness
                 </h3>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  color: '#28a745',
-                  fontWeight: 'bold'
-                }}>
+                <div className="flex items-center justify-center gap-2 text-sm text-amber-600 font-semibold">
                   <span>↗️</span>
                   <span>+5 pts vs last week</span>
-                </div>
-              </div>
-
-              {/* Recovery Status */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  {Math.round(getStatValue('recovery_score'))}
-                </div>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Recovery
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  color: '#28a745',
-                  fontWeight: 'bold'
-                }}>
-                  <span>↗️</span>
-                  <span>+12% vs last week</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Quick Navigation */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '2rem'
-          }}>
-            <Link href="/nutrition" style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              borderRadius: '12px',
-              padding: '2rem',
-              textDecoration: 'none',
-              color: '#fff',
-              display: 'block',
-              transition: 'transform 0.2s ease',
-              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.2)'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🥗</div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Nutrition Tracking</h3>
-                <p style={{ opacity: 0.9 }}>Log meals, track macros, and monitor your nutrition goals</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🥗</div>
+                <h3 className="text-2xl font-bold mb-2">Trail Fuel</h3>
+                <p className="opacity-90">Log meals, track macros, and fuel your adventures</p>
               </div>
             </Link>
-            <Link href="/training" style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              borderRadius: '12px',
-              padding: '2rem',
-              textDecoration: 'none',
-              color: '#fff',
-              display: 'block',
-              transition: 'transform 0.2s ease',
-              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.2)'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💪</div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Training Log</h3>
-                <p style={{ opacity: 0.9 }}>Track workouts, monitor progress, and achieve your fitness goals</p>
+            <Link href="/training" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🏔️</div>
+                <h3 className="text-2xl font-bold mb-2">Training Log</h3>
+                <p className="opacity-90">Track workouts, monitor progress, and conquer new peaks</p>
               </div>
             </Link>
           </div>
 
 
           {/* Nutrition Section */}
-          <div style={{ marginBottom: '3rem' }}>
-            <h2 style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
-            }}>
-              🍎 Today's Nutrition
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-stone-800 mb-6 text-center">
+              🍎 Daily Fuel Intake
             </h2>
 
             {/* Compact Nutrition Overview */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '1.5rem'
-              }}>
+            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Calories */}
                 <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-stone-700">
                       Calories
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <span className="text-sm text-stone-600">
                       {data.dailyNutritionStats.total_calories} / {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
                     </span>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                      height: '100%',
-                      width: `${Math.min((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
+                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                  <div className="text-xs text-stone-500 mt-1 text-right">
                     {Math.round((data.dailyNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100)}% of goal
                   </div>
                 </div>
 
                 {/* Protein */}
                 <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-stone-700">
                       Protein
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <span className="text-sm text-stone-600">
                       {Math.round(data.dailyNutritionStats.total_protein)}g / {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
                     </span>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      height: '100%',
-                      width: `${Math.min((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                  <div className="text-xs text-stone-500 mt-1 text-right">
                     {Math.round((data.dailyNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100)}% of goal
                   </div>
                 </div>
 
                 {/* Carbs */}
                 <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-stone-700">
                       Carbs
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <span className="text-sm text-stone-600">
                       {Math.round(data.dailyNutritionStats.total_carbs)}g / {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
                     </span>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                      height: '100%',
-                      width: `${Math.min((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
+                    <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                  <div className="text-xs text-stone-500 mt-1 text-right">
                     {Math.round((data.dailyNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100)}% of goal
                   </div>
                 </div>
 
                 {/* Fat */}
                 <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1a3a2a' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-stone-700">
                       Fat
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    <span className="text-sm text-stone-600">
                       {Math.round(data.dailyNutritionStats.total_fat)}g / {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
                     </span>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '8px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                      height: '100%',
-                      width: `${Math.min((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
+                    <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full" style={{ width: `${Math.min((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.25rem', textAlign: 'right' }}>
+                  <div className="text-xs text-stone-500 mt-1 text-right">
                     {Math.round((data.dailyNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100)}% of goal
                   </div>
                 </div>
               </div>
 
               {/* Meals Summary */}
-              <div style={{
-                marginTop: '1.5rem',
-                paddingTop: '1.5rem',
-                borderTop: '1px solid #e9ecef',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+              <div className="mt-6 pt-6 border-t border-stone-300 flex justify-between items-center">
+                <div className="text-sm text-stone-600">
                   Meals logged today: <strong>{data.dailyNutritionStats.meals_count}</strong>
                 </div>
-                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                <div className="text-sm text-stone-600">
                   Fiber: <strong>{Math.round(data.dailyNutritionStats.total_fiber)}g</strong>
                 </div>
               </div>
@@ -612,78 +299,36 @@ function DashboardContent({
           </div>
 
           {/* Main Dashboard Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr',
-            gap: '2rem',
-            marginBottom: '2rem'
-          }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
             {/* Recent Activities */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <h3 style={{
-                fontSize: '1.8rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
+            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
+              <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
                 🏃 Recent Activities
               </h3>
 
-              <div style={{ display: 'grid', gap: '1rem' }}>
+              <div className="space-y-4">
                 {data.workouts.length > 0 ? data.workouts.map((workout) => (
-                  <div key={workout.id} style={{
-                    background: '#fff',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    border: '1px solid #e9ecef',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div>
-                      <div style={{
-                        fontWeight: '600',
-                        color: '#1a3a2a',
-                        marginBottom: '0.25rem'
-                      }}>
-                        {workout.activity_type}
+                  <div key={workout.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold text-stone-800 mb-1">
+                          {workout.activity_type}
+                        </div>
+                        <div className="text-sm text-stone-600">
+                          {formatDate(workout.workout_date)} • {workout.duration_minutes} min • {workout.calories_burned || 0} cal
+                        </div>
                       </div>
-                      <div style={{
-                        fontSize: '0.8rem',
-                        color: '#666'
-                      }}>
-                        {formatDate(workout.workout_date)} • {workout.duration_minutes} min • {workout.calories_burned || 0} cal
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        workout.intensity === 'High' ? 'bg-red-100 text-red-800' :
+                        workout.intensity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {workout.intensity}
                       </div>
-                    </div>
-                    <div style={{
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.7rem',
-                      fontWeight: 'bold',
-                      background: workout.intensity === 'High' ? '#fee' :
-                                 workout.intensity === 'Medium' ? '#fff3cd' : '#d1ecf1',
-                      color: workout.intensity === 'High' ? '#c82333' :
-                             workout.intensity === 'Medium' ? '#856404' : '#0c5460'
-                    }}>
-                      {workout.intensity}
                     </div>
                   </div>
                 )) : (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '2rem',
-                    color: '#666'
-                  }}>
+                  <div className="text-center py-8 text-stone-600">
                     No workouts logged yet. Start your fitness journey!
                   </div>
                 )}
@@ -691,44 +336,20 @@ function DashboardContent({
             </div>
 
             {/* Goals & Targets */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <h3 style={{
-                fontSize: '1.8rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                🎯 Goals
+            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
+              <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
+                🎯 Goals & Targets
               </h3>
 
-              <div style={{ display: 'grid', gap: '1.5rem' }}>
+              <div className="space-y-6">
                 {/* Weekly Workout Goal */}
-                <div style={{
-                  background: '#fff',
-                  borderRadius: '8px',
-                  padding: '1.5rem',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
+                <div className="bg-white rounded-lg p-4 border border-stone-200">
+                  <div className="flex justify-between items-center mb-3">
                     <div>
-                      <div style={{ fontWeight: '600', color: '#1a3a2a', fontSize: '1.1rem' }}>
+                      <div className="font-semibold text-stone-800 text-lg">
                         🏃 Weekly Workouts
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                      <div className="text-sm text-stone-600 mt-1">
                         {(() => {
                           const goal = getGoal('weekly_workouts');
                           const current = goal ? Math.round(goal.current_value) : 0;
@@ -737,26 +358,15 @@ function DashboardContent({
                         })()}
                       </div>
                     </div>
-                    <div style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: 'bold',
-                      background: (() => {
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      (() => {
                         const goal = getGoal('weekly_workouts');
                         const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '#d4edda';
-                        if (progress >= 75) return '#fff3cd';
-                        return '#f8d7da';
-                      })(),
-                      color: (() => {
-                        const goal = getGoal('weekly_workouts');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '#155724';
-                        if (progress >= 75) return '#856404';
-                        return '#721c24';
+                        if (progress >= 100) return 'bg-green-100 text-green-800';
+                        if (progress >= 75) return 'bg-yellow-100 text-yellow-800';
+                        return 'bg-red-100 text-red-800';
                       })()
-                    }}>
+                    }`}>
                       {(() => {
                         const goal = getGoal('weekly_workouts');
                         const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
@@ -766,29 +376,13 @@ function DashboardContent({
                       })()}
                     </div>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '10px',
-                    overflow: 'hidden',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                      height: '100%',
-                      width: `${(() => {
-                        const goal = getGoal('weekly_workouts');
-                        return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
-                      })()}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full" style={{ width: `${(() => {
+                      const goal = getGoal('weekly_workouts');
+                      return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
+                    })()}%` }}></div>
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8rem',
-                    color: '#666'
-                  }}>
+                  <div className="flex justify-between text-sm text-stone-600">
                     <span>{(() => {
                       const goal = getGoal('weekly_workouts');
                       const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
@@ -803,23 +397,13 @@ function DashboardContent({
                 </div>
 
                 {/* Monthly Active Minutes */}
-                <div style={{
-                  background: '#fff',
-                  borderRadius: '8px',
-                  padding: '1.5rem',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
+                <div className="bg-white rounded-lg p-4 border border-stone-200">
+                  <div className="flex justify-between items-center mb-3">
                     <div>
-                      <div style={{ fontWeight: '600', color: '#1a3a2a', fontSize: '1.1rem' }}>
+                      <div className="font-semibold text-stone-800 text-lg">
                         ⏱️ Monthly Active Minutes
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                      <div className="text-sm text-stone-600 mt-1">
                         {(() => {
                           const goal = getGoal('monthly_minutes');
                           const current = goal ? Math.round(goal.current_value) : 0;
@@ -828,26 +412,15 @@ function DashboardContent({
                         })()}
                       </div>
                     </div>
-                    <div style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: 'bold',
-                      background: (() => {
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      (() => {
                         const goal = getGoal('monthly_minutes');
                         const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '#d4edda';
-                        if (progress >= 75) return '#fff3cd';
-                        return '#f8d7da';
-                      })(),
-                      color: (() => {
-                        const goal = getGoal('monthly_minutes');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '#155724';
-                        if (progress >= 75) return '#856404';
-                        return '#721c24';
+                        if (progress >= 100) return 'bg-green-100 text-green-800';
+                        if (progress >= 75) return 'bg-yellow-100 text-yellow-800';
+                        return 'bg-red-100 text-red-800';
                       })()
-                    }}>
+                    }`}>
                       {(() => {
                         const goal = getGoal('monthly_minutes');
                         const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
@@ -857,29 +430,13 @@ function DashboardContent({
                       })()}
                     </div>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '10px',
-                    overflow: 'hidden',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #007bff 0%, #6610f2 100%)',
-                      height: '100%',
-                      width: `${(() => {
-                        const goal = getGoal('monthly_minutes');
-                        return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
-                      })()}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-sky-400 to-blue-500 h-full rounded-full" style={{ width: `${(() => {
+                      const goal = getGoal('monthly_minutes');
+                      return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
+                    })()}%` }}></div>
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8rem',
-                    color: '#666'
-                  }}>
+                  <div className="flex justify-between text-sm text-stone-600">
                     <span>{(() => {
                       const goal = getGoal('monthly_minutes');
                       const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
@@ -894,23 +451,13 @@ function DashboardContent({
                 </div>
 
                 {/* Strength Improvement */}
-                <div style={{
-                  background: '#fff',
-                  borderRadius: '8px',
-                  padding: '1.5rem',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
+                <div className="bg-white rounded-lg p-4 border border-stone-200">
+                  <div className="flex justify-between items-center mb-3">
                     <div>
-                      <div style={{ fontWeight: '600', color: '#1a3a2a', fontSize: '1.1rem' }}>
+                      <div className="font-semibold text-stone-800 text-lg">
                         💪 Strength Goals
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                      <div className="text-sm text-stone-600 mt-1">
                         {(() => {
                           const goal = getGoal('strength_goals');
                           const current = goal ? Math.round(goal.current_value) : 0;
@@ -919,26 +466,15 @@ function DashboardContent({
                         })()}
                       </div>
                     </div>
-                    <div style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: 'bold',
-                      background: (() => {
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      (() => {
                         const goal = getGoal('strength_goals');
                         const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '#d4edda';
-                        if (progress >= 75) return '#fff3cd';
-                        return '#f8d7da';
-                      })(),
-                      color: (() => {
-                        const goal = getGoal('strength_goals');
-                        const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
-                        if (progress >= 100) return '#155724';
-                        if (progress >= 75) return '#856404';
-                        return '#721c24';
+                        if (progress >= 100) return 'bg-green-100 text-green-800';
+                        if (progress >= 75) return 'bg-yellow-100 text-yellow-800';
+                        return 'bg-red-100 text-red-800';
                       })()
-                    }}>
+                    }`}>
                       {(() => {
                         const goal = getGoal('strength_goals');
                         const progress = goal ? (goal.current_value / goal.target_value) * 100 : 0;
@@ -948,29 +484,13 @@ function DashboardContent({
                       })()}
                     </div>
                   </div>
-                  <div style={{
-                    background: '#e9ecef',
-                    borderRadius: '10px',
-                    height: '10px',
-                    overflow: 'hidden',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%)',
-                      height: '100%',
-                      width: `${(() => {
-                        const goal = getGoal('strength_goals');
-                        return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
-                      })()}%`,
-                      borderRadius: '10px'
-                    }}></div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full" style={{ width: `${(() => {
+                      const goal = getGoal('strength_goals');
+                      return goal ? Math.min((goal.current_value / goal.target_value) * 100, 100) : 0;
+                    })()}%` }}></div>
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8rem',
-                    color: '#666'
-                  }}>
+                  <div className="flex justify-between text-sm text-stone-600">
                     <span>{(() => {
                       const goal = getGoal('strength_goals');
                       const progress = goal ? Math.round((goal.current_value / goal.target_value) * 100) : 0;
@@ -985,545 +505,22 @@ function DashboardContent({
                 </div>
               </div>
 
-              {/* Upcoming Goals */}
-              <div style={{ marginTop: '2rem' }}>
-                <h4 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  color: '#1a3a2a',
-                  marginBottom: '1rem'
-                }}>
+              {/* Upcoming Challenges */}
+              <div className="mt-6 pt-6 border-t border-stone-300">
+                <h4 className="text-lg font-semibold text-stone-800 mb-4">
                   Upcoming Challenges
                 </h4>
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                  <div style={{
-                    background: '#fff',
-                    borderRadius: '6px',
-                    padding: '0.75rem',
-                    border: '1px solid #e9ecef',
-                    fontSize: '0.85rem'
-                  }}>
+                <div className="space-y-2">
+                  <div className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
                     🏔️ <strong>14er Summit</strong> - 2 weeks
                   </div>
-                  <div style={{
-                    background: '#fff',
-                    borderRadius: '6px',
-                    padding: '0.75rem',
-                    border: '1px solid #e9ecef',
-                    fontSize: '0.85rem'
-                  }}>
+                  <div className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
                     🏃 10K Race - 3 weeks
                   </div>
-                  <div style={{
-                    background: '#fff',
-                    borderRadius: '6px',
-                    padding: '0.75rem',
-                    border: '1px solid #e9ecef',
-                    fontSize: '0.85rem'
-                  }}>
+                  <div className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
                     💪 PR Attempt - 1 month
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Week-over-Week Comparison */}
-          <div style={{
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-            borderRadius: '12px',
-            padding: '2rem',
-            marginBottom: '2rem',
-            border: '1px solid #dee2e6'
-          }}>
-            <h2 style={{
-              fontSize: '1.8rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '1.5rem',
-              textAlign: 'center'
-            }}>
-              📈 This Week vs Last Week
-            </h2>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1.5rem'
-            }}>
-              {/* Workouts Comparison */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏃</div>
-                <h3 style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#1a3a2a',
-                  marginBottom: '1rem'
-                }}>
-                  Workouts
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    {data.weeklyStats.count}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
-                    {Math.max(0, data.weeklyStats.count - 2)}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  color: '#28a745'
-                }}>
-                  <span>↗️</span>
-                  <span>+{Math.round((2 / Math.max(1, data.weeklyStats.count - 2)) * 100)}% increase</span>
-                </div>
-              </div>
-
-              {/* Active Minutes Comparison */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏱️</div>
-                <h3 style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#1a3a2a',
-                  marginBottom: '1rem'
-                }}>
-                  Active Minutes
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    {data.weeklyStats.totalMinutes}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
-                    {Math.max(0, data.weeklyStats.totalMinutes - 180)}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  color: '#28a745'
-                }}>
-                  <span>↗️</span>
-                  <span>+{Math.round((180 / Math.max(1, data.weeklyStats.totalMinutes - 180)) * 100)}% increase</span>
-                </div>
-              </div>
-
-              {/* Fitness Score Comparison */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💪</div>
-                <h3 style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#1a3a2a',
-                  marginBottom: '1rem'
-                }}>
-                  Fitness Score
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    {Math.round(getStatValue('fitness_score'))}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
-                    {Math.max(0, Math.round(getStatValue('fitness_score')) - 3)}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  color: '#28a745'
-                }}>
-                  <span>↗️</span>
-                  <span>+{Math.round((3 / Math.max(1, Math.round(getStatValue('fitness_score')) - 3)) * 100)}% increase</span>
-                </div>
-              </div>
-
-              {/* Recovery Score Comparison */}
-              <div style={{
-                background: '#fff',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid #e9ecef'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>😴</div>
-                <h3 style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: '#1a3a2a',
-                  marginBottom: '1rem'
-                }}>
-                  Recovery Score
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>This week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    {Math.round(getStatValue('recovery_score'))}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1rem'
-                }}>
-                  <span style={{ fontSize: '0.9rem', color: '#666' }}>Last week:</span>
-                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#666' }}>
-                    {Math.max(0, Math.round(getStatValue('recovery_score')) - 5)}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  color: '#28a745'
-                }}>
-                  <span>↗️</span>
-                  <span>+{Math.round((5 / Math.max(1, Math.round(getStatValue('recovery_score')) - 5)) * 100)}% increase</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Health & Recovery Section */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '2rem'
-          }}>
-
-            {/* Health Metrics */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <h3 style={{
-                fontSize: '1.8rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                ❤️ Health Metrics
-              </h3>
-
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '1rem',
-                  background: '#fff',
-                  borderRadius: '8px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div>
-                    <div style={{ fontWeight: '600', color: '#1a3a2a' }}>Resting HR</div>
-                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Average bpm</div>
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    {Math.round(getHealthMetric('resting_hr'))}
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '1rem',
-                  background: '#fff',
-                  borderRadius: '8px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div>
-                    <div style={{ fontWeight: '600', color: '#1a3a2a' }}>Sleep Quality</div>
-                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Last night</div>
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#28a745' }}>
-                    {Math.round(getHealthMetric('sleep_quality'))}%
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '1rem',
-                  background: '#fff',
-                  borderRadius: '8px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div>
-                    <div style={{ fontWeight: '600', color: '#1a3a2a' }}>Body Fat</div>
-                    <div style={{ fontSize: '0.8rem', color: '#666' }}>Estimated</div>
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1a3a2a' }}>
-                    {getHealthMetric('body_fat').toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Training Insights */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <h3 style={{
-                fontSize: '1.8rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                📊 Training Insights
-              </h3>
-
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                <div style={{
-                  background: '#d4edda',
-                  border: '1px solid #c3e6cb',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  color: '#155724'
-                }}>
-                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                    💪 Strength Improving
-                  </div>
-                  <div style={{ fontSize: '0.8rem' }}>
-                    15% increase in max lifts this month
-                  </div>
-                </div>
-
-                <div style={{
-                  background: '#d1ecf1',
-                  border: '1px solid #bee5eb',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  color: '#0c5460'
-                }}>
-                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                    🏃 Endurance Gaining
-                  </div>
-                  <div style={{ fontSize: '0.8rem' }}>
-                    22% better recovery between sessions
-                  </div>
-                </div>
-
-                <div style={{
-                  background: '#fff3cd',
-                  border: '1px solid #ffeaa7',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  color: '#856404'
-                }}>
-                  <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                    ⚠️ Mobility Focus
-                  </div>
-                  <div style={{ fontSize: '0.8rem' }}>
-                    Consider adding more flexibility work
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <h3 style={{
-                fontSize: '1.8rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                ⚡ Quick Actions
-              </h3>
-
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
-                <button style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  🏃 Log Workout
-                </button>
-
-                <button style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: '#fff',
-                  color: '#1a3a2a',
-                  border: '2px solid #1a3a2a',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1a3a2a';
-                  e.currentTarget.style.color = '#fff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fff';
-                  e.currentTarget.style.color = '#1a3a2a';
-                }}
-                >
-                  📊 View Progress
-                </button>
-
-                <button style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: '#fff',
-                  color: '#1a3a2a',
-                  border: '2px solid #1a3a2a',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1a3a2a';
-                  e.currentTarget.style.color = '#fff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fff';
-                  e.currentTarget.style.color = '#1a3a2a';
-                }}
-                >
-                  🎯 Set Goals
-                </button>
-
-                <button style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: '#fff',
-                  color: '#1a3a2a',
-                  border: '2px solid #1a3a2a',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1a3a2a';
-                  e.currentTarget.style.color = '#fff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fff';
-                  e.currentTarget.style.color = '#1a3a2a';
-                }}
-                >
-                  📱 Connect Device
-                </button>
               </div>
             </div>
           </div>
