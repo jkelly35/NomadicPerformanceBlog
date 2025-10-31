@@ -15,7 +15,8 @@ import {
   getNutritionGoals,
   getDailyNutritionStats,
   Meal,
-  NutritionGoal
+  NutritionGoal,
+  getDailyHydrationTotal
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -34,13 +35,14 @@ interface DashboardData {
     total_fiber: number
     meals_count: number
   }
+  dailyHydrationTotal: number
 }
 
 async function getDashboardData(): Promise<DashboardData> {
   const today = new Date().toISOString().split('T')[0]
 
   // Fetch all dashboard data
-  const [workouts, healthMetrics, goals, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats] = await Promise.all([
+  const [workouts, healthMetrics, goals, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats, dailyHydrationTotal] = await Promise.all([
     getRecentWorkouts(5),
     getHealthMetrics(),
     getActiveGoals(),
@@ -48,7 +50,8 @@ async function getDashboardData(): Promise<DashboardData> {
     getWeeklyWorkoutStats(),
     getMealsByDate(today),
     getNutritionGoals(),
-    getDailyNutritionStats(today)
+    getDailyNutritionStats(today),
+    getDailyHydrationTotal(today)
   ])
 
   return {
@@ -59,7 +62,8 @@ async function getDashboardData(): Promise<DashboardData> {
     weeklyStats,
     meals,
     nutritionGoals,
-    dailyNutritionStats
+    dailyNutritionStats,
+    dailyHydrationTotal
   }
 }
 

@@ -1397,15 +1397,21 @@ export async function logHydration(formData: FormData): Promise<{ success: boole
   try {
     const supabase = await createClient()
 
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
     const amount_ml = parseInt(formData.get('amount_ml') as string)
-    const beverage_type = formData.get('beverage_type') as string
     const notes = formData.get('notes') as string
 
     const { data, error } = await supabase
       .from('hydration_logs')
       .insert({
+        user_id: user.id,
         amount_ml,
-        beverage_type,
+        beverage_type: 'water',
         notes
       })
       .select()
@@ -1417,6 +1423,7 @@ export async function logHydration(formData: FormData): Promise<{ success: boole
     }
 
     revalidatePath('/nutrition')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Error in logHydration:', error)

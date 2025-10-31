@@ -23,7 +23,8 @@ import {
   getSavedFoods,
   SavedFood,
   logMealFromTemplate,
-  getMealTemplateWithItems
+  getMealTemplateWithItems,
+  logHydration
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -42,6 +43,7 @@ interface DashboardData {
     total_fiber: number
     meals_count: number
   }
+  dailyHydrationTotal: number
 }
 
 function DashboardContent({ 
@@ -52,10 +54,14 @@ function DashboardContent({
   setShowMealModal, 
   showHealthModal, 
   setShowHealthModal,
+  showHydrationModal,
+  setShowHydrationModal,
   onWorkoutSubmit,
   onMealSubmit,
   onHealthSubmit,
-  isSubmitting
+  onHydrationSubmit,
+  isSubmitting,
+  localHydrationTotal
 }: { 
   data: DashboardData
   showWorkoutModal: boolean
@@ -64,10 +70,14 @@ function DashboardContent({
   setShowMealModal: (show: boolean) => void
   showHealthModal: boolean
   setShowHealthModal: (show: boolean) => void
+  showHydrationModal: boolean
+  setShowHydrationModal: (show: boolean) => void
   onWorkoutSubmit: (formData: FormData) => Promise<void>
   onMealSubmit: (formData: FormData) => Promise<void>
   onHealthSubmit: (formData: FormData) => Promise<void>
+  onHydrationSubmit: (formData: FormData) => Promise<void>
   isSubmitting: boolean
+  localHydrationTotal: number
 }) {
   const { user } = useAuth()
   const router = useRouter()
@@ -382,7 +392,7 @@ function DashboardContent({
 
             {/* Compact Nutrition Overview */}
             <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* Calories */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
@@ -454,6 +464,24 @@ function DashboardContent({
                     {Math.round((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100)}% of goal
                   </div>
                 </div>
+
+                {/* Hydration */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-stone-700">
+                      💧 Hydration
+                    </span>
+                    <span className="text-sm text-stone-600">
+                      {Math.round(localHydrationTotal)}ml / 3000ml
+                    </span>
+                  </div>
+                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-400 to-cyan-500 h-full rounded-full" style={{ width: `${Math.min((localHydrationTotal / 3000) * 100, 100)}%` }}></div>
+                  </div>
+                  <div className="text-xs text-stone-500 mt-1 text-right">
+                    {Math.round((localHydrationTotal / 3000) * 100)}% of goal
+                  </div>
+                </div>
               </div>
 
               {/* Meals Summary */}
@@ -466,13 +494,19 @@ function DashboardContent({
                 </div>
               </div>
 
-              {/* Quick Add Button */}
-              <div className="mt-4 flex justify-center">
+              {/* Quick Add Buttons */}
+              <div className="mt-4 flex justify-center gap-4">
                 <button
                   onClick={() => setFoodSelectorOpen(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                   ⚡ Quick Add Food
+                </button>
+                <button
+                  onClick={() => setShowHydrationModal(true)}
+                  className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
+                >
+                  💧 Quick Add Water
                 </button>
               </div>
             </div>
@@ -815,6 +849,106 @@ function DashboardContent({
                   }}
                 >
                   {isSubmitting ? 'Logging...' : 'Log Send'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hydration Logging Modal */}
+      {showHydrationModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>💧 Log Hydration</h2>
+            <form action={onHydrationSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Amount (ml)
+                </label>
+                <input
+                  type="number"
+                  name="amount_ml"
+                  required
+                  min="1"
+                  max="2000"
+                  placeholder="e.g., 500"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Notes (optional)
+                </label>
+                <textarea
+                  name="notes"
+                  rows={2}
+                  placeholder="e.g., During workout, with breakfast..."
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowHydrationModal(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    background: '#f8f9fa',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                    color: '#fff',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {isSubmitting ? 'Logging...' : '💧 Log Water'}
                 </button>
               </div>
             </form>
@@ -1531,7 +1665,11 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [showWorkoutModal, setShowWorkoutModal] = useState(false)
   const [showMealModal, setShowMealModal] = useState(false)
   const [showHealthModal, setShowHealthModal] = useState(false)
+  const [showHydrationModal, setShowHydrationModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Local hydration state
+  const [localHydrationTotal, setLocalHydrationTotal] = useState(data.dailyHydrationTotal)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -1594,6 +1732,27 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     }
   }
 
+  const handleHydrationSubmit = async (formData: FormData) => {
+    setIsSubmitting(true)
+    try {
+      const result = await logHydration(formData)
+      if (result.success) {
+        setShowHydrationModal(false)
+        // Update local hydration total instead of reloading page
+        const amount_ml = parseInt(formData.get('amount_ml') as string) || 0
+        setLocalHydrationTotal((prev: number) => prev + amount_ml)
+      } else {
+        alert('Error logging hydration: ' + result.error)
+      }
+    } catch (error) {
+      alert('Error logging hydration')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+
+
   if (loading) {
     return (
       <main style={{ minHeight: '100vh', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1637,9 +1796,13 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     setShowMealModal={setShowMealModal}
     showHealthModal={showHealthModal}
     setShowHealthModal={setShowHealthModal}
+    showHydrationModal={showHydrationModal}
+    setShowHydrationModal={setShowHydrationModal}
     onWorkoutSubmit={handleWorkoutSubmit}
     onMealSubmit={handleMealSubmit}
     onHealthSubmit={handleHealthSubmit}
+    onHydrationSubmit={handleHydrationSubmit}
     isSubmitting={isSubmitting}
+    localHydrationTotal={localHydrationTotal}
   />
 }
