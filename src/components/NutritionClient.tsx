@@ -1894,58 +1894,74 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             }}>
               {data.savedFoods.map((savedFood: SavedFood) => (
                 <div key={savedFood.id} style={{
-                  background: '#fff',
+                  background: '#f8f9fa',
                   borderRadius: '12px',
                   padding: '1.5rem',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                  border: '1px solid #e9ecef',
-                  position: 'relative'
+                  border: '1px solid #e9ecef'
                 }}>
-                  <button
-                    onClick={() => handleRemoveSavedFood(savedFood.id)}
-                    style={{
-                      position: 'absolute',
-                      top: '0.5rem',
-                      right: '0.5rem',
-                      background: '#dc3545',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '24px',
-                      height: '24px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title="Remove from saved foods"
-                  >
-                    ×
-                  </button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
+                        {savedFood.food_item?.name}
+                      </h3>
+                      {savedFood.food_item?.brand && (
+                        <span style={{
+                          background: '#e9ecef',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '12px',
+                          fontSize: '0.875rem',
+                          color: '#495057'
+                        }}>
+                          {savedFood.food_item.brand}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => addSavedFoodToMeal(savedFood)}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: '#28a745',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                        title="Log this food"
+                      >
+                        🍽️
+                      </button>
+                      <button
+                        onClick={() => handleRemoveSavedFood(savedFood.id)}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: '#dc3545',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem'
+                        }}
+                        title="Remove from saved foods"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
 
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
-                    {savedFood.food_item?.name}
-                  </h3>
-                  {savedFood.food_item?.brand && (
-                    <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                      {savedFood.food_item.brand}
-                    </p>
-                  )}
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
-                    <div>
-                      <strong>Calories:</strong> {savedFood.food_item?.calories_per_serving} kcal
-                    </div>
-                    <div>
-                      <strong>Protein:</strong> {savedFood.food_item?.protein_grams}g
-                    </div>
-                    <div>
-                      <strong>Carbs:</strong> {savedFood.food_item?.carbs_grams}g
-                    </div>
-                    <div>
-                      <strong>Fat:</strong> {savedFood.food_item?.fat_grams}g
-                    </div>
+                  {/* Nutrition Summary */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem'
+                  }}>
+                    <div>🔥 {savedFood.food_item?.calories_per_serving} cal</div>
+                    <div>🥩 {savedFood.food_item?.protein_grams}g protein</div>
+                    <div>🍞 {savedFood.food_item?.carbs_grams}g carbs</div>
+                    <div>🥑 {savedFood.food_item?.fat_grams}g fat</div>
                   </div>
 
                   <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#6c757d' }}>
@@ -1975,149 +1991,448 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         {/* Goals Tab */}
         {activeTab === 'goals' && (
           <div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '2rem' }}>
-              🎯 Nutrition Goals
-            </h2>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2rem'
+            }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
+                🎯 Nutrition Goals
+              </h2>
+              <div style={{
+                background: '#e8f5e8',
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                fontSize: '0.9rem',
+                color: '#2d5a2d',
+                fontWeight: '500'
+              }}>
+                Today's Progress
+              </div>
+            </div>
 
+            {/* Goals Grid */}
             <div style={{
               display: 'grid',
-              gap: '2rem',
-              maxWidth: '800px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1.5rem',
+              marginBottom: '2rem'
             }}>
               {/* Daily Calories Goal */}
               <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '2rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef'
+                background: 'linear-gradient(135deg, #fff8e1 0%, #fff3c4 100%)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid #ffe082',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                  Daily Calories
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  background: '#ff6b35',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem'
+                }}>
+                  🔥
+                </div>
+                <h3 style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 600,
+                  color: '#e65100',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>Daily Calories</span>
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>Current: {data.dailyNutritionStats.total_calories} cal</span>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                      Goal: {goalChanges.daily_calories ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value ?? 2200} cal
+                    </span>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '8px',
+                    background: '#e0e0e0',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(100, (data.dailyNutritionStats.total_calories / (goalChanges.daily_calories ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value ?? 2200)) * 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #ff6b35 0%, #f7931e 100%)',
+                      borderRadius: '4px',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="number"
                     value={goalChanges.daily_calories ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value ?? 2200}
                     onChange={(e) => handleGoalChange('daily_calories', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
-                      padding: '0.75rem',
+                      padding: '0.5rem 0.75rem',
                       border: '1px solid #ddd',
                       borderRadius: '6px',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      fontWeight: '500'
                     }}
                   />
-                  <span style={{ fontSize: '1.1rem', color: '#666' }}>calories</span>
+                  <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>cal</span>
                 </div>
               </div>
 
               {/* Protein Goal */}
               <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '2rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef'
+                background: 'linear-gradient(135deg, #e8f5e8 0%, #dcedd8 100%)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid #81c784',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                  Daily Protein
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  background: '#4caf50',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem'
+                }}>
+                  💪
+                </div>
+                <h3 style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 600,
+                  color: '#2e7d32',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>Daily Protein</span>
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>Current: {data.dailyNutritionStats.total_protein}g</span>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                      Goal: {goalChanges.protein_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value ?? 150}g
+                    </span>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '8px',
+                    background: '#e0e0e0',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(100, (data.dailyNutritionStats.total_protein / (goalChanges.protein_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value ?? 150)) * 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #4caf50 0%, #66bb6a 100%)',
+                      borderRadius: '4px',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="number"
                     value={goalChanges.protein_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value ?? 150}
                     onChange={(e) => handleGoalChange('protein_target', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
-                      padding: '0.75rem',
+                      padding: '0.5rem 0.75rem',
                       border: '1px solid #ddd',
                       borderRadius: '6px',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      fontWeight: '500'
                     }}
                   />
-                  <span style={{ fontSize: '1.1rem', color: '#666' }}>grams</span>
+                  <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>g</span>
                 </div>
               </div>
 
               {/* Carbs Goal */}
               <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '2rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef'
+                background: 'linear-gradient(135deg, #fff3e0 0%, #fce4d8 100%)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid #ffb74d',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                  Daily Carbs
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  background: '#ff9800',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem'
+                }}>
+                  🌾
+                </div>
+                <h3 style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 600,
+                  color: '#e65100',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>Daily Carbs</span>
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>Current: {data.dailyNutritionStats.total_carbs}g</span>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                      Goal: {goalChanges.carb_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value ?? 250}g
+                    </span>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '8px',
+                    background: '#e0e0e0',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(100, (data.dailyNutritionStats.total_carbs / (goalChanges.carb_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value ?? 250)) * 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #ff9800 0%, #ffb74d 100%)',
+                      borderRadius: '4px',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="number"
                     value={goalChanges.carb_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value ?? 250}
                     onChange={(e) => handleGoalChange('carb_target', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
-                      padding: '0.75rem',
+                      padding: '0.5rem 0.75rem',
                       border: '1px solid #ddd',
                       borderRadius: '6px',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      fontWeight: '500'
                     }}
                   />
-                  <span style={{ fontSize: '1.1rem', color: '#666' }}>grams</span>
+                  <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>g</span>
                 </div>
               </div>
 
               {/* Fat Goal */}
               <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '2rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef'
+                background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '2px solid #e91e63',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                  Daily Fat
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  background: '#e91e63',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem'
+                }}>
+                  🥑
+                </div>
+                <h3 style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 600,
+                  color: '#ad1457',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>Daily Fat</span>
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>Current: {data.dailyNutritionStats.total_fat}g</span>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                      Goal: {goalChanges.fat_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value ?? 70}g
+                    </span>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '8px',
+                    background: '#e0e0e0',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(100, (data.dailyNutritionStats.total_fat / (goalChanges.fat_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value ?? 70)) * 100)}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #e91e63 0%, #f06292 100%)',
+                      borderRadius: '4px',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="number"
                     value={goalChanges.fat_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value ?? 70}
                     onChange={(e) => handleGoalChange('fat_target', parseInt(e.target.value) || 0)}
                     style={{
                       flex: 1,
-                      padding: '0.75rem',
+                      padding: '0.5rem 0.75rem',
                       border: '1px solid #ddd',
                       borderRadius: '6px',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      fontWeight: '500'
                     }}
                   />
-                  <span style={{ fontSize: '1.1rem', color: '#666' }}>grams</span>
+                  <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: '500' }}>g</span>
                 </div>
               </div>
+            </div>
 
-              {/* Save Button */}
-              <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                <button
-                  onClick={handleSaveGoals}
-                  disabled={savingGoals}
-                  style={{
-                    padding: '1rem 2rem',
-                    background: savingGoals
-                      ? '#6c757d'
-                      : 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    cursor: savingGoals ? 'not-allowed' : 'pointer',
-                    opacity: savingGoals ? 0.7 : 1
-                  }}
-                >
-                  {savingGoals ? 'Saving...' : 'Save Goals'}
-                </button>
+            {/* Summary Card */}
+            <div style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '16px',
+              padding: '2rem',
+              color: '#fff',
+              textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              marginBottom: '2rem'
+            }}>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 600,
+                marginBottom: '1rem'
+              }}>
+                📊 Today's Summary
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                <div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                    {Math.round((data.dailyNutritionStats.total_calories / (goalChanges.daily_calories ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value ?? 2200)) * 100)}%
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Calories</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                    {Math.round((data.dailyNutritionStats.total_protein / (goalChanges.protein_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value ?? 150)) * 100)}%
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Protein</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                    {Math.round((data.dailyNutritionStats.total_carbs / (goalChanges.carb_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value ?? 250)) * 100)}%
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Carbs</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
+                    {Math.round((data.dailyNutritionStats.total_fat / (goalChanges.fat_target ?? data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value ?? 70)) * 100)}%
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Fat</div>
+                </div>
               </div>
+            </div>
+
+            {/* Save Button */}
+            <div style={{ textAlign: 'center' }}>
+              <button
+                onClick={handleSaveGoals}
+                disabled={savingGoals}
+                style={{
+                  padding: '1rem 3rem',
+                  background: savingGoals
+                    ? '#6c757d'
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  cursor: savingGoals ? 'not-allowed' : 'pointer',
+                  opacity: savingGoals ? 0.7 : 1,
+                  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {savingGoals ? '💾 Saving...' : '💾 Save Goals'}
+              </button>
             </div>
           </div>
         )}
