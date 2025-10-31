@@ -260,6 +260,50 @@ export async function getActiveGoals(): Promise<Goal[]> {
   }
 }
 
+// Create custom goal
+export async function createCustomGoal(goalData: {
+  goal_type: string
+  target_value: number
+  period: string
+  description?: string
+}): Promise<{ success: boolean; error?: string; data?: Goal }> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const goalPayload = {
+      user_id: user.id,
+      goal_type: goalData.goal_type,
+      target_value: goalData.target_value,
+      current_value: 0,
+      period: goalData.period,
+      is_active: true
+    }
+
+    const { data, error } = await supabase
+      .from('goals')
+      .insert([goalPayload])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating custom goal:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard')
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in createCustomGoal:', error)
+    return { success: false, error: 'Failed to create custom goal' }
+  }
+}
+
 // Fetch user stats
 export async function getUserStats(): Promise<UserStat[]> {
   try {

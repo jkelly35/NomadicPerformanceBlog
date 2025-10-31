@@ -15,8 +15,10 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('')
   const [formData, setFormData] = useState({
     email: '',
-    fullName: '',
-    bio: ''
+    firstName: '',
+    lastName: '',
+    bio: '',
+    activities: [] as string[]
   })
   const supabase = createClient()
 
@@ -26,8 +28,10 @@ export default function ProfilePage() {
     } else if (user) {
       setFormData({
         email: user.email || '',
-        fullName: user.user_metadata?.full_name || '',
-        bio: user.user_metadata?.bio || ''
+        firstName: user.user_metadata?.first_name || '',
+        lastName: user.user_metadata?.last_name || '',
+        bio: user.user_metadata?.bio || '',
+        activities: user.user_metadata?.activities || []
       })
     }
   }, [user, loading, router])
@@ -40,8 +44,10 @@ export default function ProfilePage() {
     try {
       const { error } = await supabase.auth.updateUser({
         data: {
-          full_name: formData.fullName,
-          bio: formData.bio
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          bio: formData.bio,
+          activities: formData.activities
         }
       })
 
@@ -260,6 +266,35 @@ export default function ProfilePage() {
                   </div>
                 )}
 
+                                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: '#1a3a2a',
+                    marginBottom: '0.5rem'
+                  }}>
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    placeholder="Enter your first name"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      background: '#fff',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#1a3a2a'}
+                    onBlur={(e) => e.target.style.borderColor = '#ddd'}
+                  />
+                </div>
+
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{
                     display: 'block',
@@ -268,13 +303,13 @@ export default function ProfilePage() {
                     color: '#1a3a2a',
                     marginBottom: '0.5rem'
                   }}>
-                    Full Name
+                    Last Name
                   </label>
                   <input
                     type="text"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="Enter your full name"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    placeholder="Enter your last name"
                     style={{
                       width: '100%',
                       padding: '0.75rem',
@@ -317,6 +352,57 @@ export default function ProfilePage() {
                     onFocus={(e) => e.target.style.borderColor = '#1a3a2a'}
                     onBlur={(e) => e.target.style.borderColor = '#ddd'}
                   />
+                </div>
+
+                <div style={{ marginBottom: '2rem' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: '#1a3a2a',
+                    marginBottom: '0.5rem'
+                  }}>
+                    Preferred Activities
+                  </label>
+                  <p style={{
+                    fontSize: '0.8rem',
+                    color: '#666',
+                    marginBottom: '1rem'
+                  }}>
+                    Select the activities you participate in to personalize your dashboard experience.
+                  </p>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '0.75rem'
+                  }}>
+                    {['Climbing', 'MTB', 'Running', 'Skiing', 'Snowboarding', 'Cycling'].map((activity) => (
+                      <label key={activity} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0.5rem',
+                        background: '#fff',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontSize: '0.9rem'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.activities.includes(activity)}
+                          onChange={(e) => {
+                            const newActivities = e.target.checked
+                              ? [...formData.activities, activity]
+                              : formData.activities.filter(a => a !== activity);
+                            setFormData({ ...formData, activities: newActivities });
+                          }}
+                          style={{ marginRight: '0.5rem' }}
+                        />
+                        {activity}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <button

@@ -15,7 +15,8 @@ import {
   NutritionGoal,
   logWorkout,
   logMeal,
-  updateHealthMetrics
+  updateHealthMetrics,
+  createCustomGoal
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -44,9 +45,12 @@ function DashboardContent({
   setShowMealModal, 
   showHealthModal, 
   setShowHealthModal,
+  showGoalModal,
+  setShowGoalModal,
   onWorkoutSubmit,
   onMealSubmit,
   onHealthSubmit,
+  onGoalSubmit,
   isSubmitting
 }: { 
   data: DashboardData
@@ -56,12 +60,16 @@ function DashboardContent({
   setShowMealModal: (show: boolean) => void
   showHealthModal: boolean
   setShowHealthModal: (show: boolean) => void
+  showGoalModal: boolean
+  setShowGoalModal: (show: boolean) => void
   onWorkoutSubmit: (formData: FormData) => Promise<void>
   onMealSubmit: (formData: FormData) => Promise<void>
   onHealthSubmit: (formData: FormData) => Promise<void>
+  onGoalSubmit: (formData: FormData) => Promise<void>
   isSubmitting: boolean
 }) {
   const { user } = useAuth()
+  const [activityFilter, setActivityFilter] = useState<string>('All')
 
   // Helper functions to get data
   const getStatValue = (statType: string) => {
@@ -104,7 +112,7 @@ function DashboardContent({
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative z-10 max-w-4xl">
           <h1 className="text-5xl md:text-6xl font-black mb-6 tracking-wide">
-            Welcome Back, Adventurer!
+            Welcome Back, {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Adventurer'}!
           </h1>
           <p className="text-xl md:text-2xl opacity-90 leading-relaxed mb-8">
             Your nomadic fitness journey awaits. Track your trails, fuel your body, and conquer new peaks.
@@ -211,7 +219,7 @@ function DashboardContent({
             <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="text-center">
                 <div className="text-6xl mb-4">🥗</div>
-                <h3 className="text-2xl font-bold mb-2">Trail Fuel</h3>
+                <h3 className="text-2xl font-bold mb-2">Fueling Log</h3>
                 <p className="opacity-90">Log meals, track macros, and fuel your adventures</p>
               </div>
             </Link>
@@ -322,44 +330,87 @@ function DashboardContent({
           {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
-            {/* Recent Activities */}
+            {/* Send Logs */}
             <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
               <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
-                🏃 Recent Activities
+                📝 Send Logs
               </h3>
 
+              {/* Activity Filter */}
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setActivityFilter('All')}
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      activityFilter === 'All'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {(user?.user_metadata?.activities || ['Climbing', 'MTB', 'Running', 'Skiing', 'Snowboarding', 'Cycling']).map((activity: string) => (
+                    <button
+                      key={activity}
+                      onClick={() => setActivityFilter(activity)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                        activityFilter === activity
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
+                      }`}
+                    >
+                      {activity}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-4">
-                {data.workouts.length > 0 ? data.workouts.map((workout) => (
-                  <div key={workout.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-semibold text-stone-800 mb-1">
-                          {workout.activity_type}
+                {(() => {
+                  const filteredWorkouts = activityFilter === 'All'
+                    ? data.workouts
+                    : data.workouts.filter(workout => workout.activity_type === activityFilter);
+                  
+                  return filteredWorkouts.length > 0 ? filteredWorkouts.map((workout) => (
+                    <div key={workout.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold text-stone-800 mb-1">
+                            {workout.activity_type}
+                          </div>
+                          <div className="text-sm text-stone-600">
+                            {formatDate(workout.workout_date)} • {workout.duration_minutes} min • {workout.calories_burned || 0} cal
+                          </div>
                         </div>
-                        <div className="text-sm text-stone-600">
-                          {formatDate(workout.workout_date)} • {workout.duration_minutes} min • {workout.calories_burned || 0} cal
+                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          workout.intensity === 'High' ? 'bg-red-100 text-red-800' :
+                          workout.intensity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {workout.intensity}
                         </div>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        workout.intensity === 'High' ? 'bg-red-100 text-red-800' :
-                        workout.intensity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {workout.intensity}
                       </div>
                     </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-8 text-stone-600">
-                    No workouts logged yet. Start your fitness journey!
-                  </div>
-                )}
+                  )) : (
+                    <div className="text-center py-8 text-stone-600">
+                      No {activityFilter === 'All' ? '' : activityFilter.toLowerCase() + ' '}workouts logged yet. Start your fitness journey!
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
             {/* Goals & Targets */}
             <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
-              <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
-                🎯 Goals & Targets
+              <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  🎯 Goals & Targets
+                </span>
+                <button
+                  onClick={() => setShowGoalModal(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  + Create Goal
+                </button>
               </h3>
 
               <div className="space-y-6">
@@ -525,6 +576,47 @@ function DashboardContent({
                   </div>
                 </div>
               </div>
+
+              {/* Custom Goals */}
+              {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
+                <div className="mt-6 pt-6 border-t border-stone-300">
+                  <h4 className="text-lg font-semibold text-stone-800 mb-4">
+                    Your Custom Goals
+                  </h4>
+                  <div className="grid gap-4">
+                    {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).map((goal) => (
+                      <div key={goal.id} className="bg-white rounded-lg p-4 border border-stone-200">
+                        <div className="flex justify-between items-center mb-3">
+                          <div>
+                            <div className="font-semibold text-stone-800 text-lg">
+                              🎯 {goal.goal_type}
+                            </div>
+                            <div className="text-sm text-stone-600 mt-1">
+                              {Math.round(goal.current_value)} of {Math.round(goal.target_value)} {goal.period}
+                            </div>
+                          </div>
+                          <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            (goal.current_value / goal.target_value) * 100 >= 100 ? 'bg-green-100 text-green-800' :
+                            (goal.current_value / goal.target_value) * 100 >= 75 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {(goal.current_value / goal.target_value) * 100 >= 100 ? '✅ Complete' :
+                             (goal.current_value / goal.target_value) * 100 >= 75 ? '🚀 Almost there' :
+                             '🎯 In progress'}
+                          </div>
+                        </div>
+                        <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
+                          <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full" style={{ width: `${Math.min((goal.current_value / goal.target_value) * 100, 100)}%` }}></div>
+                        </div>
+                        <div className="flex justify-between text-sm text-stone-600">
+                          <span>{Math.round((goal.current_value / goal.target_value) * 100)}% complete</span>
+                          <span>{Math.max(0, Math.round(goal.target_value - goal.current_value))} to go</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Upcoming Challenges */}
               <div className="mt-6 pt-6 border-t border-stone-300">
@@ -1035,6 +1127,129 @@ function DashboardContent({
           </div>
         </div>
       )}
+
+      {/* Goal Creation Modal */}
+      {showGoalModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>Create New Goal</h2>
+            <form action={onGoalSubmit}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Goal Type
+                </label>
+                <input
+                  type="text"
+                  name="goal_type"
+                  required
+                  placeholder="e.g., Monthly Hiking Miles, Weekly Yoga Sessions"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Target Value
+                </label>
+                <input
+                  type="number"
+                  name="target_value"
+                  required
+                  min="1"
+                  step="0.1"
+                  placeholder="e.g., 50, 10, 1000"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Period
+                </label>
+                <select
+                  name="period"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                >
+                  <option value="">Select period...</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    background: '#f8f9fa',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
+                    color: '#fff',
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Goal'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -1047,6 +1262,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [showWorkoutModal, setShowWorkoutModal] = useState(false)
   const [showMealModal, setShowMealModal] = useState(false)
   const [showHealthModal, setShowHealthModal] = useState(false)
+  const [showGoalModal, setShowGoalModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -1110,6 +1326,38 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     }
   }
 
+  const handleGoalSubmit = async (formData: FormData) => {
+    setIsSubmitting(true)
+    try {
+      const goalType = formData.get('goal_type') as string
+      const targetValue = parseFloat(formData.get('target_value') as string)
+      const period = formData.get('period') as string
+
+      if (!goalType || !targetValue || !period) {
+        alert('Please fill in all required fields')
+        return
+      }
+
+      const result = await createCustomGoal({
+        goal_type: goalType,
+        target_value: targetValue,
+        period: period
+      })
+
+      if (result.success) {
+        setShowGoalModal(false)
+        // Refresh the page to show new data
+        window.location.reload()
+      } else {
+        alert('Error creating goal: ' + result.error)
+      }
+    } catch (error) {
+      alert('Error creating goal')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (loading) {
     return (
       <main style={{ minHeight: '100vh', background: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1153,9 +1401,12 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     setShowMealModal={setShowMealModal}
     showHealthModal={showHealthModal}
     setShowHealthModal={setShowHealthModal}
+    showGoalModal={showGoalModal}
+    setShowGoalModal={setShowGoalModal}
     onWorkoutSubmit={handleWorkoutSubmit}
     onMealSubmit={handleMealSubmit}
     onHealthSubmit={handleHealthSubmit}
+    onGoalSubmit={handleGoalSubmit}
     isSubmitting={isSubmitting}
   />
 }
