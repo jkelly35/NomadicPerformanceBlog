@@ -26,13 +26,15 @@ import {
   getMealTemplateWithItems,
   logHydration,
   getDailyNutritionStats,
-  getDailyHydrationTotal
+  getDailyHydrationTotal,
+  Event as FitnessEvent
 } from '@/lib/fitness-data'
 
 interface DashboardData {
   workouts: Workout[]
   healthMetrics: HealthMetric[]
   goals: Goal[]
+  events: FitnessEvent[]
   userStats: UserStat[]
   weeklyStats: { count: number; totalMinutes: number }
   meals: Meal[]
@@ -638,17 +640,17 @@ function DashboardContent({
               </div>
             </div>
 
-            {/* Goals & Targets */}
+            {/* Goals & Events */}
             <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
               <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  🎯 Goals & Targets
+                  🎯 Goals & Events
                 </span>
                 <button
                   onClick={() => window.location.href = '/goals'}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
-                  ⚙️ Manage Goals
+                  ⚙️ Manage Goals/Events
                 </button>
               </h3>
 
@@ -702,22 +704,58 @@ function DashboardContent({
                 )}
               </div>
 
-              {/* Upcoming Challenges */}
+              {/* Upcoming Events */}
               <div className="mt-6 pt-6 border-t border-stone-300">
                 <h4 className="text-lg font-semibold text-stone-800 mb-4">
-                  Upcoming Challenges
+                  Upcoming Events
                 </h4>
-                <div className="space-y-2">
-                  <div className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
-                    🏔️ <strong>14er Summit</strong> - 2 weeks
+                {data.events.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.events.slice(0, 3).map((event) => {
+                      const eventDate = new Date(event.event_date)
+                      const today = new Date()
+                      const daysUntil = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                      
+                      return (
+                        <div key={event.id} className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              �‍♂️ <strong>{event.event_name}</strong>
+                              {event.distance && <span className="text-stone-500 ml-1">({event.distance})</span>}
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                              daysUntil > 0 ? 'bg-blue-100 text-blue-800' :
+                              daysUntil === 0 ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {daysUntil > 0 ? `${daysUntil}d` :
+                               daysUntil === 0 ? 'Today!' :
+                               'Past'}
+                            </span>
+                          </div>
+                          <div className="text-stone-500 text-xs mt-1">
+                            📅 {eventDate.toLocaleDateString()}
+                            {event.location && <span> • 📍 {event.location}</span>}
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {data.events.length > 3 && (
+                      <div className="text-center pt-2">
+                        <Link href="/goals" className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold">
+                          View all {data.events.length} events →
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
-                    🏃 10K Race - 3 weeks
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-stone-500 text-sm mb-2">No upcoming events</p>
+                    <Link href="/goals" className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold">
+                      Add your first event →
+                    </Link>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-stone-200 text-sm">
-                    💪 PR Attempt - 1 month
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

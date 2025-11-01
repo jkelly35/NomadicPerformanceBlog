@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase-server'
-import { getActiveGoals } from '@/lib/fitness-data'
+import { getActiveGoals, getActiveEvents } from '@/lib/fitness-data'
 import GoalsClient from '@/components/GoalsClient'
 
 export default async function GoalsPage() {
@@ -18,8 +18,9 @@ export default async function GoalsPage() {
     )
   }
 
-  // Fetch user's goals
+  // Fetch user's goals and events
   const goals = await getActiveGoals()
+  const events = await getActiveEvents()
 
-  return <GoalsClient goals={goals} />
+  return <GoalsClient goals={goals} events={events} />
 }

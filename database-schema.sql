@@ -31,12 +31,37 @@ CREATE TABLE IF NOT EXISTS health_metrics (
 CREATE TABLE IF NOT EXISTS goals (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  goal_type TEXT NOT NULL, -- 'weekly_workouts', 'monthly_minutes', 'strength', etc.
+  goal_type TEXT NOT NULL, -- 'weekly_workouts', 'monthly_minutes', 'strength', 'weight_loss', etc.
   target_value DECIMAL NOT NULL,
   current_value DECIMAL DEFAULT 0,
-  period TEXT NOT NULL, -- 'weekly', 'monthly', 'yearly'
+  period TEXT, -- 'weekly', 'monthly', 'yearly' (optional for non-time-based goals)
   start_date DATE NOT NULL DEFAULT CURRENT_DATE,
   end_date DATE,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Add new columns to goals table for enhanced goal management
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS target_date DATE;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS priority TEXT CHECK (priority IN ('low', 'medium', 'high'));
+
+-- Make period column optional for non-time-based goals
+ALTER TABLE goals ALTER COLUMN period DROP NOT NULL;
+
+-- Events table for tracking upcoming races, competitions, etc.
+CREATE TABLE IF NOT EXISTS events (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  event_name TEXT NOT NULL,
+  event_date DATE NOT NULL,
+  event_type TEXT, -- 'marathon', 'race', 'competition', 'triathlon', etc.
+  location TEXT,
+  description TEXT,
+  distance TEXT, -- '5k', '10k', 'half-marathon', 'marathon', etc.
+  target_time TEXT, -- target finish time
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
@@ -297,6 +322,7 @@ CREATE TABLE IF NOT EXISTS readiness_metrics (
 ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE health_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_stats ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
@@ -330,6 +356,14 @@ CREATE POLICY "Users can view own goals" ON goals
 
 DROP POLICY IF EXISTS "Users can manage own goals" ON goals;
 CREATE POLICY "Users can manage own goals" ON goals
+  FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can view own events" ON events;
+CREATE POLICY "Users can view own events" ON events
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage own events" ON events;
+CREATE POLICY "Users can manage own events" ON events
   FOR ALL USING (auth.uid() = user_id);
 
 DROP POLICY IF EXISTS "Users can view own stats" ON user_stats;

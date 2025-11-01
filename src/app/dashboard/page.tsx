@@ -16,13 +16,16 @@ import {
   getDailyNutritionStats,
   Meal,
   NutritionGoal,
-  getDailyHydrationTotal
+  getDailyHydrationTotal,
+  getActiveEvents,
+  Event as FitnessEvent
 } from '@/lib/fitness-data'
 
 interface DashboardData {
   workouts: Workout[]
   healthMetrics: HealthMetric[]
   goals: Goal[]
+  events: FitnessEvent[]
   userStats: UserStat[]
   weeklyStats: { count: number; totalMinutes: number }
   meals: Meal[]
@@ -49,10 +52,11 @@ async function getDashboardData(): Promise<DashboardData> {
   })()
 
   // Fetch all dashboard data
-  const [workouts, healthMetrics, goals, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats, dailyHydrationTotal] = await Promise.all([
+  const [workouts, healthMetrics, goals, events, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats, dailyHydrationTotal] = await Promise.all([
     getRecentWorkouts(5),
     getHealthMetrics(),
     getActiveGoals(),
+    getActiveEvents(),
     getUserStats(),
     getWeeklyWorkoutStats(),
     getMealsByDate(today),
@@ -65,6 +69,7 @@ async function getDashboardData(): Promise<DashboardData> {
     workouts,
     healthMetrics,
     goals,
+    events,
     userStats,
     weeklyStats,
     meals,

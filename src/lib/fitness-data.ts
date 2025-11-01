@@ -27,7 +27,23 @@ export interface Goal {
   goal_type: string
   target_value: number
   current_value: number
-  period: string
+  period?: string
+  is_active: boolean
+  target_date?: string
+  description?: string
+  category?: string
+  priority?: 'low' | 'medium' | 'high'
+}
+
+export interface Event {
+  id: string
+  event_name: string
+  event_date: string
+  event_type?: string
+  location?: string
+  description?: string
+  distance?: string
+  target_time?: string
   is_active: boolean
 }
 
@@ -291,12 +307,38 @@ export async function getActiveGoals(): Promise<Goal[]> {
   }
 }
 
+// Fetch active events
+export async function getActiveEvents(): Promise<Event[]> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('is_active', true)
+      .order('event_date', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching events:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getActiveEvents:', error)
+    return []
+  }
+}
+
 // Create custom goal
 export async function createCustomGoal(goalData: {
   goal_type: string
   target_value: number
-  period: string
+  period?: string
   description?: string
+  target_date?: string
+  category?: string
+  priority?: 'low' | 'medium' | 'high'
 }): Promise<{ success: boolean; error?: string; data?: Goal }> {
   try {
     const supabase = await createClient()
@@ -312,8 +354,12 @@ export async function createCustomGoal(goalData: {
       goal_type: goalData.goal_type,
       target_value: goalData.target_value,
       current_value: 0,
-      period: goalData.period,
-      is_active: true
+      period: goalData.period || null,
+      is_active: true,
+      description: goalData.description || null,
+      target_date: goalData.target_date || null,
+      category: goalData.category || null,
+      priority: goalData.priority || 'medium'
     }
 
     const { data, error } = await supabase
@@ -332,6 +378,202 @@ export async function createCustomGoal(goalData: {
   } catch (error) {
     console.error('Error in createCustomGoal:', error)
     return { success: false, error: 'Failed to create custom goal' }
+  }
+}
+
+// Update a custom goal
+export async function updateCustomGoal(goalId: string, goalData: {
+  goal_type?: string
+  target_value?: number
+  period?: string
+  description?: string
+  target_date?: string
+  category?: string
+  priority?: 'low' | 'medium' | 'high'
+  is_active?: boolean
+}): Promise<{ success: boolean; error?: string; data?: Goal }> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const { data, error } = await supabase
+      .from('goals')
+      .update(goalData)
+      .eq('id', goalId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating custom goal:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/goals')
+    revalidatePath('/dashboard')
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in updateCustomGoal:', error)
+    return { success: false, error: 'Failed to update custom goal' }
+  }
+}
+
+// Delete a custom goal
+export async function deleteCustomGoal(goalId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', goalId)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error deleting custom goal:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/goals')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteCustomGoal:', error)
+    return { success: false, error: 'Failed to delete custom goal' }
+  }
+}
+
+// Event CRUD functions
+
+// Create event
+export async function createEvent(eventData: {
+  event_name: string
+  event_date: string
+  event_type?: string
+  location?: string
+  description?: string
+  distance?: string
+  target_time?: string
+}): Promise<{ success: boolean; error?: string; data?: Event }> {
+  try {
+    const supabase = await createClient()
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const eventPayload = {
+      user_id: user.id,
+      event_name: eventData.event_name,
+      event_date: eventData.event_date,
+      event_type: eventData.event_type || null,
+      location: eventData.location || null,
+      description: eventData.description || null,
+      distance: eventData.distance || null,
+      target_time: eventData.target_time || null,
+      is_active: true
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .insert([eventPayload])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating event:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/goals')
+    revalidatePath('/dashboard')
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in createEvent:', error)
+    return { success: false, error: 'Failed to create event' }
+  }
+}
+
+// Update event
+export async function updateEvent(eventId: string, eventData: {
+  event_name?: string
+  event_date?: string
+  event_type?: string
+  location?: string
+  description?: string
+  distance?: string
+  target_time?: string
+  is_active?: boolean
+}): Promise<{ success: boolean; error?: string; data?: Event }> {
+  try {
+    const supabase = await createClient()
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .update(eventData)
+      .eq('id', eventId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating event:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/goals')
+    revalidatePath('/dashboard')
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in updateEvent:', error)
+    return { success: false, error: 'Failed to update event' }
+  }
+}
+
+// Delete event
+export async function deleteEvent(eventId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', eventId)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error deleting event:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/goals')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (error) {
+    console.error('Error in deleteEvent:', error)
+    return { success: false, error: 'Failed to delete event' }
   }
 }
 
