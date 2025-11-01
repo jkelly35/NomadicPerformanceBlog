@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import ActivityItem from "@/components/ActivityItem";
 import {
   Workout,
   HealthMetric,
@@ -37,6 +38,7 @@ import {
 
 interface DashboardData {
   workouts: Workout[]
+  sends: Send[]
   healthMetrics: HealthMetric[]
   goals: Goal[]
   events: FitnessEvent[]
@@ -668,33 +670,20 @@ function DashboardContent({
 
               <div className="space-y-4">
                 {(() => {
-                  const filteredWorkouts = activityFilter === 'All'
-                    ? data.workouts
-                    : data.workouts.filter(workout => workout.activity_type === activityFilter);
+                  const filteredSends = activityFilter === 'All'
+                    ? data.sends
+                    : data.sends.filter(send => send.sport.toLowerCase() === activityFilter.toLowerCase());
                   
-                  return filteredWorkouts.length > 0 ? filteredWorkouts.slice(0, 3).map((workout) => (
-                    <div key={workout.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="font-semibold text-stone-800 mb-1">
-                            {workout.activity_type}
-                          </div>
-                          <div className="text-sm text-stone-600">
-                            {formatDate(workout.workout_date)} • {workout.duration_minutes} min • {workout.calories_burned || 0} cal
-                          </div>
-                        </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          workout.intensity === 'High' ? 'bg-red-100 text-red-800' :
-                          workout.intensity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {workout.intensity}
-                        </div>
-                      </div>
-                    </div>
+                  return filteredSends.length > 0 ? filteredSends.slice(0, 3).map((send) => (
+                    <ActivityItem
+                      key={send.id}
+                      send={send}
+                      formatDate={formatDate}
+                    />
                   )) : (
                     <div className="text-center py-8 text-stone-600">
                       <div className="text-4xl mb-4">🏃‍♂️</div>
-                      <p className="text-stone-600 mb-2">No {activityFilter === 'All' ? '' : activityFilter.toLowerCase() + ' '}workouts logged yet.</p>
+                      <p className="text-stone-600 mb-2">No {activityFilter === 'All' ? '' : activityFilter.toLowerCase() + ' '}activities logged yet.</p>
                       <p className="text-stone-500 text-sm">Start your fitness journey!</p>
                     </div>
                   );
