@@ -1185,13 +1185,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             <div style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               borderRadius: '16px',
-              padding: '2rem',
+              padding: '2rem 1rem',
               marginBottom: '2rem',
               color: '#fff',
               textAlign: 'center'
             }}>
               <h2 style={{
-                fontSize: '1.8rem',
+                fontSize: 'clamp(1.5rem, 4vw, 1.8rem)',
                 fontWeight: 700,
                 marginBottom: '1rem',
                 color: '#fff'
@@ -1199,7 +1199,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 🚀 Quick Actions
               </h2>
               <p style={{
-                fontSize: '1rem',
+                fontSize: 'clamp(0.9rem, 3vw, 1rem)',
                 marginBottom: '1.5rem',
                 opacity: 0.9
               }}>
@@ -1209,8 +1209,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {/* Quick Meal Buttons */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                gap: '1rem',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(120px, 20vw, 140px), 1fr))',
+                gap: 'clamp(0.5rem, 2vw, 1rem)',
                 marginBottom: '1.5rem'
               }}>
                 <button
@@ -1219,16 +1219,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     setActiveTab('log')
                   }}
                   style={{
-                    padding: '1rem',
+                    padding: 'clamp(0.75rem, 3vw, 1rem)',
                     background: 'rgba(255,255,255,0.2)',
                     border: '2px solid rgba(255,255,255,0.3)',
                     borderRadius: '12px',
                     color: '#fff',
-                    fontSize: '1rem',
+                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    minHeight: '44px', // iOS touch target minimum
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -1241,16 +1245,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     setActiveTab('log')
                   }}
                   style={{
-                    padding: '1rem',
+                    padding: 'clamp(0.75rem, 3vw, 1rem)',
                     background: 'rgba(255,255,255,0.2)',
                     border: '2px solid rgba(255,255,255,0.3)',
                     borderRadius: '12px',
                     color: '#fff',
-                    fontSize: '1rem',
+                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -1263,16 +1271,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     setActiveTab('log')
                   }}
                   style={{
-                    padding: '1rem',
+                    padding: 'clamp(0.75rem, 3vw, 1rem)',
                     background: 'rgba(255,255,255,0.2)',
                     border: '2px solid rgba(255,255,255,0.3)',
                     borderRadius: '12px',
                     color: '#fff',
-                    fontSize: '1rem',
+                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -1285,16 +1297,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     setActiveTab('log')
                   }}
                   style={{
-                    padding: '1rem',
+                    padding: 'clamp(0.75rem, 3vw, 1rem)',
                     background: 'rgba(255,255,255,0.2)',
                     border: '2px solid rgba(255,255,255,0.3)',
                     borderRadius: '12px',
                     color: '#fff',
-                    fontSize: '1rem',
+                    fontSize: 'clamp(0.9rem, 3vw, 1rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -1305,23 +1321,26 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
               {/* Secondary Actions */}
               <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '1rem',
-                flexWrap: 'wrap'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(120px, 25vw, 160px), 1fr))',
+                gap: 'clamp(0.5rem, 2vw, 1rem)',
+                justifyItems: 'center'
               }}>
                 <button
                   onClick={() => setShowBarcodeScanner(true)}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem)',
                     background: 'rgba(255,255,255,0.1)',
                     border: '1px solid rgba(255,255,255,0.3)',
                     borderRadius: '25px',
                     color: '#fff',
-                    fontSize: '0.9rem',
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    minHeight: '40px',
+                    width: '100%',
+                    maxWidth: '160px'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
@@ -1331,15 +1350,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <button
                   onClick={() => setActiveTab('usda-search')}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem)',
                     background: 'rgba(255,255,255,0.1)',
                     border: '1px solid rgba(255,255,255,0.3)',
                     borderRadius: '25px',
                     color: '#fff',
-                    fontSize: '0.9rem',
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    minHeight: '40px',
+                    width: '100%',
+                    maxWidth: '160px'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
@@ -1354,15 +1376,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     }
                   }}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem)',
                     background: 'rgba(255,255,255,0.1)',
                     border: '1px solid rgba(255,255,255,0.3)',
                     borderRadius: '25px',
                     color: '#fff',
-                    fontSize: '0.9rem',
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    minHeight: '40px',
+                    width: '100%',
+                    maxWidth: '160px'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
@@ -1372,7 +1397,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               </div>
             </div>
 
-            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
+            <h2 style={{ 
+              fontSize: 'clamp(1.5rem, 5vw, 2rem)', 
+              fontWeight: 700, 
+              color: '#1a3a2a', 
+              marginBottom: '1.5rem' 
+            }}>
               Today's Nutrition
             </h2>
 
@@ -1500,16 +1530,290 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               </div>
             </div>
 
+            {/* Quick Favorites */}
+            {data.savedFoods && data.savedFoods.length > 0 && (
+              <div style={{
+                background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+                borderRadius: '12px',
+                padding: 'clamp(1rem, 4vw, 1.5rem)',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                <h3 style={{
+                  fontSize: 'clamp(1.1rem, 3.5vw, 1.3rem)',
+                  fontWeight: 600,
+                  color: '#fff',
+                  marginBottom: '1rem'
+                }}>
+                  ⭐ Quick Favorites
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(120px, 18vw, 140px), 1fr))',
+                  gap: 'clamp(0.5rem, 1.5vw, 0.75rem)',
+                  maxWidth: '600px',
+                  margin: '0 auto'
+                }}>
+                  {data.savedFoods.slice(0, 6).map((savedFood) => (
+                    <button
+                      key={savedFood.id}
+                      onClick={() => {
+                        // Navigate to log tab with this food pre-selected
+                        setSelectedMealType('snack') // Default to snack, user can change
+                        setActiveTab('log')
+                        // In a full implementation, you'd pre-select this food in the food selector
+                        alert(`Quick logging: ${savedFood.food_item?.name || 'Food'}\n\nFeature: Navigate to log tab with this food selected`)
+                      }}
+                      style={{
+                        padding: 'clamp(0.5rem, 2vw, 0.75rem)',
+                        background: 'rgba(255,255,255,0.2)',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: 'clamp(0.75rem, 2.5vw, 0.85rem)',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        backdropFilter: 'blur(10px)',
+                        textAlign: 'center',
+                        minHeight: '44px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        wordBreak: 'break-word',
+                        hyphens: 'auto'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                    >
+                      {savedFood.food_item?.name || 'Favorite Food'}
+                    </button>
+                  ))}
+                </div>
+                {data.savedFoods.length > 6 && (
+                  <button
+                    onClick={() => setActiveTab('saved')}
+                    style={{
+                      marginTop: '1rem',
+                      padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 3vw, 1rem)',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      borderRadius: '20px',
+                      color: '#fff',
+                      fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      minHeight: '36px'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                  >
+                    View All Favorites →
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Smart Meal Suggestions */}
+            <div style={{
+              background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+              borderRadius: '12px',
+              padding: 'clamp(1rem, 4vw, 1.5rem)',
+              marginBottom: '2rem',
+              textAlign: 'center'
+            }}>
+              <h3 style={{
+                fontSize: 'clamp(1.1rem, 3.5vw, 1.3rem)',
+                fontWeight: 600,
+                color: '#1a3a2a',
+                marginBottom: '1rem'
+              }}>
+                🧠 Smart Suggestions
+              </h3>
+
+              {/* Time-based suggestions */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(140px, 22vw, 180px), 1fr))',
+                gap: 'clamp(0.5rem, 1.5vw, 0.75rem)',
+                marginBottom: '1rem'
+              }}>
+                {(() => {
+                  const hour = new Date().getHours()
+                  const suggestions = []
+
+                  if (hour >= 6 && hour < 10) {
+                    suggestions.push(
+                      { emoji: '🥞', name: 'Breakfast Bowl', desc: 'High protein start' },
+                      { emoji: '🥑', name: 'Avocado Toast', desc: 'Healthy fats' },
+                      { emoji: '🍳', name: 'Egg Scramble', desc: 'Quick & filling' }
+                    )
+                  } else if (hour >= 10 && hour < 14) {
+                    suggestions.push(
+                      { emoji: '🥗', name: 'Power Salad', desc: 'Light & nutritious' },
+                      { emoji: '🥪', name: 'Turkey Wrap', desc: 'Balanced lunch' },
+                      { emoji: '🍜', name: 'Stir Fry Bowl', desc: 'Veggie focused' }
+                    )
+                  } else if (hour >= 14 && hour < 18) {
+                    suggestions.push(
+                      { emoji: '🍎', name: 'Afternoon Snack', desc: 'Sustain energy' },
+                      { emoji: '🥜', name: 'Protein Bar', desc: 'Quick boost' },
+                      { emoji: '🍇', name: 'Fruit Plate', desc: 'Natural sugars' }
+                    )
+                  } else {
+                    suggestions.push(
+                      { emoji: '🍛', name: 'Lean Protein', desc: 'Recovery meal' },
+                      { emoji: '🥦', name: 'Veggie Stir Fry', desc: 'Light dinner' },
+                      { emoji: '🐟', name: 'Grilled Fish', desc: 'Omega-3 rich' }
+                    )
+                  }
+
+                  return suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedMealType(hour >= 6 && hour < 10 ? 'breakfast' :
+                                          hour >= 10 && hour < 14 ? 'lunch' :
+                                          hour >= 14 && hour < 18 ? 'snack' : 'dinner')
+                        setActiveTab('log')
+                        alert(`Smart suggestion: ${suggestion.name}\n${suggestion.desc}\n\nNavigating to meal logging...`)
+                      }}
+                      style={{
+                        padding: 'clamp(0.75rem, 2.5vw, 1rem)',
+                        background: 'rgba(255,255,255,0.9)',
+                        border: '2px solid #e9ecef',
+                        borderRadius: '12px',
+                        color: '#1a3a2a',
+                        fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        textAlign: 'center',
+                        minHeight: '60px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.25rem'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#fff'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#fff'
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}>{suggestion.emoji}</div>
+                      <div style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', fontWeight: '600' }}>{suggestion.name}</div>
+                      <div style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.75rem)', color: '#666', fontWeight: 'normal' }}>{suggestion.desc}</div>
+                    </button>
+                  ))
+                })()}
+              </div>
+
+              {/* Goal-based suggestions */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 'clamp(0.5rem, 2vw, 1rem)',
+                flexWrap: 'wrap'
+              }}>
+                {(() => {
+                  const calorieGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200
+                  const currentCalories = data.dailyNutritionStats.total_calories
+                  const remainingCalories = calorieGoal - currentCalories
+
+                  if (remainingCalories > 500) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setActiveTab('usda-search')
+                          alert('🔍 Search for high-calorie, nutrient-dense foods to meet your goals')
+                        }}
+                        style={{
+                          padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 3vw, 1rem)',
+                          background: 'rgba(255,255,255,0.8)',
+                          border: '1px solid #4caf50',
+                          borderRadius: '20px',
+                          color: '#2e7d32',
+                          fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e8f5e8'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.8)'}
+                      >
+                        🎯 Need {Math.round(remainingCalories)} more calories
+                      </button>
+                    )
+                  } else if (remainingCalories > 0) {
+                    return (
+                      <button
+                        onClick={() => {
+                          setActiveTab('usda-search')
+                          alert('🥗 Look for light, nutrient-rich foods to finish your day')
+                        }}
+                        style={{
+                          padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 3vw, 1rem)',
+                          background: 'rgba(255,255,255,0.8)',
+                          border: '1px solid #ff9800',
+                          borderRadius: '20px',
+                          color: '#e65100',
+                          fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#fff3e0'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.8)'}
+                      >
+                        ⚖️ {Math.round(remainingCalories)} calories to goal
+                      </button>
+                    )
+                  } else {
+                    return (
+                      <button
+                        onClick={() => {
+                          alert('🎉 Great job! You\'ve met your calorie goal for today.')
+                        }}
+                        style={{
+                          padding: 'clamp(0.4rem, 1.5vw, 0.5rem) clamp(0.8rem, 3vw, 1rem)',
+                          background: 'rgba(255,255,255,0.8)',
+                          border: '1px solid #2196f3',
+                          borderRadius: '20px',
+                          color: '#0d47a1',
+                          fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e3f2fd'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.8)'}
+                      >
+                        🎉 Goal achieved!
+                      </button>
+                    )
+                  }
+                })()}
+              </div>
+            </div>
+
             {/* Consolidated Nutrition Card */}
             <div style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               borderRadius: '16px',
-              padding: '2rem',
+              padding: 'clamp(1.5rem, 5vw, 2rem)',
               marginBottom: '2rem',
               color: '#fff'
             }}>
               <h3 style={{
-                fontSize: '1.5rem',
+                fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
                 fontWeight: 600,
                 marginBottom: '1.5rem',
                 textAlign: 'center',
@@ -1522,13 +1826,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               <div style={{
                 textAlign: 'center',
                 marginBottom: '1.5rem',
-                padding: '1rem',
+                padding: 'clamp(0.75rem, 3vw, 1rem)',
                 background: 'rgba(255,255,255,0.1)',
                 borderRadius: '12px',
                 backdropFilter: 'blur(10px)'
               }}>
                 <div style={{
-                  fontSize: '2.5rem',
+                  fontSize: 'clamp(2rem, 8vw, 2.5rem)',
                   fontWeight: 'bold',
                   color: '#fff',
                   marginBottom: '0.5rem'
@@ -1536,14 +1840,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   {Math.round(data.dailyNutritionStats.total_calories)}
                 </div>
                 <div style={{
-                  fontSize: '1rem',
+                  fontSize: 'clamp(0.9rem, 3vw, 1rem)',
                   color: 'rgba(255,255,255,0.8)',
                   marginBottom: '0.5rem'
                 }}>
                   Calories
                 </div>
                 <div style={{
-                  fontSize: '0.9rem',
+                  fontSize: 'clamp(0.75rem, 2.5vw, 0.9rem)',
                   color: 'rgba(255,255,255,0.6)'
                 }}>
                   Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200}
@@ -1553,18 +1857,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {/* Macro Breakdown */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                gap: '1rem'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(100px, 20vw, 120px), 1fr))',
+                gap: 'clamp(0.5rem, 2vw, 1rem)'
               }}>
                 <div style={{
                   textAlign: 'center',
-                  padding: '1rem',
+                  padding: 'clamp(0.75rem, 2.5vw, 1rem)',
                   background: 'rgba(255,255,255,0.1)',
                   borderRadius: '8px',
                   backdropFilter: 'blur(10px)'
                 }}>
                   <div style={{
-                    fontSize: '1.5rem',
+                    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
                     fontWeight: 'bold',
                     color: '#fff',
                     marginBottom: '0.25rem'
@@ -1572,14 +1876,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     {Math.round(data.dailyNutritionStats.total_protein)}g
                   </div>
                   <div style={{
-                    fontSize: '0.9rem',
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
                     color: 'rgba(255,255,255,0.8)',
                     marginBottom: '0.25rem'
                   }}>
                     Protein
                   </div>
                   <div style={{
-                    fontSize: '0.8rem',
+                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
                     color: 'rgba(255,255,255,0.6)'
                   }}>
                     Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150}g
@@ -1588,13 +1892,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
                 <div style={{
                   textAlign: 'center',
-                  padding: '1rem',
+                  padding: 'clamp(0.75rem, 2.5vw, 1rem)',
                   background: 'rgba(255,255,255,0.1)',
                   borderRadius: '8px',
                   backdropFilter: 'blur(10px)'
                 }}>
                   <div style={{
-                    fontSize: '1.5rem',
+                    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
                     fontWeight: 'bold',
                     color: '#fff',
                     marginBottom: '0.25rem'
@@ -1602,14 +1906,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     {Math.round(data.dailyNutritionStats.total_carbs)}g
                   </div>
                   <div style={{
-                    fontSize: '0.9rem',
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
                     color: 'rgba(255,255,255,0.8)',
                     marginBottom: '0.25rem'
                   }}>
                     Carbs
                   </div>
                   <div style={{
-                    fontSize: '0.8rem',
+                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
                     color: 'rgba(255,255,255,0.6)'
                   }}>
                     Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250}g
@@ -1618,13 +1922,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
                 <div style={{
                   textAlign: 'center',
-                  padding: '1rem',
+                  padding: 'clamp(0.75rem, 2.5vw, 1rem)',
                   background: 'rgba(255,255,255,0.1)',
                   borderRadius: '8px',
                   backdropFilter: 'blur(10px)'
                 }}>
                   <div style={{
-                    fontSize: '1.5rem',
+                    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
                     fontWeight: 'bold',
                     color: '#fff',
                     marginBottom: '0.25rem'
@@ -1632,14 +1936,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     {Math.round(data.dailyNutritionStats.total_fat)}g
                   </div>
                   <div style={{
-                    fontSize: '0.9rem',
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
                     color: 'rgba(255,255,255,0.8)',
                     marginBottom: '0.25rem'
                   }}>
                     Fat
                   </div>
                   <div style={{
-                    fontSize: '0.8rem',
+                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
                     color: 'rgba(255,255,255,0.6)'
                   }}>
                     Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70}g
