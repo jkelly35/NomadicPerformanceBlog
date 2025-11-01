@@ -177,7 +177,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Food selector context
   const [foodSelectorContext, setFoodSelectorContext] = useState<'meal' | 'template'>('meal')
-  const [foodSelectorFilter, setFoodSelectorFilter] = useState<'database' | 'templates' | 'saved'>('database')
+  const [foodSelectorFilter, setFoodSelectorFilter] = useState<'database' | 'templates' | 'saved' | 'usda'>('database')
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -2158,6 +2158,57 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
             {selectedUSDAFood && (
               <div style={{ marginTop: '2rem' }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a' }}>
+                    Nutrition Facts
+                  </h3>
+                  <button
+                    onClick={async () => {
+                      if (!selectedUSDAFood) return;
+
+                      try {
+                        // Convert USDA food to FormData for saving
+                        const formData = new FormData();
+                        formData.append('name', selectedUSDAFood.description);
+                        formData.append('brand', selectedUSDAFood.brandName || '');
+                        formData.append('serving_size', selectedUSDAFood.nutrition.servingSizeGrams.toString());
+                        formData.append('serving_unit', 'g');
+                        formData.append('calories_per_serving', selectedUSDAFood.nutrition.calories.toString());
+                        formData.append('protein_grams', selectedUSDAFood.nutrition.protein.toString());
+                        formData.append('carbs_grams', selectedUSDAFood.nutrition.carbs.toString());
+                        formData.append('fat_grams', selectedUSDAFood.nutrition.fat.toString());
+                        formData.append('fiber_grams', selectedUSDAFood.nutrition.fiber.toString());
+                        formData.append('sugar_grams', selectedUSDAFood.nutrition.sugar.toString());
+                        formData.append('sodium_mg', selectedUSDAFood.nutrition.sodium.toString());
+
+                        await createFoodItem(formData);
+                        alert('Food saved to your personal database!');
+                        // Refresh food items
+                        await loadFoodItems();
+                      } catch (error) {
+                        console.error('Error saving food:', error);
+                        alert('Failed to save food. It may already exist in your database.');
+                      }
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#28a745',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    💾 Save to Database
+                  </button>
+                </div>
                 <NutritionFacts
                   food={selectedUSDAFood}
                   className="max-w-md mx-auto"
@@ -4667,6 +4718,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 >
                   ⭐ Saved Foods
                 </button>
+                <button
+                  onClick={() => setFoodSelectorFilter('usda')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: foodSelectorFilter === 'usda' ? '#ff6b35' : '#f8f9fa',
+                    color: foodSelectorFilter === 'usda' ? '#fff' : '#1a3a2a',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  🔍 USDA Search
+                </button>
               </div>
 
               {/* Search */}
@@ -4864,7 +4930,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
               {((foodSelectorFilter === 'database' && foodItems.length === 0) ||
                 (foodSelectorFilter === 'templates' && data.mealTemplates.length === 0) ||
-                (foodSelectorFilter === 'saved' && data.savedFoods.length === 0)) && (
+                (foodSelectorFilter === 'saved' && data.savedFoods.length === 0) ||
+                (foodSelectorFilter === 'usda' && false)) && (
                 <div style={{
                   textAlign: 'center',
                   padding: '2rem',
@@ -4873,6 +4940,68 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   {foodSelectorFilter === 'database' && 'No foods found. Try a different search term.'}
                   {foodSelectorFilter === 'templates' && 'No meal templates found. Create some templates first.'}
                   {foodSelectorFilter === 'saved' && 'No saved foods found. Save some foods from the database first.'}
+                </div>
+              )}
+
+              {/* USDA Food Search */}
+              {foodSelectorFilter === 'usda' && (
+                <div style={{ padding: '1rem' }}>
+                  <FoodSearch
+                    onFoodSelect={async (usdaFood: USDAFoodItem) => {
+                      if (foodSelectorContext === 'template') {
+                        // For templates, save USDA food to database first, then add to template
+                        try {
+                          const formData = new FormData();
+                          formData.append('name', usdaFood.description);
+                          formData.append('brand', usdaFood.brandName || '');
+                          formData.append('serving_size', usdaFood.nutrition.servingSizeGrams.toString());
+                          formData.append('serving_unit', 'g');
+                          formData.append('calories_per_serving', usdaFood.nutrition.calories.toString());
+                          formData.append('protein_grams', usdaFood.nutrition.protein.toString());
+                          formData.append('carbs_grams', usdaFood.nutrition.carbs.toString());
+                          formData.append('fat_grams', usdaFood.nutrition.fat.toString());
+                          formData.append('fiber_grams', usdaFood.nutrition.fiber.toString());
+                          formData.append('sugar_grams', usdaFood.nutrition.sugar.toString());
+                          formData.append('sodium_mg', usdaFood.nutrition.sodium.toString());
+
+                          const result = await createFoodItem(formData);
+                          if (result.success && result.data && result.data.id) {
+                            // Add the newly saved food to the template
+                            setTemplateForm(prev => ({
+                              ...prev,
+                              food_items: [...prev.food_items, { food_item_id: result.data!.id, quantity: usdaFood.nutrition.servingSizeGrams }]
+                            }));
+                            setFoodSelectorOpen(false);
+                            setFoodSelectorSearch('');
+                            // Refresh food items to include the new one
+                            await loadFoodItems();
+                          }
+                        } catch (error) {
+                          console.error('Error saving USDA food for template:', error);
+                          alert('Failed to save food. It may already exist in your database.');
+                        }
+                      } else {
+                        // For meal logging, convert USDA food to local format
+                        const localFood: FoodItem = {
+                          id: usdaFood.fdcId.toString(),
+                          name: usdaFood.description,
+                          brand: usdaFood.brandName,
+                          serving_size: usdaFood.nutrition.servingSizeGrams,
+                          serving_unit: 'g',
+                          calories_per_serving: usdaFood.nutrition.calories,
+                          protein_grams: usdaFood.nutrition.protein,
+                          carbs_grams: usdaFood.nutrition.carbs,
+                          fat_grams: usdaFood.nutrition.fat,
+                          fiber_grams: usdaFood.nutrition.fiber,
+                          sugar_grams: usdaFood.nutrition.sugar,
+                          sodium_mg: usdaFood.nutrition.sodium,
+                          created_at: new Date().toISOString()
+                        };
+                        setSelectedFoods(prev => [...prev, { food: localFood, quantity: usdaFood.nutrition.servingSizeGrams }]);
+                      }
+                    }}
+                    placeholder="Search USDA food database..."
+                  />
                 </div>
               )}
             </div>
