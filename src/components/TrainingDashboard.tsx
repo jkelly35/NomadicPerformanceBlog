@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { StatsCardSkeleton, WorkoutCardSkeleton, HeroSkeleton } from './SkeletonLoaders';
 import WeatherWidget from './WeatherWidget';
+import TrainingInsightsDisplay from './TrainingInsightsDisplay';
 
 interface Workout {
   id: string;
@@ -143,6 +144,11 @@ export default function TrainingDashboard({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* AI Training Insights */}
+        <div className="mb-8">
+          <TrainingInsightsDisplay showHeader={true} compact={false} />
         </div>
 
         {/* Recent Workouts */}
