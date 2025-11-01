@@ -95,7 +95,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   // Meal History state
   const [meals, setMeals] = useState<any[]>(initialData.meals)
   const [mealFilter, setMealFilter] = useState<'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('all')
-  const [dateFilter, setDateFilter] = useState('')
+  const [dateFilter, setDateFilter] = useState(() => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
   const [mealsLoading, setMealsLoading] = useState(false)
 
   // Log Meal state
@@ -398,12 +404,91 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
-  const addSavedFoodToMeal = (savedFood: SavedFood) => {
-    if (savedFood.food_item) {
-      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: savedFood.food_item!.serving_size }])
+  const addSavedFoodToMeal = async (savedFood: SavedFood) => {
+    if (!savedFood.food_item) return
+
+    setLogMealLoading(true)
+    try {
+      const mealData = new FormData()
+      // Determine meal type based on current time
+      const now = new Date()
+      const hour = now.getHours()
+      let mealType = 'snack'
+      if (hour < 11) mealType = 'breakfast'
+      else if (hour < 15) mealType = 'lunch'
+      else if (hour < 19) mealType = 'dinner'
+      // else remains 'snack' for evening
+
+      mealData.append('meal_type', mealType)
+      mealData.append('meal_date', new Date().toISOString().split('T')[0])
+      mealData.append('meal_time', new Date().toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }))
+
+      // Add the single food item
+      mealData.append('food_0', savedFood.food_item.id)
+      mealData.append('quantity_0', savedFood.food_item.serving_size.toString())
+
+      const result = await logMeal(mealData)
+      if (result.success && result.data) {
+        const newMeal = result.data
+        // Update local data immediately
+        setData(prev => {
+          const updatedMeals = [newMeal, ...prev.meals]
+          const today = (() => {
+            const d = new Date()
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          })()
+          
+          // Recalculate daily nutrition stats from all meals for today
+          const todayMeals = updatedMeals.filter(meal => meal.meal_date === today)
+          const recalculatedStats = todayMeals.reduce(
+            (acc, meal) => ({
+              total_calories: acc.total_calories + (meal.total_calories || 0),
+              total_protein: acc.total_protein + (meal.total_protein || 0),
+              total_carbs: acc.total_carbs + (meal.total_carbs || 0),
+              total_fat: acc.total_fat + (meal.total_fat || 0),
+              total_fiber: acc.total_fiber + (meal.total_fiber || 0),
+              meals_count: acc.meals_count + 1
+            }),
+            {
+              total_calories: 0,
+              total_protein: 0,
+              total_carbs: 0,
+              total_fat: 0,
+              total_fiber: 0,
+              meals_count: 0
+            }
+          )
+          
+          return {
+            ...prev,
+            meals: updatedMeals,
+            dailyNutritionStats: recalculatedStats
+          }
+        })
+
+        // Also update the separate meals state used for meal history display
+        setMeals(prev => [newMeal, ...prev])
+
+        // Also refresh data from server to ensure consistency
+        setTimeout(async () => {
+          await refreshNutritionData()
+        }, 500)
+      } else {
+        alert('Failed to log food: ' + result.error)
+      }
+    } catch (error) {
+      alert('Error logging food')
+    } finally {
+      setLogMealLoading(false)
     }
-    setFoodSelectorOpen(false)
-    setFoodSelectorSearch('')
   }
 
   const removeFoodFromMeal = (index: number) => {
@@ -468,27 +553,88 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         
         if (editingMealId) {
           // For editing, remove the old meal and add the new one
-          setData(prev => ({
-            ...prev,
-            meals: prev.meals.filter(meal => meal.id !== editingMealId).concat(newMeal),
-            // Don't update dailyNutritionStats locally - let server revalidation handle it
-            dailyNutritionStats: prev.dailyNutritionStats
-          }))
+          setData(prev => {
+            const remainingMeals = prev.meals.filter(meal => meal.id !== editingMealId).concat(newMeal)
+            const today = (() => {
+              const d = new Date()
+              const year = d.getFullYear()
+              const month = String(d.getMonth() + 1).padStart(2, '0')
+              const day = String(d.getDate()).padStart(2, '0')
+              return `${year}-${month}-${day}`
+            })()
+            
+            // Recalculate daily nutrition stats from remaining meals for today
+            const todayMeals = remainingMeals.filter(meal => meal.meal_date === today)
+            const recalculatedStats = todayMeals.reduce(
+              (acc, meal) => ({
+                total_calories: acc.total_calories + (meal.total_calories || 0),
+                total_protein: acc.total_protein + (meal.total_protein || 0),
+                total_carbs: acc.total_carbs + (meal.total_carbs || 0),
+                total_fat: acc.total_fat + (meal.total_fat || 0),
+                total_fiber: acc.total_fiber + (meal.total_fiber || 0),
+                meals_count: acc.meals_count + 1
+              }),
+              {
+                total_calories: 0,
+                total_protein: 0,
+                total_carbs: 0,
+                total_fat: 0,
+                total_fiber: 0,
+                meals_count: 0
+              }
+            )
+            
+            return {
+              ...prev,
+              meals: remainingMeals,
+              dailyNutritionStats: recalculatedStats
+            }
+          })
+
+          // Also update the separate meals state used for meal history display
+          setMeals(prev => prev.filter(meal => meal.id !== editingMealId).concat(newMeal))
         } else {
           // For new meals
-          setData(prev => ({
-            ...prev,
-            meals: [newMeal, ...prev.meals],
-            dailyNutritionStats: {
-              ...prev.dailyNutritionStats,
-              total_calories: prev.dailyNutritionStats.total_calories + (newMeal.total_calories || 0),
-              total_protein: prev.dailyNutritionStats.total_protein + (newMeal.total_protein || 0),
-              total_carbs: prev.dailyNutritionStats.total_carbs + (newMeal.total_carbs || 0),
-              total_fat: prev.dailyNutritionStats.total_fat + (newMeal.total_fat || 0),
-              total_fiber: prev.dailyNutritionStats.total_fiber + (newMeal.total_fiber || 0),
-              meals_count: prev.dailyNutritionStats.meals_count + 1
+          setData(prev => {
+            const updatedMeals = [newMeal, ...prev.meals]
+            const today = (() => {
+              const d = new Date()
+              const year = d.getFullYear()
+              const month = String(d.getMonth() + 1).padStart(2, '0')
+              const day = String(d.getDate()).padStart(2, '0')
+              return `${year}-${month}-${day}`
+            })()
+            
+            // Recalculate daily nutrition stats from all meals for today
+            const todayMeals = updatedMeals.filter(meal => meal.meal_date === today)
+            const recalculatedStats = todayMeals.reduce(
+              (acc, meal) => ({
+                total_calories: acc.total_calories + (meal.total_calories || 0),
+                total_protein: acc.total_protein + (meal.total_protein || 0),
+                total_carbs: acc.total_carbs + (meal.total_carbs || 0),
+                total_fat: acc.total_fat + (meal.total_fat || 0),
+                total_fiber: acc.total_fiber + (meal.total_fiber || 0),
+                meals_count: acc.meals_count + 1
+              }),
+              {
+                total_calories: 0,
+                total_protein: 0,
+                total_carbs: 0,
+                total_fat: 0,
+                total_fiber: 0,
+                meals_count: 0
+              }
+            )
+            
+            return {
+              ...prev,
+              meals: updatedMeals,
+              dailyNutritionStats: recalculatedStats
             }
-          }))
+          })
+
+          // Also update the separate meals state used for meal history display
+          setMeals(prev => [newMeal, ...prev])
         }
 
         // Reset form
@@ -524,7 +670,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (result.success) {
         // Update local data by removing the deleted meal
         setData(prev => {
-          const mealToDelete = prev.meals.find(meal => meal.id === mealId)
+          const remainingMeals = prev.meals.filter(meal => meal.id !== mealId)
           const today = (() => {
             const d = new Date()
             const year = d.getFullYear()
@@ -532,22 +678,37 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             const day = String(d.getDate()).padStart(2, '0')
             return `${year}-${month}-${day}`
           })()
-          const isToday = mealToDelete && mealToDelete.meal_date === today
+          
+          // Recalculate daily nutrition stats from remaining meals for today
+          const todayMeals = remainingMeals.filter(meal => meal.meal_date === today)
+          const recalculatedStats = todayMeals.reduce(
+            (acc, meal) => ({
+              total_calories: acc.total_calories + (meal.total_calories || 0),
+              total_protein: acc.total_protein + (meal.total_protein || 0),
+              total_carbs: acc.total_carbs + (meal.total_carbs || 0),
+              total_fat: acc.total_fat + (meal.total_fat || 0),
+              total_fiber: acc.total_fiber + (meal.total_fiber || 0),
+              meals_count: acc.meals_count + 1
+            }),
+            {
+              total_calories: 0,
+              total_protein: 0,
+              total_carbs: 0,
+              total_fat: 0,
+              total_fiber: 0,
+              meals_count: 0
+            }
+          )
           
           return {
             ...prev,
-            meals: prev.meals.filter(meal => meal.id !== mealId),
-            dailyNutritionStats: isToday ? {
-              ...prev.dailyNutritionStats,
-              total_calories: prev.dailyNutritionStats.total_calories - (mealToDelete?.total_calories || 0),
-              total_protein: prev.dailyNutritionStats.total_protein - (mealToDelete?.total_protein || 0),
-              total_carbs: prev.dailyNutritionStats.total_carbs - (mealToDelete?.total_carbs || 0),
-              total_fat: prev.dailyNutritionStats.total_fat - (mealToDelete?.total_fat || 0),
-              total_fiber: prev.dailyNutritionStats.total_fiber - (mealToDelete?.total_fiber || 0),
-              meals_count: prev.dailyNutritionStats.meals_count - 1
-            } : prev.dailyNutritionStats
+            meals: remainingMeals,
+            dailyNutritionStats: recalculatedStats
           }
         })
+
+        // Also update the separate meals state used for meal history display
+        setMeals(prev => prev.filter(meal => meal.id !== mealId))
       } else {
         alert('Failed to delete meal: ' + result.error)
       }
@@ -612,7 +773,50 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     const today = new Date().toISOString().split('T')[0]
     try {
       const result = await logMealFromTemplate(templateId, today, undefined, user!.id)
-      if (result.success) {
+      if (result.success && result.data) {
+        const newMeal = result.data
+        // Update local data immediately
+        setData(prev => {
+          const updatedMeals = [newMeal, ...prev.meals]
+          const today = (() => {
+            const d = new Date()
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const day = String(d.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          })()
+          
+          // Recalculate daily nutrition stats from all meals for today
+          const todayMeals = updatedMeals.filter(meal => meal.meal_date === today)
+          const recalculatedStats = todayMeals.reduce(
+            (acc, meal) => ({
+              total_calories: acc.total_calories + (meal.total_calories || 0),
+              total_protein: acc.total_protein + (meal.total_protein || 0),
+              total_carbs: acc.total_carbs + (meal.total_carbs || 0),
+              total_fat: acc.total_fat + (meal.total_fat || 0),
+              total_fiber: acc.total_fiber + (meal.total_fiber || 0),
+              meals_count: acc.meals_count + 1
+            }),
+            {
+              total_calories: 0,
+              total_protein: 0,
+              total_carbs: 0,
+              total_fat: 0,
+              total_fiber: 0,
+              meals_count: 0
+            }
+          )
+          
+          return {
+            ...prev,
+            meals: updatedMeals,
+            dailyNutritionStats: recalculatedStats
+          }
+        })
+
+        // Also update the separate meals state used for meal history display
+        setMeals(prev => [newMeal, ...prev])
+
         alert('Meal logged successfully!')
         // Refresh data to update weekly chart
         await refreshNutritionData()
@@ -1853,6 +2057,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   if (dateFilter && meal.meal_date !== dateFilter) return false
                   return true
                 })
+                .sort((a, b) => {
+                  // Sort by time descending (most recent first)
+                  return b.meal_time.localeCompare(a.meal_time)
+                })
                 .map((meal: Meal) => (
                   <div key={meal.id} style={{
                     background: '#f8f9fa',
@@ -2569,14 +2777,16 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
                         onClick={() => addSavedFoodToMeal(savedFood)}
+                        disabled={logMealLoading}
                         style={{
                           padding: '0.5rem',
                           borderRadius: '6px',
                           border: 'none',
                           background: '#28a745',
                           color: '#fff',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem'
+                          cursor: logMealLoading ? 'not-allowed' : 'pointer',
+                          fontSize: '0.875rem',
+                          opacity: logMealLoading ? 0.7 : 1
                         }}
                         title="Log this food"
                       >
