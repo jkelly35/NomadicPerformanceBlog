@@ -3865,3 +3865,260 @@ export async function getAllInsights(): Promise<Insight[]> {
     return []
   }
 }
+
+// Advanced AI Analytics and Predictions
+export interface PerformancePrediction {
+  predicted_performance: number
+  confidence_level: number
+  trend_direction: 'improving' | 'declining' | 'stable'
+  factors_influencing: string[]
+  next_workout_suggestion: string
+  estimated_date?: string
+}
+
+export interface TrainingOptimization {
+  optimal_training_time: string
+  recommended_intensity: 'Low' | 'Medium' | 'High'
+  training_load_score: number
+  recovery_days_needed: number
+  next_session_focus: string
+  risk_factors: string[]
+}
+
+export async function predictWorkoutPerformance(): Promise<PerformancePrediction | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Get recent workout data (last 10 workouts)
+    const { data: workouts } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('workout_date', { ascending: false })
+      .limit(10)
+
+    if (!workouts || workouts.length < 3) {
+      return null // Need at least 3 workouts for prediction
+    }
+
+    // Simple linear regression for performance prediction
+    const workoutData = workouts.reverse() // Oldest first for trend analysis
+    const performanceScores = workoutData.map((workout, index) => ({
+      x: index, // Time index
+      y: (workout.duration_minutes || 0) * (workout.intensity === 'High' ? 1.5 : workout.intensity === 'Medium' ? 1.2 : 1.0)
+    }))
+
+    // Calculate trend using simple linear regression
+    const n = performanceScores.length
+    const sumX = performanceScores.reduce((sum, point) => sum + point.x, 0)
+    const sumY = performanceScores.reduce((sum, point) => sum + point.y, 0)
+    const sumXY = performanceScores.reduce((sum, point) => sum + point.x * point.y, 0)
+    const sumXX = performanceScores.reduce((sum, point) => sum + point.x * point.x, 0)
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
+    const intercept = (sumY - slope * sumX) / n
+
+    // Predict next performance (at x = n)
+    const predictedPerformance = slope * n + intercept
+    const currentPerformance = performanceScores[performanceScores.length - 1].y
+    const trendDirection = slope > 0.5 ? 'improving' : slope < -0.5 ? 'declining' : 'stable'
+
+    // Calculate confidence based on data consistency
+    const variances = performanceScores.map(point => Math.pow(point.y - (slope * point.x + intercept), 2))
+    const mse = variances.reduce((sum, variance) => sum + variance, 0) / n
+    const confidenceLevel = Math.max(0, Math.min(100, 100 - (mse / currentPerformance) * 50))
+
+    // Determine influencing factors
+    const factors = []
+    const recentWorkouts = workoutData.slice(-3)
+    const avgIntensity = recentWorkouts.reduce((sum, w) => sum + (w.intensity === 'High' ? 3 : w.intensity === 'Medium' ? 2 : 1), 0) / recentWorkouts.length
+
+    if (avgIntensity > 2.5) factors.push('High training intensity')
+    if (recentWorkouts.length >= 3 && recentWorkouts.every(w => new Date(w.workout_date) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))) {
+      factors.push('Consistent training schedule')
+    }
+    if (slope > 1) factors.push('Progressive overload')
+    if (slope < -1) factors.push('Possible overtraining or recovery needs')
+
+    // Generate next workout suggestion
+    let suggestion = 'Maintain current training intensity'
+    if (trendDirection === 'improving') {
+      suggestion = 'Consider increasing training volume or intensity'
+    } else if (trendDirection === 'declining') {
+      suggestion = 'Focus on recovery and consider reducing intensity'
+    }
+
+    return {
+      predicted_performance: Math.round(predictedPerformance * 10) / 10,
+      confidence_level: Math.round(confidenceLevel),
+      trend_direction: trendDirection,
+      factors_influencing: factors,
+      next_workout_suggestion: suggestion
+    }
+  } catch (error) {
+    console.error('Error predicting workout performance:', error)
+    return null
+  }
+}
+
+export async function optimizeTrainingSchedule(): Promise<TrainingOptimization | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Get recent workout data
+    const { data: workouts } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('workout_date', { ascending: false })
+      .limit(14) // Last 2 weeks
+
+    if (!workouts || workouts.length < 3) {
+      return null
+    }
+
+    // Analyze training patterns
+    const workoutTimes = workouts.map(w => new Date(w.workout_date).getHours())
+    const avgWorkoutTime = workoutTimes.reduce((sum, time) => sum + time, 0) / workoutTimes.length
+
+    // Determine optimal training time based on consistency and performance
+    let optimalTime = '18:00' // Default evening
+    if (avgWorkoutTime < 12) {
+      optimalTime = '08:00' // Morning person
+    } else if (avgWorkoutTime < 17) {
+      optimalTime = '12:00' // Midday
+    }
+
+    // Calculate training load score (0-100)
+    const recentWorkouts = workouts.slice(0, 7) // Last week
+    const totalMinutes = recentWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0)
+    const highIntensityCount = recentWorkouts.filter(w => w.intensity === 'High').length
+    const trainingLoadScore = Math.min(100, (totalMinutes / 300) * 50 + (highIntensityCount / 7) * 50)
+
+    // Determine recommended intensity
+    let recommendedIntensity: 'Low' | 'Medium' | 'High' = 'Medium'
+    if (trainingLoadScore > 80) {
+      recommendedIntensity = 'Low' // Overloaded, need recovery
+    } else if (trainingLoadScore < 30) {
+      recommendedIntensity = 'High' // Undertrained, can push harder
+    }
+
+    // Calculate recovery days needed
+    let recoveryDays = 1
+    if (trainingLoadScore > 70) {
+      recoveryDays = 2
+    } else if (trainingLoadScore < 40) {
+      recoveryDays = 0
+    }
+
+    // Determine next session focus
+    let nextFocus = 'Balanced training session'
+    if (recommendedIntensity === 'Low') {
+      nextFocus = 'Recovery and technique work'
+    } else if (recommendedIntensity === 'High') {
+      nextFocus = 'Progressive overload and strength building'
+    }
+
+    // Identify risk factors
+    const riskFactors = []
+    if (trainingLoadScore > 90) {
+      riskFactors.push('High risk of overtraining')
+    }
+    if (recentWorkouts.length < 3) {
+      riskFactors.push('Inconsistent training schedule')
+    }
+    const highIntensityRatio = highIntensityCount / recentWorkouts.length
+    if (highIntensityRatio > 0.7) {
+      riskFactors.push('Excessive high-intensity training')
+    }
+
+    return {
+      optimal_training_time: optimalTime,
+      recommended_intensity: recommendedIntensity,
+      training_load_score: Math.round(trainingLoadScore),
+      recovery_days_needed: recoveryDays,
+      next_session_focus: nextFocus,
+      risk_factors: riskFactors
+    }
+  } catch (error) {
+    console.error('Error optimizing training schedule:', error)
+    return null
+  }
+}
+
+export async function predictGoalAchievement(goalId: string): Promise<{
+  estimated_completion_date: string
+  confidence_percentage: number
+  required_weekly_progress: number
+  current_trajectory: 'on_track' | 'behind' | 'ahead'
+  recommendations: string[]
+} | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Get goal data
+    const { data: goal } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('id', goalId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!goal) return null
+
+    const currentProgress = (goal.current_value / goal.target_value) * 100
+    const daysElapsed = Math.max(1, Math.floor((Date.now() - new Date(goal.created_at).getTime()) / (1000 * 60 * 60 * 24)))
+    const targetDate = goal.target_date ? new Date(goal.target_date) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+    const daysRemaining = Math.max(1, Math.floor((targetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+
+    // Calculate required weekly progress
+    const remainingProgress = 100 - currentProgress
+    const requiredWeeklyProgress = (remainingProgress / daysRemaining) * 7
+
+    // Determine trajectory
+    let trajectory: 'on_track' | 'behind' | 'ahead' = 'on_track'
+    const expectedProgress = (daysElapsed / (daysElapsed + daysRemaining)) * 100
+    if (currentProgress < expectedProgress * 0.8) {
+      trajectory = 'behind'
+    } else if (currentProgress > expectedProgress * 1.2) {
+      trajectory = 'ahead'
+    }
+
+    // Calculate confidence and estimated completion
+    const weeklyProgressRate = currentProgress / Math.max(1, daysElapsed / 7)
+    const estimatedWeeksToComplete = remainingProgress / Math.max(0.1, weeklyProgressRate)
+    const estimatedCompletionDate = new Date(Date.now() + estimatedWeeksToComplete * 7 * 24 * 60 * 60 * 1000)
+
+    // Confidence based on consistency (simplified)
+    const confidencePercentage = Math.min(95, Math.max(10, weeklyProgressRate * 10))
+
+    // Generate recommendations
+    const recommendations = []
+    if (trajectory === 'behind') {
+      recommendations.push('Increase training frequency or intensity')
+      recommendations.push('Consider adjusting your target timeline')
+    } else if (trajectory === 'ahead') {
+      recommendations.push('Consider increasing your target for greater challenge')
+      recommendations.push('Maintain current progress rate')
+    } else {
+      recommendations.push('Keep up the excellent progress!')
+    }
+
+    return {
+      estimated_completion_date: estimatedCompletionDate.toISOString().split('T')[0],
+      confidence_percentage: Math.round(confidencePercentage),
+      required_weekly_progress: Math.round(requiredWeeklyProgress * 10) / 10,
+      current_trajectory: trajectory,
+      recommendations
+    }
+  } catch (error) {
+    console.error('Error predicting goal achievement:', error)
+    return null
+  }
+}

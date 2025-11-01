@@ -9,6 +9,8 @@ import Footer from "@/components/Footer";
 import ActivityItem from "@/components/ActivityItem";
 import WeatherWidget from "@/components/WeatherWidget";
 import InsightsDisplay from "@/components/InsightsDisplay";
+import TrainingOptimizationDisplay from "@/components/TrainingOptimizationDisplay";
+import GoalPredictionDisplay from "@/components/GoalPredictionDisplay";
 import {
   Workout,
   HealthMetric,
@@ -713,6 +715,11 @@ function DashboardContent({
             <InsightsDisplay limit={3} compact={true} />
           </div>
 
+          {/* Training Optimization Section */}
+          <div className="mb-12">
+            <TrainingOptimizationDisplay showHeader={true} compact={true} />
+          </div>
+
           {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
@@ -861,6 +868,18 @@ function DashboardContent({
                   </div>
                 )}
               </div>
+
+              {/* Goal Predictions */}
+              {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
+                <div className="mt-6 pt-6 border-t border-stone-300">
+                  <h4 className="text-lg font-semibold text-stone-800 mb-4">AI Goal Predictions</h4>
+                  <div className="grid gap-4">
+                    {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).slice(0, 1).map((goal) => (
+                      <GoalPredictionDisplay key={goal.id} goalId={goal.id} showHeader={false} compact={true} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Upcoming Events */}
               <div className="mt-6 pt-6 border-t border-stone-300">

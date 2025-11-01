@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar"
 import Footer from "@/components/Footer"
 import InsightsDisplay from "@/components/InsightsDisplay"
+import PerformancePredictionDisplay from "@/components/PerformancePredictionDisplay"
+import TrainingOptimizationDisplay from "@/components/TrainingOptimizationDisplay"
 import {
   NutritionTrendsChart,
   WorkoutVolumeChart,
@@ -20,7 +22,7 @@ import {
 
 export default function AnalyticsClient() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'nutrition' | 'workouts' | 'health' | 'hydration' | 'insights'>('insights')
+  const [activeTab, setActiveTab] = useState<'nutrition' | 'workouts' | 'health' | 'hydration' | 'insights' | 'predictions'>('insights')
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(30)
   const [loading, setLoading] = useState(true)
 
@@ -57,6 +59,7 @@ export default function AnalyticsClient() {
 
   const tabs = [
     { id: 'insights', label: 'AI Insights', icon: '🧠' },
+    { id: 'predictions', label: 'AI Predictions', icon: '🔮' },
     { id: 'nutrition', label: 'Nutrition Trends', icon: '📊' },
     { id: 'workouts', label: 'Workout Volume', icon: '💪' },
     { id: 'health', label: 'Health Metrics', icon: '❤️' },
@@ -135,6 +138,19 @@ export default function AnalyticsClient() {
                   <p className="text-gray-600">Personalized recommendations based on your fitness data patterns</p>
                 </div>
                 <InsightsDisplay showHeader={false} />
+              </div>
+            )}
+
+            {activeTab === 'predictions' && (
+              <div>
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">AI Performance Predictions</h2>
+                  <p className="text-gray-600">Advanced analytics predicting your future performance and optimal training strategies</p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PerformancePredictionDisplay showHeader={true} compact={false} />
+                  <TrainingOptimizationDisplay showHeader={true} compact={false} />
+                </div>
               </div>
             )}
 
