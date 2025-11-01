@@ -233,7 +233,7 @@ export default function NavBar() {
               <Link
                 href="/dashboard"
                 style={{
-                  color: '#fff',
+                  color: 'var(--nav-text, #fff)',
                   textDecoration: 'none',
                   fontSize: '1.2rem',
                   fontWeight: 600,
