@@ -380,15 +380,15 @@ function DashboardContent({
         <div className="max-w-7xl mx-auto">
 
           {/* Today's Overview */}
-          <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl p-8 mb-8 border border-stone-200 shadow-lg">
-            <h2 className="text-2xl font-bold text-stone-800 mb-6 text-center">
+          <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl p-8 mb-12 border border-stone-200 shadow-lg">
+            <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
               📊 Today's Overview
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Readiness Score */}
-              <Link href="/readiness" className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer block">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
+              <Link href="/readiness" className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer block group">
+                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white group-hover:animate-pulse">
                   {(() => {
                     // Calculate readiness score based on recent activity (last 3 days)
                     const today = new Date();
@@ -414,7 +414,7 @@ function DashboardContent({
                     return Math.round(activityScore + recoveryBonus + fitnessBonus);
                   })()}
                 </div>
-                <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                <h3 className="text-xl font-semibold text-stone-800 mb-2">
                   Readiness Score
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-semibold">
@@ -424,15 +424,15 @@ function DashboardContent({
               </Link>
 
               {/* Today's Active Minutes */}
-              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white">
+              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 group">
+                <div className="w-20 h-20 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white group-hover:animate-pulse">
                   {data.workouts.filter(w => {
                     const workoutDate = new Date(w.workout_date);
                     const today = new Date();
                     return workoutDate.toDateString() === today.toDateString();
                   }).reduce((total, w) => total + w.duration_minutes, 0)}
                 </div>
-                <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                <h3 className="text-xl font-semibold text-stone-800 mb-2">
                   Today's Minutes
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-sky-600 font-semibold">
@@ -442,15 +442,15 @@ function DashboardContent({
               </div>
 
               {/* Today's Calories */}
-              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
-                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white">
+              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 group">
+                <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white group-hover:animate-pulse">
                   {data.workouts.filter(w => {
                     const workoutDate = new Date(w.workout_date);
                     const today = new Date();
                     return workoutDate.toDateString() === today.toDateString();
                   }).reduce((total, w) => total + (w.calories_burned || 0), 0)}
                 </div>
-                <h3 className="text-lg font-semibold text-stone-800 mb-2">
+                <h3 className="text-xl font-semibold text-stone-800 mb-2">
                   Today's Calories
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-amber-600 font-semibold">
@@ -462,181 +462,176 @@ function DashboardContent({
           </div>
 
           {/* Quick Navigation */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🥗</div>
-                <h3 className="text-2xl font-bold mb-2">Nutrition Dashboard</h3>
-                <p className="opacity-90">Log meals, track macros, and fuel your adventures</p>
-              </div>
-            </Link>
-            <Link href="/activities" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🏔️</div>
-                <h3 className="text-2xl font-bold mb-2">Activities Dashboard</h3>
-                <p className="opacity-90">Track workouts, monitor progress, and conquer new peaks</p>
-              </div>
-            </Link>
-            <Link href="/equipment" className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🎒</div>
-                <h3 className="text-2xl font-bold mb-2">Equipment Tracking</h3>
-                <p className="opacity-90">Manage gear, track maintenance, and optimize your kit</p>
-              </div>
-            </Link>
-            <Link href="/training" className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
-              <div className="text-center">
-                <div className="text-6xl mb-4">💪</div>
-                <h3 className="text-2xl font-bold mb-2">Training Dashboard</h3>
-                <p className="opacity-90">Plan strength training, track exercises, and build power</p>
-              </div>
-            </Link>
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
+              🚀 Quick Access
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
+                <div className="text-center">
+                  <div className="text-5xl mb-3 group-hover:animate-bounce">🥗</div>
+                  <h3 className="text-xl font-bold mb-2">Nutrition</h3>
+                  <p className="text-sm opacity-90 leading-tight">Log meals, track macros, fuel your adventures</p>
+                </div>
+              </Link>
+              <Link href="/activities" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
+                <div className="text-center">
+                  <div className="text-5xl mb-3 group-hover:animate-bounce">🏔️</div>
+                  <h3 className="text-xl font-bold mb-2">Activities</h3>
+                  <p className="text-sm opacity-90 leading-tight">Track sends, monitor progress, conquer peaks</p>
+                </div>
+              </Link>
+              <Link href="/training" className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
+                <div className="text-center">
+                  <div className="text-5xl mb-3 group-hover:animate-bounce">💪</div>
+                  <h3 className="text-xl font-bold mb-2">Training</h3>
+                  <p className="text-sm opacity-90 leading-tight">Plan strength training, build power</p>
+                </div>
+              </Link>
+              <Link href="/equipment" className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
+                <div className="text-center">
+                  <div className="text-5xl mb-3 group-hover:animate-bounce">🎒</div>
+                  <h3 className="text-xl font-bold mb-2">Equipment</h3>
+                  <p className="text-sm opacity-90 leading-tight">Manage gear, track maintenance</p>
+                </div>
+              </Link>
+            </div>
           </div>
 
 
           {/* Nutrition Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-stone-800 mb-6 text-center">
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
               🍎 Daily Fuel Intake
             </h2>
 
             {/* Compact Nutrition Overview */}
-            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-8 shadow-lg border border-stone-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                 {/* Calories */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-stone-700">
-                      Calories
-                    </span>
-                    <span className="text-sm text-stone-600">
-                      {localNutritionStats.total_calories} / {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
-                    </span>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600 mb-2">
+                    {localNutritionStats.total_calories}
                   </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
+                  <div className="text-sm font-semibold text-stone-700 mb-3">
+                    Calories
                   </div>
-                  <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100)}% of goal
+                  <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    Goal: {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
                   </div>
                 </div>
 
                 {/* Protein */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-stone-700">
-                      Protein
-                    </span>
-                    <span className="text-sm text-stone-600">
-                      {Math.round(localNutritionStats.total_protein)}g / {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
-                    </span>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    {Math.round(localNutritionStats.total_protein)}g
                   </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
+                  <div className="text-sm font-semibold text-stone-700 mb-3">
+                    Protein
                   </div>
-                  <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100)}% of goal
+                  <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    Goal: {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
                   </div>
                 </div>
 
                 {/* Carbs */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-stone-700">
-                      Carbs
-                    </span>
-                    <span className="text-sm text-stone-600">
-                      {Math.round(localNutritionStats.total_carbs)}g / {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
-                    </span>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-pink-600 mb-2">
+                    {Math.round(localNutritionStats.total_carbs)}g
                   </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
+                  <div className="text-sm font-semibold text-stone-700 mb-3">
+                    Carbs
                   </div>
-                  <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100)}% of goal
+                  <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    Goal: {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
                   </div>
                 </div>
 
                 {/* Fat */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-stone-700">
-                      Fat
-                    </span>
-                    <span className="text-sm text-stone-600">
-                      {Math.round(localNutritionStats.total_fat)}g / {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
-                    </span>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-cyan-600 mb-2">
+                    {Math.round(localNutritionStats.total_fat)}g
                   </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full" style={{ width: `${Math.min((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
+                  <div className="text-sm font-semibold text-stone-700 mb-3">
+                    Fat
                   </div>
-                  <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100)}% of goal
+                  <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    Goal: {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
                   </div>
                 </div>
 
                 {/* Hydration */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-semibold text-stone-700">
-                      💧 Hydration
-                    </span>
-                    <span className="text-sm text-stone-600">
-                      {Math.round(localHydrationTotal)}ml / 3000ml
-                    </span>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    {Math.round(localHydrationTotal)}ml
                   </div>
-                  <div className="bg-stone-200 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-400 to-cyan-500 h-full rounded-full" style={{ width: `${Math.min((localHydrationTotal / 3000) * 100, 100)}%` }}></div>
+                  <div className="text-sm font-semibold text-stone-700 mb-3">
+                    💧 Hydration
                   </div>
-                  <div className="text-xs text-stone-500 mt-1 text-right">
-                    {Math.round((localHydrationTotal / 3000) * 100)}% of goal
+                  <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-gradient-to-r from-blue-400 to-cyan-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localHydrationTotal / 3000) * 100, 100)}%` }}></div>
+                  </div>
+                  <div className="text-xs text-stone-500">
+                    Goal: 3000ml
                   </div>
                 </div>
               </div>
 
-              {/* Meals Summary */}
-              <div className="mt-6 pt-6 border-t border-stone-300 flex justify-between items-center">
-                <div className="text-sm text-stone-600">
-                  Meals logged today: <strong>{localNutritionStats.meals_count}</strong>
+              {/* Meals Summary & Quick Actions */}
+              <div className="mt-8 pt-6 border-t border-stone-300">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                  <div className="text-sm text-stone-600">
+                    Meals logged today: <strong className="text-stone-800">{localNutritionStats.meals_count}</strong>
+                  </div>
+                  <div className="text-sm text-stone-600">
+                    Fiber: <strong className="text-stone-800">{Math.round(localNutritionStats.total_fiber)}g</strong>
+                  </div>
                 </div>
-                <div className="text-sm text-stone-600">
-                  Fiber: <strong>{Math.round(localNutritionStats.total_fiber)}g</strong>
-                </div>
-              </div>
 
-              {/* Quick Add Buttons */}
-              <div className="mt-4 flex justify-center gap-4">
-                <button
-                  onClick={() => {
-                    setFoodSelectorOpen(true)
-                    loadFoodData()
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                  ⚡ Quick Add Food
-                </button>
-                <button
-                  onClick={() => setShowHydrationModal(true)}
-                  className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                  💧 Quick Add Water
-                </button>
+                {/* Quick Add Buttons */}
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <button
+                    onClick={() => {
+                      setFoodSelectorOpen(true)
+                      loadFoodData()
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                  >
+                    ⚡ Quick Add Food
+                  </button>
+                  <button
+                    onClick={() => setShowHydrationModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                  >
+                    💧 Quick Add Water
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Main Dashboard Grid */}
+          </div>          {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
             {/* Activity Logs */}
-            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-8 shadow-lg border border-stone-200">
+              <div className="flex items-center justify-between mb-8">
                 <h3 className="text-2xl font-bold text-stone-800 flex items-center gap-2">
                   📝 Activity Logs
                 </h3>
                 <button
                   onClick={() => setShowWorkoutModal(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                   ➕ Log Activity
                 </button>
@@ -647,22 +642,22 @@ function DashboardContent({
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setActivityFilter('All')}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       activityFilter === 'All'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-200'
                     }`}
                   >
-                    All
+                    All Activities
                   </button>
                   {(user?.user_metadata?.activities || ['Climbing', 'MTB', 'Running', 'Skiing', 'Snowboarding', 'Cycling']).map((activity: string) => (
                     <button
                       key={activity}
                       onClick={() => setActivityFilter(activity)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         activityFilter === activity
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
+                          ? 'bg-emerald-600 text-white shadow-md'
+                          : 'bg-white text-stone-700 hover:bg-stone-100 border border-stone-200'
                       }`}
                     >
                       {activity}
@@ -677,8 +672,8 @@ function DashboardContent({
                     ? data.workouts
                     : data.workouts.filter(workout => workout.activity_type === activityFilter);
                   
-                  return filteredWorkouts.length > 0 ? filteredWorkouts.map((workout) => (
-                    <div key={workout.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
+                  return filteredWorkouts.length > 0 ? filteredWorkouts.slice(0, 3).map((workout) => (
+                    <div key={workout.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-center">
                         <div>
                           <div className="font-semibold text-stone-800 mb-1">
@@ -698,17 +693,19 @@ function DashboardContent({
                     </div>
                   )) : (
                     <div className="text-center py-8 text-stone-600">
-                      No {activityFilter === 'All' ? '' : activityFilter.toLowerCase() + ' '}workouts logged yet. Start your fitness journey!
+                      <div className="text-4xl mb-4">🏃‍♂️</div>
+                      <p className="text-stone-600 mb-2">No {activityFilter === 'All' ? '' : activityFilter.toLowerCase() + ' '}workouts logged yet.</p>
+                      <p className="text-stone-500 text-sm">Start your fitness journey!</p>
                     </div>
                   );
                 })()}
               </div>
 
               {/* View All Activities Button */}
-              <div className="mt-6 text-center">
+              <div className="mt-8 text-center">
                 <button
-                  onClick={() => router.push('/sends')}
-                  className="bg-gradient-to-br from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
+                  onClick={() => router.push('/activities')}
+                  className="bg-gradient-to-br from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white px-8 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
                 >
                   📊 View All Activities
                 </button>
@@ -716,65 +713,71 @@ function DashboardContent({
             </div>
 
             {/* Goals & Events */}
-            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
-              <h3 className="text-2xl font-bold text-stone-800 mb-6 flex items-center justify-between">
-                <span className="flex items-center gap-2">
+            <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-8 shadow-lg border border-stone-200">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold text-stone-800 flex items-center gap-2">
                   🎯 Goals & Events
-                </span>
+                </h3>
                 <button
                   onClick={() => router.push('/goals')}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
                 >
-                  ⚙️ Manage Goals/Events
+                  ⚙️ Manage
                 </button>
-              </h3>
+              </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* Goals */}
                 {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 ? (
-                  <div className="grid gap-4">
-                    {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).map((goal) => (
-                      <div key={goal.id} className="bg-white rounded-lg p-4 border border-stone-200">
-                        <div className="flex justify-between items-center mb-3">
-                          <div>
-                            <div className="font-semibold text-stone-800 text-lg">
-                              🎯 {goal.goal_type}
+                  <div>
+                    <h4 className="text-lg font-semibold text-stone-800 mb-4">Active Goals</h4>
+                    <div className="grid gap-4">
+                      {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).slice(0, 2).map((goal) => (
+                        <div key={goal.id} className="bg-white rounded-lg p-4 border border-stone-200 shadow-sm">
+                          <div className="flex justify-between items-center mb-3">
+                            <div>
+                              <div className="font-semibold text-stone-800 text-lg">
+                                🎯 {goal.goal_type}
+                              </div>
+                              <div className="text-sm text-stone-600 mt-1">
+                                {Math.round(goal.current_value)} of {Math.round(goal.target_value)} {goal.period}
+                              </div>
                             </div>
-                            <div className="text-sm text-stone-600 mt-1">
-                              {Math.round(goal.current_value)} of {Math.round(goal.target_value)} {goal.period}
+                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              (goal.current_value / goal.target_value) * 100 >= 100 ? 'bg-green-100 text-green-800' :
+                              (goal.current_value / goal.target_value) * 100 >= 75 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {(goal.current_value / goal.target_value) * 100 >= 100 ? '✅ Complete' :
+                               (goal.current_value / goal.target_value) * 100 >= 75 ? '🚀 Almost there' :
+                               '🎯 In progress'}
                             </div>
                           </div>
-                          <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            (goal.current_value / goal.target_value) * 100 >= 100 ? 'bg-green-100 text-green-800' :
-                            (goal.current_value / goal.target_value) * 100 >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {(goal.current_value / goal.target_value) * 100 >= 100 ? '✅ Complete' :
-                             (goal.current_value / goal.target_value) * 100 >= 75 ? '🚀 Almost there' :
-                             '🎯 In progress'}
+                          <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
+                            <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((goal.current_value / goal.target_value) * 100, 100)}%` }}></div>
+                          </div>
+                          <div className="flex justify-between text-sm text-stone-600">
+                            <span>{Math.round((goal.current_value / goal.target_value) * 100)}% complete</span>
+                            <span>{Math.max(0, Math.round(goal.target_value - goal.current_value))} to go</span>
                           </div>
                         </div>
-                        <div className="bg-stone-200 rounded-full h-3 overflow-hidden mb-2">
-                          <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full" style={{ width: `${Math.min((goal.current_value / goal.target_value) * 100, 100)}%` }}></div>
-                        </div>
-                        <div className="flex justify-between text-sm text-stone-600">
-                          <span>{Math.round((goal.current_value / goal.target_value) * 100)}% complete</span>
-                          <span>{Math.max(0, Math.round(goal.target_value - goal.current_value))} to go</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  <div className="bg-white rounded-lg p-8 text-center border border-stone-200">
-                    <div className="text-4xl mb-4">🎯</div>
-                    <h3 className="text-lg font-semibold text-stone-800 mb-2">No Goals Yet</h3>
-                    <p className="text-stone-600 mb-4">Create your first goal to start tracking your fitness objectives.</p>
-                    <button
-                      onClick={() => router.push('/goals')}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Create Your First Goal
-                    </button>
+                  <div>
+                    <h4 className="text-lg font-semibold text-stone-800 mb-4">Active Goals</h4>
+                    <div className="bg-white rounded-lg p-8 text-center border border-stone-200 shadow-sm">
+                      <div className="text-4xl mb-4">🎯</div>
+                      <h3 className="text-lg font-semibold text-stone-800 mb-2">No Goals Yet</h3>
+                      <p className="text-stone-600 mb-4">Create your first goal to start tracking your fitness objectives.</p>
+                      <button
+                        onClick={() => router.push('/goals')}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Create Your First Goal
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
