@@ -649,3 +649,132 @@ SELECT
   unnest(ARRAY[2200, 150, 250, 70]),
   'daily'
 WHERE auth.uid() IS NOT NULL;
+
+-- Equipment tracking tables
+
+-- Equipment categories table
+CREATE TABLE IF NOT EXISTS equipment_categories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  category_name TEXT NOT NULL UNIQUE,
+  sport TEXT NOT NULL, -- 'climbing', 'mtb', 'skiing', 'running', 'general'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Equipment table
+CREATE TABLE IF NOT EXISTS equipment (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  equipment_name TEXT NOT NULL,
+  category_id UUID REFERENCES equipment_categories(id),
+  brand TEXT,
+  model TEXT,
+  purchase_date DATE,
+  purchase_price DECIMAL,
+  current_value DECIMAL,
+  mileage_distance DECIMAL DEFAULT 0, -- for tracking usage (km/miles)
+  mileage_time DECIMAL DEFAULT 0, -- for tracking usage (hours)
+  notes TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Sends/Activities table for sport-specific logging
+CREATE TABLE IF NOT EXISTS sends (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  sport TEXT NOT NULL, -- 'climbing', 'mtb', 'skiing', 'snowboarding', 'running', 'other'
+  activity_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  duration_minutes INTEGER,
+
+  -- Climbing specific fields
+  climb_type TEXT, -- 'bouldering', 'sport', 'trad', 'alpine'
+  climb_name TEXT,
+  climb_grade TEXT, -- V-grade, YDS, French, etc.
+  climb_location TEXT,
+
+  -- MTB specific fields
+  trail_name TEXT,
+  trail_level TEXT, -- 'beginner', 'intermediate', 'advanced', 'expert'
+  trail_time TEXT, -- completion time
+  trail_distance DECIMAL, -- in km
+
+  -- Skiing/Snowboarding specific fields
+  mountain_name TEXT,
+  vertical_feet INTEGER,
+  runs_completed INTEGER,
+
+  -- Running specific fields
+  run_distance DECIMAL, -- in km
+  run_time TEXT, -- completion time
+  run_pace TEXT, -- min/km or min/mile
+  run_elevation_gain INTEGER, -- in feet/meters
+
+  -- Equipment used (JSON array of equipment IDs)
+  equipment_used JSONB DEFAULT '[]',
+
+  -- General fields
+  notes TEXT,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5), -- 1-5 star rating
+  weather_conditions TEXT,
+  partners TEXT, -- climbing partners, riding buddies, etc.
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Insert default equipment categories
+INSERT INTO equipment_categories (category_name, sport) VALUES
+  ('Climbing Shoes', 'climbing'),
+  ('Harness', 'climbing'),
+  ('Rope', 'climbing'),
+  ('Quickdraws', 'climbing'),
+  ('Helmet', 'climbing'),
+  ('Chalk Bag', 'climbing'),
+  ('Mountain Bike', 'mtb'),
+  ('Bike Helmet', 'mtb'),
+  ('Bike Shoes', 'mtb'),
+  ('Bike Pedals', 'mtb'),
+  ('Bike Tires', 'mtb'),
+  ('Ski Boots', 'skiing'),
+  ('Skis', 'skiing'),
+  ('Ski Poles', 'skiing'),
+  ('Ski Helmet', 'skiing'),
+  ('Snowboard Boots', 'snowboarding'),
+  ('Snowboard', 'snowboarding'),
+  ('Snowboard Helmet', 'snowboarding'),
+  ('Running Shoes', 'running'),
+  ('Running Shorts', 'running'),
+  ('Running Jacket', 'running'),
+  ('GPS Watch', 'general'),
+  ('Heart Rate Monitor', 'general')
+ON CONFLICT (category_name) DO NOTHING;
+
+-- Row Level Security (RLS) policies
+
+-- Equipment policies
+ALTER TABLE equipment ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own equipment" ON equipment
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own equipment" ON equipment
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own equipment" ON equipment
+  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own equipment" ON equipment
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Sends policies
+ALTER TABLE sends ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own sends" ON sends
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own sends" ON sends
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own sends" ON sends
+  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own sends" ON sends
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Equipment categories are readable by all authenticated users
+ALTER TABLE equipment_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can view equipment categories" ON equipment_categories
+  FOR SELECT USING (auth.uid() IS NOT NULL);

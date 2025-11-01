@@ -216,6 +216,75 @@ export interface MealTemplateItem {
   food_item?: FoodItem
 }
 
+export interface EquipmentCategory {
+  id: string
+  category_name: string
+  sport: string
+  created_at: string
+}
+
+export interface Equipment {
+  id: string
+  user_id: string
+  equipment_name: string
+  category_id?: string
+  brand?: string
+  model?: string
+  purchase_date?: string
+  purchase_price?: number
+  current_value?: number
+  mileage_distance: number
+  mileage_time: number
+  notes?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  category?: EquipmentCategory
+}
+
+export interface Send {
+  id: string
+  user_id: string
+  sport: string
+  activity_date: string
+  duration_minutes?: number
+
+  // Climbing specific fields
+  climb_type?: string
+  climb_name?: string
+  climb_grade?: string
+  climb_location?: string
+
+  // MTB specific fields
+  trail_name?: string
+  trail_level?: string
+  trail_time?: string
+  trail_distance?: number
+
+  // Skiing/Snowboarding specific fields
+  mountain_name?: string
+  vertical_feet?: number
+  runs_completed?: number
+
+  // Running specific fields
+  run_distance?: number
+  run_time?: string
+  run_pace?: string
+  run_elevation_gain?: number
+
+  // Equipment used
+  equipment_used: string[]
+
+  // General fields
+  notes?: string
+  rating?: number
+  weather_conditions?: string
+  partners?: string
+
+  created_at: string
+  updated_at: string
+}
+
 // Fetch recent workouts
 export async function getRecentWorkouts(limit: number = 5): Promise<Workout[]> {
   try {
@@ -633,6 +702,12 @@ export async function logWorkout(formData: FormData) {
   try {
     const supabase = await createClient()
 
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
     const activity_type = formData.get('activity_type') as string
     const duration_minutes = parseInt(formData.get('duration_minutes') as string)
     const calories_burned = formData.get('calories_burned') ? parseInt(formData.get('calories_burned') as string) : null
@@ -649,6 +724,7 @@ export async function logWorkout(formData: FormData) {
     const { data, error } = await supabase
       .from('workouts')
       .insert({
+        user_id: user.id,
         activity_type,
         duration_minutes,
         calories_burned,
@@ -2618,4 +2694,422 @@ function calculateReadinessScores(metrics: Partial<ReadinessMetric>): Partial<Re
   scores.overall_readiness = totalWeight > 0 ? Math.round(totalScore / totalWeight) : undefined
 
   return scores
+}
+
+// Equipment functions
+export async function getEquipmentCategories(): Promise<EquipmentCategory[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('equipment_categories')
+    .select('*')
+    .order('sport', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching equipment categories:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function getUserEquipment(): Promise<Equipment[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('equipment')
+    .select(`
+      *,
+      category:equipment_categories(*)
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching user equipment:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function createEquipment(equipmentData: {
+  equipment_name: string
+  category_id?: string
+  brand?: string
+  model?: string
+  purchase_date?: string
+  purchase_price?: number
+  notes?: string
+}): Promise<{ success: boolean; equipment?: Equipment; error?: string }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('equipment')
+    .insert([equipmentData])
+    .select(`
+      *,
+      category:equipment_categories(*)
+    `)
+    .single()
+
+  if (error) {
+    console.error('Error creating equipment:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/equipment')
+  return { success: true, equipment: data }
+}
+
+export async function updateEquipment(equipmentId: string, equipmentData: {
+  equipment_name?: string
+  category_id?: string
+  brand?: string
+  model?: string
+  purchase_date?: string
+  purchase_price?: number
+  current_value?: number
+  mileage_distance?: number
+  mileage_time?: number
+  notes?: string
+  is_active?: boolean
+}): Promise<{ success: boolean; equipment?: Equipment; error?: string }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('equipment')
+    .update(equipmentData)
+    .eq('id', equipmentId)
+    .select(`
+      *,
+      category:equipment_categories(*)
+    `)
+    .single()
+
+  if (error) {
+    console.error('Error updating equipment:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/equipment')
+  return { success: true, equipment: data }
+}
+
+export async function deleteEquipment(equipmentId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('equipment')
+    .delete()
+    .eq('id', equipmentId)
+
+  if (error) {
+    console.error('Error deleting equipment:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/equipment')
+  return { success: true }
+}
+
+// Sends functions
+export async function getRecentSends(limit: number = 10): Promise<Send[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('sends')
+    .select('*')
+    .order('activity_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching recent sends:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function getSendsBySport(sport: string, limit: number = 20): Promise<Send[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('sends')
+    .select('*')
+    .eq('sport', sport)
+    .order('activity_date', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching sends by sport:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function createSend(sendData: {
+  sport: string
+  activity_date?: string
+  duration_minutes?: number
+
+  // Climbing specific
+  climb_type?: string
+  climb_name?: string
+  climb_grade?: string
+  climb_location?: string
+
+  // MTB specific
+  trail_name?: string
+  trail_level?: string
+  trail_time?: string
+  trail_distance?: number
+
+  // Skiing/Snowboarding specific
+  mountain_name?: string
+  vertical_feet?: number
+  runs_completed?: number
+
+  // Running specific
+  run_distance?: number
+  run_time?: string
+  run_pace?: string
+  run_elevation_gain?: number
+
+  // Equipment used
+  equipment_used?: string[]
+
+  // General fields
+  notes?: string
+  rating?: number
+  weather_conditions?: string
+  partners?: string
+}): Promise<{ success: boolean; send?: Send; error?: string }> {
+  'use server'
+  
+  const supabase = await createClient()
+  
+  // Get the current user
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError || !session?.user) {
+    console.error('Session error:', sessionError)
+    return { success: false, error: 'User not authenticated' }
+  }
+
+  const user = session.user
+  console.log('Creating send for user:', user.id)
+  console.log('Send data:', { ...sendData, user_id: user.id })
+
+  const { data, error } = await supabase
+    .from('sends')
+    .insert([{
+      ...sendData,
+      user_id: user.id
+    }])
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating send:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/training')
+  return { success: true, send: data }
+}
+
+export async function logSend(formData: FormData) {
+  try {
+    const supabase = await createClient()
+
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' }
+    }
+
+    const sport = formData.get('sport') as string
+    const activity_date = formData.get('activity_date') as string || new Date().toISOString().split('T')[0]
+    const duration_minutes = formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes') as string) : null
+    const notes = formData.get('notes') as string
+    const rating = formData.get('rating') ? parseInt(formData.get('rating') as string) : null
+    const weather_conditions = formData.get('weather_conditions') as string
+    const partners = formData.get('partners') as string
+
+    // Sport-specific fields
+    const climb_type = formData.get('climb_type') as string
+    const climb_name = formData.get('climb_name') as string
+    const climb_grade = formData.get('climb_grade') as string
+    const climb_location = formData.get('climb_location') as string
+
+    const trail_name = formData.get('trail_name') as string
+    const trail_level = formData.get('trail_level') as string
+    const trail_time = formData.get('trail_time') as string
+    const trail_distance = formData.get('trail_distance') ? parseFloat(formData.get('trail_distance') as string) : null
+
+    const mountain_name = formData.get('mountain_name') as string
+    const vertical_feet = formData.get('vertical_feet') ? parseInt(formData.get('vertical_feet') as string) : null
+    const runs_completed = formData.get('runs_completed') ? parseInt(formData.get('runs_completed') as string) : null
+
+    const run_distance = formData.get('run_distance') ? parseFloat(formData.get('run_distance') as string) : null
+    const run_time = formData.get('run_time') as string
+    const run_pace = formData.get('run_pace') as string
+    const run_elevation_gain = formData.get('run_elevation_gain') ? parseInt(formData.get('run_elevation_gain') as string) : null
+
+    // Equipment used - this would need to be handled differently for form data
+    // For now, we'll skip equipment and handle it in the client-side version
+    const equipment_used: string[] = []
+
+    const { data, error } = await supabase
+      .from('sends')
+      .insert({
+        user_id: user.id,
+        sport,
+        activity_date,
+        duration_minutes,
+        notes,
+        rating,
+        weather_conditions,
+        partners,
+        climb_type,
+        climb_name,
+        climb_grade,
+        climb_location,
+        trail_name,
+        trail_level,
+        trail_time,
+        trail_distance,
+        mountain_name,
+        vertical_feet,
+        runs_completed,
+        run_distance,
+        run_time,
+        run_pace,
+        run_elevation_gain,
+        equipment_used
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error logging send:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/training')
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error in logSend:', error)
+    return { success: false, error: 'Failed to log activity' }
+  }
+}
+
+export async function updateSend(sendId: string, sendData: {
+  sport?: string
+  activity_date?: string
+  duration_minutes?: number
+
+  // Climbing specific
+  climb_type?: string
+  climb_name?: string
+  climb_grade?: string
+  climb_location?: string
+
+  // MTB specific
+  trail_name?: string
+  trail_level?: string
+  trail_time?: string
+  trail_distance?: number
+
+  // Skiing/Snowboarding specific
+  mountain_name?: string
+  vertical_feet?: number
+  runs_completed?: number
+
+  // Running specific
+  run_distance?: number
+  run_time?: string
+  run_pace?: string
+  run_elevation_gain?: number
+
+  // Equipment used
+  equipment_used?: string[]
+
+  // General fields
+  notes?: string
+  rating?: number
+  weather_conditions?: string
+  partners?: string
+}): Promise<{ success: boolean; send?: Send; error?: string }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('sends')
+    .update(sendData)
+    .eq('id', sendId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating send:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/training')
+  return { success: true, send: data }
+}
+
+export async function deleteSend(sendId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('sends')
+    .delete()
+    .eq('id', sendId)
+
+  if (error) {
+    console.error('Error deleting send:', error)
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/training')
+  return { success: true }
+}
+
+export async function getSendStats(): Promise<{
+  totalSends: number
+  sendsBySport: { sport: string; count: number }[]
+  recentActivity: { date: string; count: number }[]
+}> {
+  const supabase = await createClient()
+
+  // Get total sends
+  const { count: totalSends } = await supabase
+    .from('sends')
+    .select('*', { count: 'exact', head: true })
+
+  // Get sends by sport
+  const { data: rawSportData } = await supabase
+    .from('sends')
+    .select('sport')
+
+  const sportCounts: { [key: string]: number } = {}
+  rawSportData?.forEach(send => {
+    sportCounts[send.sport] = (sportCounts[send.sport] || 0) + 1
+  })
+  const sendsBySport = Object.entries(sportCounts).map(([sport, count]) => ({ sport, count }))
+
+  // Get recent activity (last 30 days)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const { data: rawRecentData } = await supabase
+    .from('sends')
+    .select('activity_date')
+    .gte('activity_date', thirtyDaysAgo)
+
+  const dateCounts: { [key: string]: number } = {}
+  rawRecentData?.forEach(send => {
+    dateCounts[send.activity_date] = (dateCounts[send.activity_date] || 0) + 1
+  })
+  const recentActivity = Object.entries(dateCounts)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  return {
+    totalSends: totalSends || 0,
+    sendsBySport: sendsBySport || [],
+    recentActivity: recentActivity || []
+  }
 }

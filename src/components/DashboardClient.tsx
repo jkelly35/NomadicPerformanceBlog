@@ -27,7 +27,12 @@ import {
   logHydration,
   getDailyNutritionStats,
   getDailyHydrationTotal,
-  Event as FitnessEvent
+  Event as FitnessEvent,
+  Send,
+  Equipment,
+  createSend,
+  getUserEquipment,
+  logSend
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -48,6 +53,7 @@ interface DashboardData {
     meals_count: number
   }
   dailyHydrationTotal: number
+  equipment: Equipment[]
 }
 
 function DashboardContent({ 
@@ -69,7 +75,15 @@ function DashboardContent({
   localNutritionStats,
   setLocalNutritionStats,
   user,
-  loading
+  loading,
+  selectedSport,
+  setSelectedSport,
+  sendData,
+  setSendData,
+  handleSportChange,
+  handleEquipmentToggle,
+  handleSendSubmit,
+  renderSportSpecificFields
 }: { 
   data: DashboardData
   showWorkoutModal: boolean
@@ -104,6 +118,60 @@ function DashboardContent({
   }) => void
   user: any
   loading: boolean
+  selectedSport: string
+  setSelectedSport: (sport: string) => void
+  sendData: {
+    activity_date: string
+    duration_minutes: string
+    notes: string
+    rating: string
+    weather_conditions: string
+    partners: string
+    climb_type: string
+    climb_name: string
+    climb_grade: string
+    climb_location: string
+    trail_name: string
+    trail_level: string
+    trail_time: string
+    trail_distance: string
+    mountain_name: string
+    vertical_feet: string
+    runs_completed: string
+    run_distance: string
+    run_time: string
+    run_pace: string
+    run_elevation_gain: string
+    equipment_used: string[]
+  }
+  setSendData: React.Dispatch<React.SetStateAction<{
+    activity_date: string
+    duration_minutes: string
+    notes: string
+    rating: string
+    weather_conditions: string
+    partners: string
+    climb_type: string
+    climb_name: string
+    climb_grade: string
+    climb_location: string
+    trail_name: string
+    trail_level: string
+    trail_time: string
+    trail_distance: string
+    mountain_name: string
+    vertical_feet: string
+    runs_completed: string
+    run_distance: string
+    run_time: string
+    run_pace: string
+    run_elevation_gain: string
+    equipment_used: string[]
+  }>>
+  handleSportChange: (sport: string) => void
+  handleEquipmentToggle: (equipmentId: string) => void
+  handleSendSubmit: (e: React.FormEvent) => Promise<void>
+  renderSportSpecificFields: () => JSX.Element | null
 }) {
   const router = useRouter()
   const [activityFilter, setActivityFilter] = useState<string>('All')
@@ -553,17 +621,17 @@ function DashboardContent({
           {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 
-            {/* Send Logs */}
+            {/* Activity Logs */}
             <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-6 shadow-lg border border-stone-200">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-stone-800 flex items-center gap-2">
-                  📝 Send Logs
+                  📝 Activity Logs
                 </h3>
                 <button
                   onClick={() => setShowWorkoutModal(true)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
                 >
-                  ➕ Log Send
+                  ➕ Log Activity
                 </button>
               </div>
 
@@ -629,13 +697,13 @@ function DashboardContent({
                 })()}
               </div>
 
-              {/* View All Sends Button */}
+              {/* View All Activities Button */}
               <div className="mt-6 text-center">
                 <button
-                  onClick={() => window.location.href = '/sends'}
+                  onClick={() => router.push('/sends')}
                   className="bg-gradient-to-br from-stone-500 to-stone-600 hover:from-stone-600 hover:to-stone-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg"
                 >
-                  📊 View All Sends
+                  📊 View All Activities
                 </button>
               </div>
             </div>
@@ -647,7 +715,7 @@ function DashboardContent({
                   🎯 Goals & Events
                 </span>
                 <button
-                  onClick={() => window.location.href = '/goals'}
+                  onClick={() => router.push('/goals')}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   ⚙️ Manage Goals/Events
@@ -695,7 +763,7 @@ function DashboardContent({
                     <h3 className="text-lg font-semibold text-stone-800 mb-2">No Goals Yet</h3>
                     <p className="text-stone-600 mb-4">Create your first goal to start tracking your fitness objectives.</p>
                     <button
-                      onClick={() => window.location.href = '/goals'}
+                      onClick={() => router.push('/goals')}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                       Create Your First Goal
@@ -764,7 +832,7 @@ function DashboardContent({
 
       <Footer />
 
-      {/* Workout Logging Modal */}
+      {/* Activity Logging Modal */}
       {showWorkoutModal && (
         <div style={{
           position: 'fixed',
@@ -782,19 +850,21 @@ function DashboardContent({
             background: '#fff',
             borderRadius: '12px',
             padding: '2rem',
-            maxWidth: '500px',
+            maxWidth: '600px',
             width: '90%',
             maxHeight: '90vh',
             overflow: 'auto'
           }}>
-            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>Log Your Send</h2>
-            <form action={onWorkoutSubmit}>
-              <div style={{ marginBottom: '1rem' }}>
+            <h2 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>Log Activity</h2>
+            <form onSubmit={handleSendSubmit}>
+              {/* Sport Selection */}
+              <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Activity Type
+                  Sport *
                 </label>
-                <select 
-                  name="activity_type" 
+                <select
+                  value={selectedSport}
+                  onChange={(e) => handleSportChange(e.target.value)}
                   required
                   style={{
                     width: '100%',
@@ -804,85 +874,72 @@ function DashboardContent({
                     fontSize: '1rem'
                   }}
                 >
-                  <option value="">Select activity...</option>
-                  <option value="Rock Climbing">🧗 Rock Climbing</option>
-                  <option value="Trail Running">🏃 Trail Running</option>
-                  <option value="Hiking">🥾 Hiking</option>
-                  <option value="Skiing">🎿 Skiing</option>
-                  <option value="Snowboarding">🏂 Snowboarding</option>
-                  <option value="Cycling">🚴 Cycling</option>
-                  <option value="Strength Training">💪 Strength Training</option>
-                  <option value="Yoga & Mobility">🧘 Yoga & Mobility</option>
-                  <option value="Core Workout">🏋️ Core Workout</option>
-                  <option value="Swimming">🏊 Swimming</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Duration (minutes)
-                </label>
-                <input 
-                  type="number" 
-                  name="duration_minutes" 
-                  required 
-                  min="1"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Calories Burned (optional)
-                </label>
-                <input 
-                  type="number" 
-                  name="calories_burned" 
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                  Intensity
-                </label>
-                <select 
-                  name="intensity" 
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
+                  <option value="">Select a sport...</option>
+                  <option value="climbing">🧗 Rock Climbing</option>
+                  <option value="trail-running">🏃 Trail Running</option>
+                  <option value="mtb">🚵 Mountain Biking</option>
+                  <option value="skiing">🎿 Skiing</option>
+                  <option value="snowboarding">🏂 Snowboarding</option>
+                  <option value="hiking">🥾 Hiking</option>
+                  <option value="cycling">🚴 Cycling</option>
+                  <option value="strength">💪 Strength Training</option>
+                  <option value="yoga">🧘 Yoga & Mobility</option>
+                  <option value="core">🏋️ Core Workout</option>
+                  <option value="swimming">🏊 Swimming</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
 
+              {/* Sport-Specific Fields */}
+              {renderSportSpecificFields()}
+
+              {/* Equipment Selection */}
+              {selectedSport && data.equipment && data.equipment.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                    Equipment Used
+                  </label>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '0.5rem',
+                    maxHeight: '150px',
+                    overflow: 'auto',
+                    padding: '0.5rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px'
+                  }}>
+                    {data.equipment
+                      .filter(equipment => {
+                        if (selectedSport === 'climbing') return equipment.category?.sport === 'climbing';
+                        if (selectedSport === 'mtb') return equipment.category?.sport === 'mtb';
+                        if (selectedSport === 'skiing' || selectedSport === 'snowboarding') return equipment.category?.sport === 'skiing';
+                        if (selectedSport === 'trail-running' || selectedSport === 'hiking') return equipment.category?.sport === 'running';
+                        if (selectedSport === 'cycling') return equipment.category?.sport === 'cycling';
+                        return false;
+                      })
+                      .map(equipment => (
+                        <label key={equipment.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <input
+                            type="checkbox"
+                            checked={sendData.equipment_used?.includes(equipment.id) || false}
+                            onChange={() => handleEquipmentToggle(equipment.id)}
+                          />
+                          {equipment.equipment_name}
+                        </label>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
                   Notes (optional)
                 </label>
-                <textarea 
-                  name="notes" 
+                <textarea
+                  value={sendData.notes || ''}
+                  onChange={(e) => setSendData({ ...sendData, notes: e.target.value })}
                   rows={3}
                   style={{
                     width: '100%',
@@ -895,8 +952,9 @@ function DashboardContent({
                 />
               </div>
 
+              {/* Submit Buttons */}
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowWorkoutModal(false)}
                   style={{
@@ -909,7 +967,7 @@ function DashboardContent({
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={isSubmitting}
                   style={{
@@ -922,7 +980,7 @@ function DashboardContent({
                     fontWeight: 'bold'
                   }}
                 >
-                  {isSubmitting ? 'Logging...' : 'Log Send'}
+                  {isSubmitting ? 'Logging...' : 'Log Activity'}
                 </button>
               </div>
             </form>
@@ -1742,6 +1800,44 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [showHydrationModal, setShowHydrationModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Send/Activity logging states
+  const [selectedSport, setSelectedSport] = useState<string>('climbing')
+  const [sendData, setSendData] = useState({
+    // General fields
+    activity_date: new Date().toISOString().split('T')[0],
+    duration_minutes: '',
+    notes: '',
+    rating: '',
+    weather_conditions: '',
+    partners: '',
+
+    // Climbing specific
+    climb_type: '',
+    climb_name: '',
+    climb_grade: '',
+    climb_location: '',
+
+    // MTB specific
+    trail_name: '',
+    trail_level: '',
+    trail_time: '',
+    trail_distance: '',
+
+    // Skiing/Snowboarding specific
+    mountain_name: '',
+    vertical_feet: '',
+    runs_completed: '',
+
+    // Running specific
+    run_distance: '',
+    run_time: '',
+    run_pace: '',
+    run_elevation_gain: '',
+
+    // Equipment used
+    equipment_used: [] as string[]
+  })
+
   // Local state for immediate UI updates
   const [localNutritionStats, setLocalNutritionStats] = useState(data.dailyNutritionStats)
   const [localHydrationTotal, setLocalHydrationTotal] = useState(data.dailyHydrationTotal)
@@ -1850,6 +1946,444 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       alert('Error logging activity')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Send/Activity logging handlers
+  const handleSportChange = (sport: string) => {
+    setSelectedSport(sport)
+    // Reset sport-specific fields when changing sports
+    setSendData(prev => ({
+      ...prev,
+      // Reset all sport-specific fields
+      climb_type: '',
+      climb_name: '',
+      climb_grade: '',
+      climb_location: '',
+      trail_name: '',
+      trail_level: '',
+      trail_time: '',
+      trail_distance: '',
+      mountain_name: '',
+      vertical_feet: '',
+      runs_completed: '',
+      run_distance: '',
+      run_time: '',
+      run_pace: '',
+      run_elevation_gain: '',
+      equipment_used: []
+    }))
+  }
+
+  const handleEquipmentToggle = (equipmentId: string) => {
+    setSendData(prev => ({
+      ...prev,
+      equipment_used: prev.equipment_used.includes(equipmentId)
+        ? prev.equipment_used.filter(id => id !== equipmentId)
+        : [...prev.equipment_used, equipmentId]
+    }))
+  }
+
+  const handleSendSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      const sendPayload = {
+        sport: selectedSport,
+        activity_date: sendData.activity_date,
+        duration_minutes: sendData.duration_minutes ? parseInt(sendData.duration_minutes) : undefined,
+
+        // Climbing specific
+        climb_type: sendData.climb_type || undefined,
+        climb_name: sendData.climb_name || undefined,
+        climb_grade: sendData.climb_grade || undefined,
+        climb_location: sendData.climb_location || undefined,
+
+        // MTB specific
+        trail_name: sendData.trail_name || undefined,
+        trail_level: sendData.trail_level || undefined,
+        trail_time: sendData.trail_time || undefined,
+        trail_distance: sendData.trail_distance ? parseFloat(sendData.trail_distance) : undefined,
+
+        // Skiing/Snowboarding specific
+        mountain_name: sendData.mountain_name || undefined,
+        vertical_feet: sendData.vertical_feet ? parseInt(sendData.vertical_feet) : undefined,
+        runs_completed: sendData.runs_completed ? parseInt(sendData.runs_completed) : undefined,
+
+        // Running specific
+        run_distance: sendData.run_distance ? parseFloat(sendData.run_distance) : undefined,
+        run_time: sendData.run_time || undefined,
+        run_pace: sendData.run_pace || undefined,
+        run_elevation_gain: sendData.run_elevation_gain ? parseInt(sendData.run_elevation_gain) : undefined,
+
+        // Equipment and general fields
+        equipment_used: sendData.equipment_used,
+        notes: sendData.notes || undefined,
+        rating: sendData.rating ? parseInt(sendData.rating) : undefined,
+        weather_conditions: sendData.weather_conditions || undefined,
+        partners: sendData.partners || undefined
+      }
+
+      const result = await createSend(sendPayload)
+
+      if (result.success) {
+        setSendData({
+          activity_date: new Date().toISOString().split('T')[0],
+          duration_minutes: '',
+          notes: '',
+          rating: '',
+          weather_conditions: '',
+          partners: '',
+          climb_type: '',
+          climb_name: '',
+          climb_grade: '',
+          climb_location: '',
+          trail_name: '',
+          trail_level: '',
+          trail_time: '',
+          trail_distance: '',
+          mountain_name: '',
+          vertical_feet: '',
+          runs_completed: '',
+          run_distance: '',
+          run_time: '',
+          run_pace: '',
+          run_elevation_gain: '',
+          equipment_used: []
+        })
+        setShowWorkoutModal(false)
+        // Refresh the page to show new data
+        window.location.reload()
+      } else {
+        alert('Failed to log activity: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Failed to log activity:', error)
+      alert('Failed to log activity. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Render sport-specific fields for the modal
+  const renderSportSpecificFields = () => {
+    const relevantEquipment = data.equipment.filter(eq =>
+      eq.category?.sport === selectedSport || eq.category?.sport === 'general'
+    )
+
+    switch (selectedSport) {
+      case 'climbing':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Climb Type
+                </label>
+                <select
+                  value={sendData.climb_type}
+                  onChange={(e) => setSendData({ ...sendData, climb_type: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select type</option>
+                  <option value="bouldering">Bouldering</option>
+                  <option value="sport">Sport Climbing</option>
+                  <option value="trad">Traditional</option>
+                  <option value="alpine">Alpine</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Grade
+                </label>
+                <input
+                  type="text"
+                  value={sendData.climb_grade}
+                  onChange={(e) => setSendData({ ...sendData, climb_grade: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="V5, 5.10a, etc."
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Climb Name
+                </label>
+                <input
+                  type="text"
+                  value={sendData.climb_name}
+                  onChange={(e) => setSendData({ ...sendData, climb_name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Route name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={sendData.climb_location}
+                  onChange={(e) => setSendData({ ...sendData, climb_location: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Crag or area"
+                />
+              </div>
+            </div>
+            {relevantEquipment.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Equipment Used
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {relevantEquipment.map((eq) => (
+                    <label key={eq.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={sendData.equipment_used.includes(eq.id)}
+                        onChange={() => handleEquipmentToggle(eq.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">{eq.equipment_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      case 'mtb':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Trail Name
+                </label>
+                <input
+                  type="text"
+                  value={sendData.trail_name}
+                  onChange={(e) => setSendData({ ...sendData, trail_name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Trail name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Difficulty Level
+                </label>
+                <select
+                  value={sendData.trail_level}
+                  onChange={(e) => setSendData({ ...sendData, trail_level: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select level</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Time (HH:MM:SS)
+                </label>
+                <input
+                  type="text"
+                  value={sendData.trail_time}
+                  onChange={(e) => setSendData({ ...sendData, trail_time: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="01:23:45"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Distance (km)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={sendData.trail_distance}
+                  onChange={(e) => setSendData({ ...sendData, trail_distance: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="12.5"
+                />
+              </div>
+            </div>
+            {relevantEquipment.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Equipment Used
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {relevantEquipment.map((eq) => (
+                    <label key={eq.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={sendData.equipment_used.includes(eq.id)}
+                        onChange={() => handleEquipmentToggle(eq.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">{eq.equipment_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      case 'skiing':
+      case 'snowboarding':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Mountain/Resort
+                </label>
+                <input
+                  type="text"
+                  value={sendData.mountain_name}
+                  onChange={(e) => setSendData({ ...sendData, mountain_name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Mountain name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Vertical Feet
+                </label>
+                <input
+                  type="number"
+                  value={sendData.vertical_feet}
+                  onChange={(e) => setSendData({ ...sendData, vertical_feet: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="2000"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Runs Completed
+              </label>
+              <input
+                type="number"
+                value={sendData.runs_completed}
+                onChange={(e) => setSendData({ ...sendData, runs_completed: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="15"
+              />
+            </div>
+            {relevantEquipment.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Equipment Used
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {relevantEquipment.map((eq) => (
+                    <label key={eq.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={sendData.equipment_used.includes(eq.id)}
+                        onChange={() => handleEquipmentToggle(eq.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">{eq.equipment_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      case 'running':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Distance (km)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={sendData.run_distance}
+                  onChange={(e) => setSendData({ ...sendData, run_distance: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="5.0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Time (HH:MM:SS)
+                </label>
+                <input
+                  type="text"
+                  value={sendData.run_time}
+                  onChange={(e) => setSendData({ ...sendData, run_time: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="00:25:30"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Pace (min/km)
+                </label>
+                <input
+                  type="text"
+                  value={sendData.run_pace}
+                  onChange={(e) => setSendData({ ...sendData, run_pace: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="5:00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Elevation Gain (ft)
+                </label>
+                <input
+                  type="number"
+                  value={sendData.run_elevation_gain}
+                  onChange={(e) => setSendData({ ...sendData, run_elevation_gain: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="500"
+                />
+              </div>
+            </div>
+            {relevantEquipment.length > 0 && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Equipment Used
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {relevantEquipment.map((eq) => (
+                    <label key={eq.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={sendData.equipment_used.includes(eq.id)}
+                        onChange={() => handleEquipmentToggle(eq.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">{eq.equipment_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      default:
+        return null
     }
   }
 
@@ -1978,5 +2512,13 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     setLocalNutritionStats={setLocalNutritionStats}
     user={user}
     loading={loading}
+    selectedSport={selectedSport}
+    setSelectedSport={setSelectedSport}
+    sendData={sendData}
+    setSendData={setSendData}
+    handleSportChange={handleSportChange}
+    handleEquipmentToggle={handleEquipmentToggle}
+    handleSendSubmit={handleSendSubmit}
+    renderSportSpecificFields={renderSportSpecificFields}
   />
 }
