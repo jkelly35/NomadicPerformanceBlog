@@ -778,3 +778,327 @@ CREATE POLICY "Users can delete their own sends" ON sends
 ALTER TABLE equipment_categories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Authenticated users can view equipment categories" ON equipment_categories
   FOR SELECT USING (auth.uid() IS NOT NULL);
+
+-- ===========================================
+-- STRENGTH TRAINING SCHEMA
+-- ===========================================
+
+-- Exercises table
+CREATE TABLE IF NOT EXISTS exercises (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT CHECK (category IN ('upper_body', 'lower_body', 'full_body', 'core', 'cardio', 'olympic', 'powerlifting', 'bodybuilding', 'functional')) NOT NULL,
+  muscle_groups TEXT[] NOT NULL,
+  equipment TEXT[] NOT NULL DEFAULT '{}',
+  instructions TEXT,
+  video_url TEXT,
+  difficulty TEXT CHECK (difficulty IN ('beginner', 'intermediate', 'advanced')) NOT NULL,
+  is_custom BOOLEAN DEFAULT false,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Training plans table
+CREATE TABLE IF NOT EXISTS training_plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT CHECK (category IN ('strength', 'powerlifting', 'bodybuilding', 'olympic', 'functional', 'general')) NOT NULL,
+  difficulty TEXT CHECK (difficulty IN ('beginner', 'intermediate', 'advanced')) NOT NULL,
+  duration_weeks INTEGER NOT NULL,
+  is_public BOOLEAN DEFAULT false,
+  created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  tags TEXT[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Training phases table
+CREATE TABLE IF NOT EXISTS training_phases (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  plan_id UUID REFERENCES training_plans(id) ON DELETE CASCADE NOT NULL,
+  phase_number INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  duration_weeks INTEGER NOT NULL,
+  goal TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(plan_id, phase_number)
+);
+
+-- Training weeks table
+CREATE TABLE IF NOT EXISTS training_weeks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  phase_id UUID REFERENCES training_phases(id) ON DELETE CASCADE NOT NULL,
+  week_number INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  focus TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(phase_id, week_number)
+);
+
+-- Training days table
+CREATE TABLE IF NOT EXISTS training_days (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  week_id UUID REFERENCES training_weeks(id) ON DELETE CASCADE NOT NULL,
+  day_number INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  focus TEXT[] DEFAULT '{}',
+  estimated_duration INTEGER NOT NULL, -- minutes
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(week_id, day_number)
+);
+
+-- Training day exercises table
+CREATE TABLE IF NOT EXISTS training_day_exercises (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  day_id UUID REFERENCES training_days(id) ON DELETE CASCADE NOT NULL,
+  exercise_id UUID REFERENCES exercises(id) ON DELETE CASCADE NOT NULL,
+  order_position INTEGER NOT NULL,
+  target_sets INTEGER NOT NULL,
+  target_reps TEXT NOT NULL, -- e.g., "3x8-12" or "8,8,6,6"
+  target_weight TEXT, -- e.g., "70% 1RM" or "50kg"
+  target_rpe INTEGER CHECK (target_rpe >= 1 AND target_rpe <= 10),
+  rest_time_seconds INTEGER,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- User training plans table
+CREATE TABLE IF NOT EXISTS user_training_plans (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  plan_id UUID REFERENCES training_plans(id) ON DELETE CASCADE NOT NULL,
+  start_date DATE NOT NULL,
+  current_phase INTEGER DEFAULT 1,
+  current_week INTEGER DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
+  progress_percentage DECIMAL DEFAULT 0,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, plan_id, start_date)
+);
+
+-- Strength workouts table
+CREATE TABLE IF NOT EXISTS strength_workouts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  plan_day_id UUID REFERENCES training_days(id) ON DELETE SET NULL,
+  workout_date DATE NOT NULL,
+  name TEXT NOT NULL,
+  duration_minutes INTEGER,
+  notes TEXT,
+  completed BOOLEAN DEFAULT false,
+  total_volume DECIMAL, -- Total weight lifted in kg
+  average_rpe DECIMAL CHECK (average_rpe >= 1 AND average_rpe <= 10),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Workout exercises table
+CREATE TABLE IF NOT EXISTS workout_exercises (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workout_id UUID REFERENCES strength_workouts(id) ON DELETE CASCADE NOT NULL,
+  exercise_id UUID REFERENCES exercises(id) ON DELETE CASCADE NOT NULL,
+  order_position INTEGER NOT NULL,
+  notes TEXT,
+  target_sets INTEGER,
+  target_reps TEXT,
+  target_weight TEXT,
+  target_rpe INTEGER CHECK (target_rpe >= 1 AND target_rpe <= 10),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Exercise sets table
+CREATE TABLE IF NOT EXISTS exercise_sets (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workout_exercise_id UUID REFERENCES workout_exercises(id) ON DELETE CASCADE NOT NULL,
+  set_number INTEGER NOT NULL,
+  reps INTEGER,
+  weight_kg DECIMAL,
+  weight_lbs DECIMAL,
+  distance_meters DECIMAL,
+  distance_miles DECIMAL,
+  duration_seconds INTEGER,
+  pace_min_per_km DECIMAL,
+  pace_min_per_mile DECIMAL,
+  rpe INTEGER CHECK (rpe >= 1 AND rpe <= 10),
+  rest_time_seconds INTEGER,
+  notes TEXT,
+  completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(workout_exercise_id, set_number)
+);
+
+-- Strength performance metrics table
+CREATE TABLE IF NOT EXISTS strength_performance_metrics (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  exercise_id UUID REFERENCES exercises(id) ON DELETE CASCADE NOT NULL,
+  date DATE NOT NULL,
+  metric_type TEXT CHECK (metric_type IN ('max_weight', 'volume', 'strength_gains', 'endurance', 'power')) NOT NULL,
+  value DECIMAL NOT NULL,
+  unit TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, exercise_id, date, metric_type)
+);
+
+-- ===========================================
+-- STRENGTH TRAINING POLICIES
+-- ===========================================
+
+-- Exercises policies
+ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Exercises are viewable by authenticated users" ON exercises
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Users can create custom exercises" ON exercises
+  FOR INSERT WITH CHECK (auth.uid() = created_by OR is_custom = false);
+CREATE POLICY "Users can update their custom exercises" ON exercises
+  FOR UPDATE USING (auth.uid() = created_by AND is_custom = true);
+
+-- Training plans policies
+ALTER TABLE training_plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public training plans are viewable by authenticated users" ON training_plans
+  FOR SELECT USING (auth.uid() IS NOT NULL AND (is_public = true OR auth.uid() = created_by));
+CREATE POLICY "Users can create training plans" ON training_plans
+  FOR INSERT WITH CHECK (auth.uid() = created_by);
+CREATE POLICY "Users can update their training plans" ON training_plans
+  FOR UPDATE USING (auth.uid() = created_by);
+CREATE POLICY "Users can delete their training plans" ON training_plans
+  FOR DELETE USING (auth.uid() = created_by);
+
+-- Training phases, weeks, days policies (inherit from plan ownership)
+ALTER TABLE training_phases ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Training phases are accessible through plans" ON training_phases
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM training_plans
+      WHERE training_plans.id = training_phases.plan_id
+      AND (training_plans.is_public = true OR training_plans.created_by = auth.uid())
+    )
+  );
+
+ALTER TABLE training_weeks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Training weeks are accessible through plans" ON training_weeks
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM training_phases tp
+      JOIN training_plans p ON p.id = tp.plan_id
+      WHERE tp.id = training_weeks.phase_id
+      AND (p.is_public = true OR p.created_by = auth.uid())
+    )
+  );
+
+ALTER TABLE training_days ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Training days are accessible through plans" ON training_days
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM training_weeks tw
+      JOIN training_phases tp ON tp.id = tw.phase_id
+      JOIN training_plans p ON p.id = tp.plan_id
+      WHERE tw.id = training_days.week_id
+      AND (p.is_public = true OR p.created_by = auth.uid())
+    )
+  );
+
+ALTER TABLE training_day_exercises ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Training day exercises are accessible through plans" ON training_day_exercises
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM training_days td
+      JOIN training_weeks tw ON tw.id = td.week_id
+      JOIN training_phases tp ON tp.id = tw.phase_id
+      JOIN training_plans p ON p.id = tp.plan_id
+      WHERE td.id = training_day_exercises.day_id
+      AND (p.is_public = true OR p.created_by = auth.uid())
+    )
+  );
+
+-- User training plans policies
+ALTER TABLE user_training_plans ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their training plans" ON user_training_plans
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage their training plans" ON user_training_plans
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Strength workouts policies
+ALTER TABLE strength_workouts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their strength workouts" ON strength_workouts
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Workout exercises and sets policies
+ALTER TABLE workout_exercises ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage workout exercises through workouts" ON workout_exercises
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM strength_workouts
+      WHERE strength_workouts.id = workout_exercises.workout_id
+      AND strength_workouts.user_id = auth.uid()
+    )
+  );
+
+ALTER TABLE exercise_sets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage exercise sets through workouts" ON exercise_sets
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM workout_exercises we
+      JOIN strength_workouts sw ON sw.id = we.workout_id
+      WHERE we.id = exercise_sets.workout_exercise_id
+      AND sw.user_id = auth.uid()
+    )
+  );
+
+-- Strength performance metrics policies
+ALTER TABLE strength_performance_metrics ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their performance metrics" ON strength_performance_metrics
+  FOR ALL USING (auth.uid() = user_id);
+
+-- ===========================================
+-- STRENGTH TRAINING INDEXES
+-- ===========================================
+
+-- Performance indexes
+CREATE INDEX IF NOT EXISTS idx_exercises_category ON exercises(category);
+CREATE INDEX IF NOT EXISTS idx_exercises_muscle_groups ON exercises USING GIN(muscle_groups);
+CREATE INDEX IF NOT EXISTS idx_exercises_equipment ON exercises USING GIN(equipment);
+CREATE INDEX IF NOT EXISTS idx_training_plans_category ON training_plans(category);
+CREATE INDEX IF NOT EXISTS idx_training_plans_created_by ON training_plans(created_by);
+CREATE INDEX IF NOT EXISTS idx_user_training_plans_user_id ON user_training_plans(user_id);
+CREATE INDEX IF NOT EXISTS idx_strength_workouts_user_date ON strength_workouts(user_id, workout_date);
+CREATE INDEX IF NOT EXISTS idx_exercise_sets_workout_exercise ON exercise_sets(workout_exercise_id);
+CREATE INDEX IF NOT EXISTS idx_strength_metrics_user_exercise ON strength_performance_metrics(user_id, exercise_id);
+
+-- ===========================================
+-- STRENGTH TRAINING TRIGGERS
+-- ===========================================
+
+-- Update timestamps trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = TIMEZONE('utc'::text, NOW());
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Apply update triggers to relevant tables
+DROP TRIGGER IF EXISTS update_training_plans_updated_at ON training_plans;
+CREATE TRIGGER update_training_plans_updated_at
+    BEFORE UPDATE ON training_plans
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_user_training_plans_updated_at ON user_training_plans;
+CREATE TRIGGER update_user_training_plans_updated_at
+    BEFORE UPDATE ON user_training_plans
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_strength_workouts_updated_at ON strength_workouts;
+CREATE TRIGGER update_strength_workouts_updated_at
+    BEFORE UPDATE ON strength_workouts
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

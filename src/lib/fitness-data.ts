@@ -53,6 +53,151 @@ export interface UserStat {
   calculated_date: string
 }
 
+// Strength Training Types
+export interface Exercise {
+  id: string
+  name: string
+  category: 'upper_body' | 'lower_body' | 'full_body' | 'core' | 'cardio' | 'olympic' | 'powerlifting' | 'bodybuilding' | 'functional'
+  muscle_groups: string[]
+  equipment: string[]
+  instructions?: string
+  video_url?: string
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  is_custom: boolean
+  created_by?: string
+  created_at: string
+}
+
+export interface ExerciseSet {
+  id: string
+  exercise_id: string
+  set_number: number
+  reps?: number
+  weight_kg?: number
+  weight_lbs?: number
+  distance_meters?: number
+  distance_miles?: number
+  duration_seconds?: number
+  pace_min_per_km?: number
+  pace_min_per_mile?: number
+  rpe?: number // Rate of Perceived Exertion (1-10)
+  rest_time_seconds?: number
+  notes?: string
+  completed: boolean
+}
+
+export interface WorkoutExercise {
+  id: string
+  workout_id: string
+  exercise_id: string
+  exercise: Exercise
+  order: number
+  notes?: string
+  sets: ExerciseSet[]
+  target_sets?: number
+  target_reps?: string // e.g., "3x8-12" or "8,8,6,6"
+  target_weight?: string
+  target_rpe?: number
+}
+
+export interface StrengthWorkout {
+  id: string
+  user_id: string
+  plan_day_id?: string // Links to training plan
+  workout_date: string
+  name: string
+  duration_minutes?: number
+  notes?: string
+  completed: boolean
+  exercises: WorkoutExercise[]
+  total_volume?: number // Total weight lifted
+  average_rpe?: number
+  created_at: string
+}
+
+export interface TrainingDay {
+  id: string
+  week_id: string
+  day_number: number
+  name: string
+  focus: string[]
+  exercises: {
+    exercise_id: string
+    exercise: Exercise
+    order: number
+    target_sets: number
+    target_reps: string
+    target_weight?: string
+    target_rpe?: number
+    rest_time_seconds?: number
+    notes?: string
+  }[]
+  estimated_duration: number
+  notes?: string
+}
+
+export interface TrainingWeek {
+  id: string
+  phase_id: string
+  week_number: number
+  name: string
+  focus: string
+  days: TrainingDay[]
+  notes?: string
+}
+
+export interface TrainingPhase {
+  id: string
+  plan_id: string
+  phase_number: number
+  name: string
+  description: string
+  duration_weeks: number
+  goal: string
+  weeks: TrainingWeek[]
+  notes?: string
+}
+
+export interface TrainingPlan {
+  id: string
+  name: string
+  description: string
+  category: 'strength' | 'powerlifting' | 'bodybuilding' | 'olympic' | 'functional' | 'general'
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  duration_weeks: number
+  phases: TrainingPhase[]
+  is_public: boolean
+  created_by: string
+  tags: string[]
+  created_at: string
+}
+
+export interface UserTrainingPlan {
+  id: string
+  user_id: string
+  plan_id: string
+  plan: TrainingPlan
+  start_date: string
+  current_phase: number
+  current_week: number
+  is_active: boolean
+  progress_percentage: number
+  notes?: string
+  created_at: string
+}
+
+export interface StrengthPerformanceMetric {
+  id: string
+  user_id: string
+  exercise_id: string
+  exercise: Exercise
+  date: string
+  metric_type: 'max_weight' | 'volume' | 'strength_gains' | 'endurance' | 'power'
+  value: number
+  unit: string
+  notes?: string
+}
+
 export interface FoodItem {
   id: string
   name: string
@@ -4119,6 +4264,568 @@ export async function predictGoalAchievement(goalId: string): Promise<{
     }
   } catch (error) {
     console.error('Error predicting goal achievement:', error)
+    return null
+  }
+}
+
+// ===========================================
+// STRENGTH TRAINING FUNCTIONS
+// ===========================================
+
+// Exercise Management
+export async function getExercises(filters?: {
+  category?: string
+  muscle_groups?: string[]
+  equipment?: string[]
+  difficulty?: string
+  search?: string
+}): Promise<Exercise[]> {
+  try {
+    const supabase = await createClient()
+    let query = supabase
+      .from('exercises')
+      .select('*')
+      .order('name')
+
+    if (filters?.category) {
+      query = query.eq('category', filters.category)
+    }
+    if (filters?.difficulty) {
+      query = query.eq('difficulty', filters.difficulty)
+    }
+    if (filters?.muscle_groups && filters.muscle_groups.length > 0) {
+      query = query.overlaps('muscle_groups', filters.muscle_groups)
+    }
+    if (filters?.equipment && filters.equipment.length > 0) {
+      query = query.overlaps('equipment', filters.equipment)
+    }
+    if (filters?.search) {
+      query = query.ilike('name', `%${filters.search}%`)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching exercises:', error)
+    return []
+  }
+}
+
+export async function createExercise(exercise: Omit<Exercise, 'id' | 'created_at'>): Promise<Exercise | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data, error } = await supabase
+      .from('exercises')
+      .insert({
+        ...exercise,
+        created_by: user.id
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    revalidatePath('/training')
+    return data
+  } catch (error) {
+    console.error('Error creating exercise:', error)
+    return null
+  }
+}
+
+// Training Plan Management
+export async function getTrainingPlans(filters?: {
+  category?: string
+  difficulty?: string
+  is_public?: boolean
+  created_by?: string
+}): Promise<TrainingPlan[]> {
+  try {
+    const supabase = await createClient()
+    let query = supabase
+      .from('training_plans')
+      .select(`
+        *,
+        training_phases (
+          *,
+          training_weeks (
+            *,
+            training_days (
+              *,
+              training_day_exercises (
+                *,
+                exercises (*)
+              )
+            )
+          )
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (filters?.category) {
+      query = query.eq('category', filters.category)
+    }
+    if (filters?.difficulty) {
+      query = query.eq('difficulty', filters.difficulty)
+    }
+    if (filters?.is_public !== undefined) {
+      query = query.eq('is_public', filters.is_public)
+    }
+    if (filters?.created_by) {
+      query = query.eq('created_by', filters.created_by)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching training plans:', error)
+    return []
+  }
+}
+
+export async function createTrainingPlan(plan: Omit<TrainingPlan, 'id' | 'created_at' | 'created_by'>): Promise<TrainingPlan | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Start a transaction-like approach (Supabase doesn't have explicit transactions in client)
+    // First, create the main training plan
+    const { data: planData, error: planError } = await supabase
+      .from('training_plans')
+      .insert({
+        name: plan.name,
+        description: plan.description,
+        category: plan.category,
+        difficulty: plan.difficulty,
+        duration_weeks: plan.duration_weeks,
+        tags: plan.tags,
+        created_by: user.id,
+        is_public: false
+      })
+      .select()
+      .single()
+
+    if (planError) throw planError
+
+    // Then create phases, weeks, days, and exercises
+    if (plan.phases) {
+      for (const phase of plan.phases) {
+        const { data: phaseData, error: phaseError } = await supabase
+          .from('training_phases')
+          .insert({
+            plan_id: planData.id,
+            phase_number: phase.phase_number,
+            name: phase.name,
+            description: phase.description,
+            duration_weeks: phase.duration_weeks,
+            goal: phase.goal,
+            notes: phase.notes
+          })
+          .select()
+          .single()
+
+        if (phaseError) throw phaseError
+
+        if (phase.weeks) {
+          for (const week of phase.weeks) {
+            const { data: weekData, error: weekError } = await supabase
+              .from('training_weeks')
+              .insert({
+                phase_id: phaseData.id,
+                week_number: week.week_number,
+                name: week.name,
+                focus: week.focus,
+                notes: week.notes
+              })
+              .select()
+              .single()
+
+            if (weekError) throw weekError
+
+            if (week.days) {
+              for (const day of week.days) {
+                const { data: dayData, error: dayError } = await supabase
+                  .from('training_days')
+                  .insert({
+                    week_id: weekData.id,
+                    day_number: day.day_number,
+                    name: day.name,
+                    focus: day.focus,
+                    estimated_duration: day.estimated_duration,
+                    notes: day.notes
+                  })
+                  .select()
+                  .single()
+
+                if (dayError) throw dayError
+
+                if (day.exercises) {
+                  for (const exercise of day.exercises) {
+                    let exerciseId = exercise.exercise_id
+
+                    // If this is a custom exercise, create it first
+                    if (exercise.exercise?.is_custom && exercise.exercise.id.startsWith('custom-')) {
+                      const customExercise = await createExercise({
+                        name: exercise.exercise.name,
+                        category: exercise.exercise.category,
+                        muscle_groups: exercise.exercise.muscle_groups,
+                        equipment: exercise.exercise.equipment,
+                        instructions: exercise.exercise.instructions,
+                        video_url: exercise.exercise.video_url,
+                        difficulty: exercise.exercise.difficulty,
+                        is_custom: true,
+                        created_by: user.id
+                      })
+                      if (customExercise) {
+                        exerciseId = customExercise.id
+                      } else {
+                        throw new Error(`Failed to create custom exercise: ${exercise.exercise.name}`)
+                      }
+                    }
+
+                    const { error: exerciseError } = await supabase
+                      .from('training_day_exercises')
+                      .insert({
+                        day_id: dayData.id,
+                        exercise_id: exerciseId,
+                        order_position: exercise.order,
+                        target_sets: exercise.target_sets,
+                        target_reps: exercise.target_reps,
+                        target_weight: exercise.target_weight,
+                        target_rpe: exercise.target_rpe,
+                        rest_time_seconds: exercise.rest_time_seconds,
+                        notes: exercise.notes
+                      })
+
+                    if (exerciseError) throw exerciseError
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    revalidatePath('/training')
+    return planData
+  } catch (error) {
+    console.error('Error creating training plan:', error)
+    return null
+  }
+}
+
+export async function getUserTrainingPlans(): Promise<UserTrainingPlan[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data, error } = await supabase
+      .from('user_training_plans')
+      .select(`
+        *,
+        training_plans (
+          *,
+          training_phases (
+            *,
+            training_weeks (
+              *,
+              training_days (
+                *,
+                training_day_exercises (
+                  *,
+                  exercises (*)
+                )
+              )
+            )
+          )
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching user training plans:', error)
+    return []
+  }
+}
+
+export async function assignTrainingPlan(planId: string, startDate: string): Promise<UserTrainingPlan | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // First, deactivate any existing active plans
+    await supabase
+      .from('user_training_plans')
+      .update({ is_active: false })
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+
+    const { data, error } = await supabase
+      .from('user_training_plans')
+      .insert({
+        user_id: user.id,
+        plan_id: planId,
+        start_date: startDate,
+        is_active: true
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    revalidatePath('/training')
+    return data
+  } catch (error) {
+    console.error('Error assigning training plan:', error)
+    return null
+  }
+}
+
+// Strength Workout Management
+export async function getStrengthWorkouts(limit?: number): Promise<StrengthWorkout[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    let query = supabase
+      .from('strength_workouts')
+      .select(`
+        *,
+        workout_exercises (
+          *,
+          exercises (*),
+          exercise_sets (*)
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('workout_date', { ascending: false })
+
+    if (limit) {
+      query = query.limit(limit)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching strength workouts:', error)
+    return []
+  }
+}
+
+export async function createStrengthWorkout(workout: Omit<StrengthWorkout, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<StrengthWorkout | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data, error } = await supabase
+      .from('strength_workouts')
+      .insert({
+        ...workout,
+        user_id: user.id
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    revalidatePath('/training')
+    return data
+  } catch (error) {
+    console.error('Error creating strength workout:', error)
+    return null
+  }
+}
+
+export async function updateStrengthWorkout(workoutId: string, updates: Partial<StrengthWorkout>): Promise<StrengthWorkout | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data, error } = await supabase
+      .from('strength_workouts')
+      .update(updates)
+      .eq('id', workoutId)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) throw error
+    revalidatePath('/training')
+    return data
+  } catch (error) {
+    console.error('Error updating strength workout:', error)
+    return null
+  }
+}
+
+// Exercise Set Management
+export async function addExerciseSet(workoutExerciseId: string, setData: Omit<ExerciseSet, 'id' | 'exercise_id' | 'created_at'>): Promise<ExerciseSet | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Verify the workout belongs to the user
+    const { data: workoutExercise } = await supabase
+      .from('workout_exercises')
+      .select(`
+        workout_id,
+        strength_workouts!inner(user_id)
+      `)
+      .eq('id', workoutExerciseId)
+      .single()
+
+    if (!workoutExercise || (workoutExercise.strength_workouts as any)?.user_id !== user.id) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('exercise_sets')
+      .insert({
+        ...setData,
+        workout_exercise_id: workoutExerciseId
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    revalidatePath('/training')
+    return data
+  } catch (error) {
+    console.error('Error adding exercise set:', error)
+    return null
+  }
+}
+
+export async function updateExerciseSet(setId: string, updates: Partial<ExerciseSet>): Promise<ExerciseSet | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Verify the set belongs to the user through workout ownership
+    const { data: set } = await supabase
+      .from('exercise_sets')
+      .select(`
+        *,
+        workout_exercises (
+          workout_id,
+          strength_workouts!inner(user_id)
+        )
+      `)
+      .eq('id', setId)
+      .single()
+
+    if (!set || set.workout_exercises.strength_workouts.user_id !== user.id) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('exercise_sets')
+      .update(updates)
+      .eq('id', setId)
+      .select()
+      .single()
+
+    if (error) throw error
+    revalidatePath('/training')
+    return data
+  } catch (error) {
+    console.error('Error updating exercise set:', error)
+    return null
+  }
+}
+
+// Strength Performance Analytics
+export async function getStrengthPerformanceMetrics(exerciseId?: string, limit = 50): Promise<StrengthPerformanceMetric[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    let query = supabase
+      .from('strength_performance_metrics')
+      .select(`
+        *,
+        exercises (*)
+      `)
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .limit(limit)
+
+    if (exerciseId) {
+      query = query.eq('exercise_id', exerciseId)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching strength performance metrics:', error)
+    return []
+  }
+}
+
+export async function calculateStrengthGains(exerciseId: string): Promise<{
+  exercise: Exercise
+  max_weight: number
+  total_volume: number
+  strength_gains_percentage: number
+  recent_performance: StrengthPerformanceMetric[]
+} | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Get exercise details
+    const { data: exercise } = await supabase
+      .from('exercises')
+      .select('*')
+      .eq('id', exerciseId)
+      .single()
+
+    if (!exercise) return null
+
+    // Get recent performance metrics
+    const { data: metrics } = await supabase
+      .from('strength_performance_metrics')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('exercise_id', exerciseId)
+      .eq('metric_type', 'max_weight')
+      .order('date', { ascending: false })
+      .limit(10)
+
+    if (!metrics || metrics.length < 2) return null
+
+    const maxWeight = Math.max(...metrics.map(m => m.value))
+    const oldestWeight = metrics[metrics.length - 1].value
+    const newestWeight = metrics[0].value
+    const strengthGainsPercentage = ((newestWeight - oldestWeight) / oldestWeight) * 100
+
+    return {
+      exercise,
+      max_weight: maxWeight,
+      total_volume: metrics.reduce((sum, m) => sum + m.value, 0),
+      strength_gains_percentage: Math.round(strengthGainsPercentage * 10) / 10,
+      recent_performance: metrics
+    }
+  } catch (error) {
+    console.error('Error calculating strength gains:', error)
     return null
   }
 }
