@@ -392,7 +392,7 @@ function DashboardContent({
           </div>
 
           {/* Quick Navigation */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="text-center">
                 <div className="text-6xl mb-4">🥗</div>
@@ -405,6 +405,13 @@ function DashboardContent({
                 <div className="text-6xl mb-4">🏔️</div>
                 <h3 className="text-2xl font-bold mb-2">Training Dashboard</h3>
                 <p className="opacity-90">Track workouts, monitor progress, and conquer new peaks</p>
+              </div>
+            </Link>
+            <Link href="/equipment" className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🎒</div>
+                <h3 className="text-2xl font-bold mb-2">Equipment Tracking</h3>
+                <p className="opacity-90">Manage gear, track maintenance, and optimize your kit</p>
               </div>
             </Link>
           </div>
