@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import ActivityItem from "@/components/ActivityItem";
+import WeatherWidget from "@/components/WeatherWidget";
 import {
   Workout,
   HealthMetric,
@@ -461,6 +462,11 @@ function DashboardContent({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Weather Widget */}
+          <div className="mb-12">
+            <WeatherWidget showRecommendations={true} />
           </div>
 
           {/* Quick Navigation */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { StatsCardSkeleton, WorkoutCardSkeleton, HeroSkeleton } from './SkeletonLoaders';
+import WeatherWidget from './WeatherWidget';
 
 interface Workout {
   id: string;
@@ -95,6 +96,11 @@ export default function TrainingDashboard({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Weather Widget */}
+        <div className="mb-8">
+          <WeatherWidget showRecommendations={true} />
         </div>
 
         {/* Stats Cards */}
