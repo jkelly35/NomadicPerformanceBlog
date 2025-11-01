@@ -24,6 +24,7 @@ export default function ContactForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -76,6 +77,17 @@ export default function ContactForm() {
     } catch (error) {
       console.error('Email sending failed:', error);
       setSubmitStatus('error');
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          setErrorMessage('Network error. Please check your internet connection and try again.');
+        } else if (error.message.includes('timeout')) {
+          setErrorMessage('Request timed out. Please try again.');
+        } else {
+          setErrorMessage('Failed to send message. Please try again or contact us directly.');
+        }
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -296,10 +308,46 @@ export default function ContactForm() {
             background: '#f8d7da',
             color: '#721c24',
             borderRadius: '6px',
-            border: '1px solid #f5c6cb',
-            textAlign: 'center'
+            border: '1px solid #f5c6cb'
           }}>
-            ❌ There was an error sending your message. Please try again or contact us directly.
+            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+              ❌ {errorMessage}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitStatus('idle');
+                  setErrorMessage('');
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#dc3545',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  marginRight: '0.5rem'
+                }}
+              >
+                Try Again
+              </button>
+              <a
+                href="mailto:contact@nomadicperformance.com"
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#1a3a2a',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  display: 'inline-block'
+                }}
+              >
+                Email Directly
+              </a>
+            </div>
           </div>
         )}
 

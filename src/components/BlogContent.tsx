@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import PostCard from './PostCard';
+import { BlogCardSkeleton, GridSkeleton } from './SkeletonLoaders';
 
 type PostMeta = {
   title: string;
@@ -14,9 +15,10 @@ type PostMeta = {
 
 interface BlogContentProps {
   posts: PostMeta[];
+  isLoading?: boolean;
 }
 
-export default function BlogContent({ posts }: BlogContentProps) {
+export default function BlogContent({ posts, isLoading = false }: BlogContentProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -98,12 +100,18 @@ export default function BlogContent({ posts }: BlogContentProps) {
             </button>
           )}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-          {filteredPosts.map((p: PostMeta) => (
-            <PostCard key={p.slug} post={p} />
-          ))}
-        </div>
-        {filteredPosts.length === 0 && hasActiveFilters && (
+
+        {isLoading ? (
+          <GridSkeleton count={6} SkeletonComponent={BlogCardSkeleton} />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+            {filteredPosts.map((p: PostMeta) => (
+              <PostCard key={p.slug} post={p} />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && filteredPosts.length === 0 && hasActiveFilters && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#666' }}>
             <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>
               No articles found {searchTerm && `for &quot;${searchTerm}&quot;`}
@@ -123,7 +131,7 @@ export default function BlogContent({ posts }: BlogContentProps) {
             >clear your filters</button> to see all articles.</p>
           </div>
         )}
-        {posts.length === 0 && !hasActiveFilters && (
+        {!isLoading && posts.length === 0 && !hasActiveFilters && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#666' }}>
             <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>No posts yet</p>
             <p>Check back soon for new content!</p>

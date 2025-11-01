@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import StructuredData, { organizationStructuredData } from '@/components/StructuredData';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Physical Therapy & Outdoor Performance Training",
@@ -84,11 +85,13 @@ export default function RootLayout({
         <StructuredData data={organizationStructuredData} />
       </head>
       <body>
-        <AuthProvider>
-          {children}
-          <PWAInstallPrompt />
-          <OfflineIndicator />
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            {children}
+            <PWAInstallPrompt />
+            <OfflineIndicator />
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
