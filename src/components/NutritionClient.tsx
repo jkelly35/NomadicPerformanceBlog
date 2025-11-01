@@ -3312,29 +3312,36 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '2rem'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: 'clamp(1rem, 4vw, 2rem)',
+              marginBottom: 'clamp(1.5rem, 4vw, 2rem)'
             }}>
               {/* Meal Details */}
               <div style={{
                 background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '2rem',
+                borderRadius: 'clamp(8px, 3vw, 12px)',
+                padding: 'clamp(1.5rem, 4vw, 2rem)',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef'
+                border: '1px solid #e9ecef',
+                order: 1
               }}>
                 <h3 style={{
-                  fontSize: '1.5rem',
+                  fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                   fontWeight: 600,
                   color: '#1a3a2a',
-                  marginBottom: '1.5rem'
+                  marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
                 }}>
                   Meal Details
                 </h3>
 
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div style={{ display: 'grid', gap: 'clamp(0.75rem, 3vw, 1rem)' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: 'clamp(0.25rem, 2vw, 0.5rem)',
+                      fontWeight: '500',
+                      fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                    }}>
                       Meal Type *
                     </label>
                     <select
@@ -3342,10 +3349,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       onChange={(e) => setSelectedMealType(e.target.value as any)}
                       style={{
                         width: '100%',
-                        padding: '0.75rem',
+                        padding: 'clamp(0.75rem, 3vw, 1rem)',
                         border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '1rem'
+                        borderRadius: 'clamp(4px, 2vw, 6px)',
+                        fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
+                        minHeight: '44px',
+                        backgroundColor: '#fff'
                       }}
                     >
                       <option value="breakfast">Breakfast</option>
@@ -3355,9 +3364,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     </select>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: 'clamp(0.5rem, 2vw, 1rem)'
+                  }}>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: 'clamp(0.25rem, 2vw, 0.5rem)',
+                        fontWeight: '500',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                      }}>
                         Date *
                       </label>
                       <input
@@ -3366,15 +3384,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         onChange={(e) => setMealDate(e.target.value)}
                         style={{
                           width: '100%',
-                          padding: '0.75rem',
+                          padding: 'clamp(0.75rem, 3vw, 1rem)',
                           border: '1px solid #ddd',
-                          borderRadius: '6px',
-                          fontSize: '1rem'
+                          borderRadius: 'clamp(4px, 2vw, 6px)',
+                          fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
+                          minHeight: '44px'
                         }}
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: 'clamp(0.25rem, 2vw, 0.5rem)',
+                        fontWeight: '500',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                      }}>
                         Time (optional)
                       </label>
                       <input
@@ -3383,17 +3407,23 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         onChange={(e) => setMealTime(e.target.value)}
                         style={{
                           width: '100%',
-                          padding: '0.75rem',
+                          padding: 'clamp(0.75rem, 3vw, 1rem)',
                           border: '1px solid #ddd',
-                          borderRadius: '6px',
-                          fontSize: '1rem'
+                          borderRadius: 'clamp(4px, 2vw, 6px)',
+                          fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
+                          minHeight: '44px'
                         }}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: 'clamp(0.25rem, 2vw, 0.5rem)',
+                      fontWeight: '500',
+                      fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                    }}>
                       Notes (optional)
                     </label>
                     <textarea
@@ -3402,11 +3432,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       placeholder="Any notes about this meal..."
                       style={{
                         width: '100%',
-                        padding: '0.75rem',
+                        padding: 'clamp(0.75rem, 3vw, 1rem)',
                         border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '1rem',
-                        minHeight: '80px',
+                        borderRadius: 'clamp(4px, 2vw, 6px)',
+                        fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
+                        minHeight: 'clamp(80px, 15vw, 100px)',
                         resize: 'vertical'
                       }}
                     />
@@ -3417,16 +3447,17 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {/* Meal Summary */}
               <div style={{
                 background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '2rem',
+                borderRadius: 'clamp(8px, 3vw, 12px)',
+                padding: 'clamp(1.5rem, 4vw, 2rem)',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef'
+                border: '1px solid #e9ecef',
+                order: 2
               }}>
                 <h3 style={{
-                  fontSize: '1.5rem',
+                  fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                   fontWeight: 600,
                   color: '#1a3a2a',
-                  marginBottom: '1.5rem'
+                  marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
                 }}>
                   Meal Summary
                 </h3>
@@ -3434,55 +3465,71 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 {(() => {
                   const totals = calculateMealTotals()
                   return (
-                    <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gap: 'clamp(1rem, 3vw, 1.5rem)' }}>
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-                        gap: '1rem'
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                        gap: 'clamp(0.5rem, 2vw, 1rem)'
                       }}>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                             fontWeight: 'bold',
                             color: '#ff6b35'
                           }}>
                             {Math.round(totals.calories)}
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Calories</div>
+                          <div style={{
+                            fontSize: 'clamp(0.75rem, 2vw, 0.8rem)',
+                            color: '#666'
+                          }}>Calories</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                             fontWeight: 'bold',
                             color: '#667eea'
                           }}>
                             {Math.round(totals.protein)}g
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Protein</div>
+                          <div style={{
+                            fontSize: 'clamp(0.75rem, 2vw, 0.8rem)',
+                            color: '#666'
+                          }}>Protein</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                             fontWeight: 'bold',
                             color: '#f7931e'
                           }}>
                             {Math.round(totals.carbs)}g
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Carbs</div>
+                          <div style={{
+                            fontSize: 'clamp(0.75rem, 2vw, 0.8rem)',
+                            color: '#666'
+                          }}>Carbs</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                             fontWeight: 'bold',
                             color: '#4ecdc4'
                           }}>
                             {Math.round(totals.fat)}g
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Fat</div>
+                          <div style={{
+                            fontSize: 'clamp(0.75rem, 2vw, 0.8rem)',
+                            color: '#666'
+                          }}>Fat</div>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: 'clamp(0.5rem, 2vw, 1rem)',
+                        flexWrap: 'wrap'
+                      }}>
                         {editingMealId && (
                           <button
                             type="button"
@@ -3502,14 +3549,16 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                             }}
                             style={{
                               flex: 1,
-                              padding: '1rem',
+                              minWidth: 'clamp(120px, 25vw, 140px)',
+                              padding: 'clamp(0.75rem, 3vw, 1rem)',
                               background: '#6c757d',
                               color: '#fff',
                               border: 'none',
-                              borderRadius: '8px',
-                              fontSize: '1.1rem',
+                              borderRadius: 'clamp(6px, 2vw, 8px)',
+                              fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
                               fontWeight: 'bold',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              minHeight: '44px'
                             }}
                           >
                             Cancel Edit
@@ -3521,17 +3570,19 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           disabled={selectedFoods.length === 0 || logMealLoading}
                           style={{
                             flex: editingMealId ? 1 : 'none',
-                            padding: '1rem',
+                            minWidth: editingMealId ? 'clamp(120px, 25vw, 140px)' : 'clamp(200px, 40vw, 250px)',
+                            padding: 'clamp(0.75rem, 3vw, 1rem)',
                             background: selectedFoods.length === 0
                               ? '#6c757d'
                               : 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
                             color: '#fff',
                             border: 'none',
-                            borderRadius: '8px',
-                            fontSize: '1.1rem',
+                            borderRadius: 'clamp(6px, 2vw, 8px)',
+                            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
                             fontWeight: 'bold',
                             cursor: selectedFoods.length === 0 || logMealLoading ? 'not-allowed' : 'pointer',
-                            opacity: selectedFoods.length === 0 || logMealLoading ? 0.7 : 1
+                            opacity: selectedFoods.length === 0 || logMealLoading ? 0.7 : 1,
+                            minHeight: '44px'
                           }}
                         >
                           {logMealLoading ? (editingMealId ? 'Updating Meal...' : 'Logging Meal...') : (editingMealId ? 'Update Meal' : 'Log Meal')}
@@ -3546,22 +3597,25 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             {/* Selected Foods */}
             <div style={{
               background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
+              borderRadius: 'clamp(8px, 3vw, 12px)',
+              padding: 'clamp(1.5rem, 4vw, 2rem)',
               boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
               border: '1px solid #e9ecef',
-              marginTop: '2rem'
+              marginTop: 'clamp(1.5rem, 4vw, 2rem)'
             }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '1.5rem'
+                marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
+                flexWrap: 'wrap',
+                gap: 'clamp(0.5rem, 2vw, 1rem)'
               }}>
                 <h3 style={{
-                  fontSize: '1.5rem',
+                  fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                   fontWeight: 600,
-                  color: '#1a3a2a'
+                  color: '#1a3a2a',
+                  margin: 0
                 }}>
                   Selected Foods ({selectedFoods.length})
                 </h3>
@@ -3571,14 +3625,19 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     setFoodSelectorOpen(true)
                   }}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: 'clamp(0.75rem, 3vw, 1rem) clamp(1rem, 3vw, 1.5rem)',
                     background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
                     color: '#fff',
                     border: 'none',
-                    borderRadius: '25px',
+                    borderRadius: 'clamp(20px, 6vw, 25px)',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(255,107,53,0.3)'
+                    boxShadow: '0 4px 16px rgba(255,107,53,0.3)',
+                    fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}
                 >
                   ➕ Add Food
@@ -3586,26 +3645,41 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               </div>
 
               {selectedFoods.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+                <div style={{
+                  textAlign: 'center',
+                  padding: 'clamp(2rem, 8vw, 3rem)',
+                  color: '#666',
+                  fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                }}>
                   No foods selected. Click "Add Food" to start building your meal.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div style={{ display: 'grid', gap: 'clamp(0.75rem, 2vw, 1rem)' }}>
                   {selectedFoods.map(({ food, quantity }, index) => (
                     <div key={`${food.id}-${index}`} style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '1rem',
+                      padding: 'clamp(1rem, 3vw, 1.25rem)',
                       background: '#fff',
-                      borderRadius: '8px',
-                      border: '1px solid #e9ecef'
+                      borderRadius: 'clamp(6px, 2vw, 8px)',
+                      border: '1px solid #e9ecef',
+                      flexWrap: 'wrap',
+                      gap: 'clamp(0.5rem, 2vw, 1rem)'
                     }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '600', color: '#1a3a2a' }}>
+                      <div style={{ flex: 1, minWidth: 'clamp(150px, 30vw, 200px)' }}>
+                        <div style={{
+                          fontWeight: '600',
+                          color: '#1a3a2a',
+                          fontSize: 'clamp(0.95rem, 2.5vw, 1rem)',
+                          marginBottom: 'clamp(0.25rem, 1vw, 0.5rem)'
+                        }}>
                           {food.name}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                        <div style={{
+                          fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
+                          color: '#666'
+                        }}>
                           {food.brand && `${food.brand} • `}{quantity} {food.serving_unit} ({(quantity / food.serving_size).toFixed(1)} servings)
                         </div>
                       </div>
@@ -3613,9 +3687,15 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '1rem'
+                        gap: 'clamp(0.75rem, 2vw, 1rem)',
+                        flexWrap: 'wrap'
                       }}>
-                        <div style={{ textAlign: 'right', fontSize: '0.9rem', color: '#666' }}>
+                        <div style={{
+                          textAlign: 'right',
+                          fontSize: 'clamp(0.85rem, 2vw, 0.9rem)',
+                          color: '#666',
+                          minWidth: 'clamp(60px, 15vw, 80px)'
+                        }}>
                           <div>{Math.round(food.calories_per_serving * quantity / food.serving_size)} cal</div>
                           <div>{Math.round(food.protein_grams * quantity / food.serving_size)}g protein</div>
                         </div>
@@ -3623,7 +3703,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.5rem'
+                          gap: 'clamp(0.25rem, 1vw, 0.5rem)',
+                          minWidth: 'clamp(100px, 20vw, 120px)'
                         }}>
                           <input
                             type="number"
@@ -3632,26 +3713,37 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                             value={quantity}
                             onChange={(e) => updateFoodQuantity(index, parseFloat(e.target.value) || 0.1)}
                             style={{
-                              width: '80px',
-                              padding: '0.5rem',
+                              width: 'clamp(60px, 15vw, 80px)',
+                              padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                               border: '1px solid #ddd',
-                              borderRadius: '4px',
-                              textAlign: 'center'
+                              borderRadius: 'clamp(4px, 1.5vw, 6px)',
+                              textAlign: 'center',
+                              fontSize: 'clamp(0.9rem, 2vw, 1rem)',
+                              minHeight: '44px'
                             }}
                           />
-                          <span style={{ fontSize: '0.8rem', color: '#666' }}>{food.serving_unit}</span>
+                          <span style={{
+                            fontSize: 'clamp(0.8rem, 2vw, 0.85rem)',
+                            color: '#666',
+                            whiteSpace: 'nowrap'
+                          }}>{food.serving_unit}</span>
                         </div>
 
                         <button
                           onClick={() => removeFoodFromMeal(index)}
                           style={{
-                            padding: '0.5rem',
+                            padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                             background: '#dc3545',
                             color: '#fff',
                             border: 'none',
-                            borderRadius: '4px',
+                            borderRadius: 'clamp(4px, 1.5vw, 6px)',
                             cursor: 'pointer',
-                            fontSize: '0.8rem'
+                            fontSize: 'clamp(0.8rem, 2vw, 1rem)',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}
                         >
                           ✕
