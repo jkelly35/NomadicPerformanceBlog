@@ -7,6 +7,7 @@ import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import FoodSearch from "@/components/FoodSearch";
 import NutritionFacts from "@/components/NutritionFacts";
+import NutritionInsightsDisplay from "@/components/NutritionInsightsDisplay";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import BarcodeScanner from './BarcodeScanner';
 import { BarcodeFood } from '@/lib/barcode-api';
@@ -3822,22 +3823,27 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
         {/* Insights Sub-Tab */}
         {activeTab === 'ai-insights' && aiInsightsSubTab === 'insights' && (
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '2rem',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-            border: '1px solid #e9ecef'
-          }}>
-            <h2 style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '2rem',
-              textAlign: 'center'
+          <div className="space-y-8">
+            {/* AI-Powered Nutrition Insights */}
+            <NutritionInsightsDisplay showHeader={true} compact={false} />
+
+            {/* Existing Insights System */}
+            <div style={{
+              background: '#fff',
+              borderRadius: '12px',
+              padding: '2rem',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+              border: '1px solid #e9ecef'
             }}>
-              💡 Nutrition Insights
-            </h2>
+              <h2 style={{
+                fontSize: '2rem',
+                fontWeight: 700,
+                color: '#1a3a2a',
+                marginBottom: '2rem',
+                textAlign: 'center'
+              }}>
+                💡 Weekly Nutrition Insights
+              </h2>
 
             {/* Insights Overview */}
             <div style={{
@@ -4032,6 +4038,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 </div>
               )}
             </div>
+          </div>
           </div>
         )}
 

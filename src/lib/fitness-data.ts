@@ -3469,3 +3469,399 @@ export async function getHydrationCaffeineTrends(days: number = 30): Promise<Arr
     return []
   }
 }
+
+// AI Insights and Recommendations
+export interface Insight {
+  id: string
+  type: 'workout' | 'nutrition' | 'health' | 'goals' | 'hydration' | 'general'
+  priority: 'low' | 'medium' | 'high'
+  title: string
+  message: string
+  recommendation?: string
+  data?: any
+  created_at: string
+}
+
+export async function generateWorkoutInsights(): Promise<Insight[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const insights: Insight[] = []
+
+    // Get recent workout data
+    const { data: workouts } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('workout_date', { ascending: false })
+      .limit(30)
+
+    if (!workouts || workouts.length === 0) {
+      insights.push({
+        id: 'workout-start',
+        type: 'workout',
+        priority: 'high',
+        title: 'Start Your Fitness Journey',
+        message: 'You haven\'t logged any workouts yet. Getting started is the hardest part!',
+        recommendation: 'Try logging your first workout today - even a 20-minute walk counts!',
+        created_at: new Date().toISOString()
+      })
+      return insights
+    }
+
+    // Analyze workout frequency
+    const lastWeek = workouts.filter(w => {
+      const workoutDate = new Date(w.workout_date)
+      const weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      return workoutDate >= weekAgo
+    })
+
+    if (lastWeek.length === 0) {
+      insights.push({
+        id: 'workout-streak-broken',
+        type: 'workout',
+        priority: 'medium',
+        title: 'Time to Get Back At It',
+        message: 'You haven\'t worked out in the last week. Consistency is key!',
+        recommendation: 'Schedule your next workout for tomorrow and build back your routine.',
+        created_at: new Date().toISOString()
+      })
+    } else if (lastWeek.length >= 5) {
+      insights.push({
+        id: 'workout-consistent',
+        type: 'workout',
+        priority: 'low',
+        title: 'Great Consistency!',
+        message: `You've completed ${lastWeek.length} workouts this week. Keep it up!`,
+        recommendation: 'Consider adding variety to prevent burnout - try a new activity type.',
+        created_at: new Date().toISOString()
+      })
+    }
+
+    // Analyze workout intensity
+    const highIntensityCount = workouts.filter(w => w.intensity === 'High').length
+    const totalWorkouts = workouts.length
+    const highIntensityPercentage = (highIntensityCount / totalWorkouts) * 100
+
+    if (highIntensityPercentage > 70) {
+      insights.push({
+        id: 'workout-intensity-high',
+        type: 'workout',
+        priority: 'medium',
+        title: 'High Intensity Alert',
+        message: `${Math.round(highIntensityPercentage)}% of your workouts are high intensity.`,
+        recommendation: 'Mix in some moderate or low-intensity workouts to allow for recovery and prevent injury.',
+        created_at: new Date().toISOString()
+      })
+    }
+
+    return insights
+  } catch (error) {
+    console.error('Error generating workout insights:', error)
+    return []
+  }
+}
+
+export async function generateNutritionInsights(): Promise<Insight[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const insights: Insight[] = []
+
+    // Get recent meal data
+    const { data: meals } = await supabase
+      .from('meals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('meal_date', { ascending: false })
+      .limit(30)
+
+    if (!meals || meals.length === 0) {
+      insights.push({
+        id: 'nutrition-start',
+        type: 'nutrition',
+        priority: 'high',
+        title: 'Track Your Nutrition',
+        message: 'Start logging your meals to understand your eating patterns and optimize your performance.',
+        recommendation: 'Log your next meal and see how it affects your energy levels throughout the day.',
+        created_at: new Date().toISOString()
+      })
+      return insights
+    }
+
+    // Analyze calorie consistency
+    const recentMeals = meals.slice(0, 7) // Last 7 meals
+    const avgCalories = recentMeals.reduce((sum, meal) => sum + (meal.total_calories || 0), 0) / recentMeals.length
+    const calorieVariance = recentMeals.reduce((sum, meal) => {
+      const diff = (meal.total_calories || 0) - avgCalories
+      return sum + (diff * diff)
+    }, 0) / recentMeals.length
+    const stdDev = Math.sqrt(calorieVariance)
+
+    if (stdDev > avgCalories * 0.3) { // High variance (>30% of average)
+      insights.push({
+        id: 'nutrition-calories-inconsistent',
+        type: 'nutrition',
+        priority: 'medium',
+        title: 'Calorie Intake Varies Widely',
+        message: 'Your daily calorie intake fluctuates significantly, which can affect energy levels.',
+        recommendation: 'Aim for more consistent calorie intake throughout the week for better performance.',
+        data: { avgCalories: Math.round(avgCalories), stdDev: Math.round(stdDev) },
+        created_at: new Date().toISOString()
+      })
+    }
+
+    // Analyze protein intake
+    const avgProtein = recentMeals.reduce((sum, meal) => sum + (meal.total_protein || 0), 0) / recentMeals.length
+    if (avgProtein < 80) { // Less than recommended minimum
+      insights.push({
+        id: 'nutrition-low-protein',
+        type: 'nutrition',
+        priority: 'high',
+        title: 'Boost Your Protein Intake',
+        message: `Your average protein intake is ${Math.round(avgProtein)}g per meal.`,
+        recommendation: 'Include protein-rich foods like chicken, fish, eggs, or plant-based alternatives in every meal.',
+        data: { avgProtein: Math.round(avgProtein) },
+        created_at: new Date().toISOString()
+      })
+    }
+
+    return insights
+  } catch (error) {
+    console.error('Error generating nutrition insights:', error)
+    return []
+  }
+}
+
+export async function generateHealthInsights(): Promise<Insight[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const insights: Insight[] = []
+
+    // Get recent health metrics
+    const { data: metrics } = await supabase
+      .from('health_metrics')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('recorded_date', { ascending: false })
+      .limit(30)
+
+    if (!metrics || metrics.length === 0) {
+      insights.push({
+        id: 'health-start-tracking',
+        type: 'health',
+        priority: 'medium',
+        title: 'Track Your Health Metrics',
+        message: 'Start monitoring key health indicators to optimize your performance and recovery.',
+        recommendation: 'Log your weight, body fat percentage, or resting heart rate to see trends over time.',
+        created_at: new Date().toISOString()
+      })
+      return insights
+    }
+
+    // Analyze weight trends
+    const weightMetrics = metrics.filter(m => m.metric_type === 'weight')
+    if (weightMetrics.length >= 7) {
+      const recentWeights = weightMetrics.slice(0, 7)
+      const oldestWeight = recentWeights[recentWeights.length - 1].value
+      const newestWeight = recentWeights[0].value
+      const weightChange = newestWeight - oldestWeight
+
+      if (Math.abs(weightChange) > 2) { // Significant change
+        const direction = weightChange > 0 ? 'gained' : 'lost'
+        insights.push({
+          id: 'health-weight-change',
+          type: 'health',
+          priority: 'medium',
+          title: `Weight ${direction.charAt(0).toUpperCase() + direction.slice(1)}`,
+          message: `You've ${direction} ${Math.abs(Math.round(weightChange * 10) / 10)}kg in the last week.`,
+          recommendation: weightChange > 0
+            ? 'Monitor your calorie intake and consider increasing activity levels if this wasn\'t intentional.'
+            : 'Ensure you\'re getting enough nutrients and not losing weight too quickly.',
+          data: { weightChange: Math.round(weightChange * 10) / 10 },
+          created_at: new Date().toISOString()
+        })
+      }
+    }
+
+    return insights
+  } catch (error) {
+    console.error('Error generating health insights:', error)
+    return []
+  }
+}
+
+export async function generateGoalInsights(): Promise<Insight[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const insights: Insight[] = []
+
+    // Get active goals
+    const { data: goals } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+
+    if (!goals || goals.length === 0) {
+      insights.push({
+        id: 'goals-set-first',
+        type: 'goals',
+        priority: 'high',
+        title: 'Set Your First Goal',
+        message: 'Goals help you stay motivated and track your progress toward specific targets.',
+        recommendation: 'Set a realistic goal like "Workout 3 times per week" or "Lose 1kg per month".',
+        created_at: new Date().toISOString()
+      })
+      return insights
+    }
+
+    // Analyze goal progress
+    const goalsWithProgress = goals.map(goal => ({
+      ...goal,
+      progress: (goal.current_value / goal.target_value) * 100
+    }))
+
+    const completedGoals = goalsWithProgress.filter(g => g.progress >= 100)
+    const strugglingGoals = goalsWithProgress.filter(g => g.progress < 30)
+
+    if (completedGoals.length > 0) {
+      insights.push({
+        id: 'goals-completed',
+        type: 'goals',
+        priority: 'low',
+        title: 'Goals Achieved! 🎉',
+        message: `Congratulations! You've completed ${completedGoals.length} goal${completedGoals.length > 1 ? 's' : ''}.`,
+        recommendation: 'Set new, challenging goals to keep progressing.',
+        data: { completedCount: completedGoals.length },
+        created_at: new Date().toISOString()
+      })
+    }
+
+    if (strugglingGoals.length > 0) {
+      insights.push({
+        id: 'goals-struggling',
+        type: 'goals',
+        priority: 'high',
+        title: 'Goals Need Attention',
+        message: `${strugglingGoals.length} of your goals have less than 30% progress.`,
+        recommendation: 'Break down large goals into smaller milestones or adjust your target timeline.',
+        data: { strugglingCount: strugglingGoals.length },
+        created_at: new Date().toISOString()
+      })
+    }
+
+    return insights
+  } catch (error) {
+    console.error('Error generating goal insights:', error)
+    return []
+  }
+}
+
+export async function generateHydrationInsights(): Promise<Insight[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const insights: Insight[] = []
+
+    // Get recent hydration data
+    const { data: hydration } = await supabase
+      .from('hydration')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .limit(7)
+
+    if (!hydration || hydration.length === 0) {
+      insights.push({
+        id: 'hydration-start',
+        type: 'hydration',
+        priority: 'medium',
+        title: 'Stay Hydrated',
+        message: 'Proper hydration is crucial for performance and recovery.',
+        recommendation: 'Aim for 2500-3000ml of water per day. Start tracking your intake!',
+        created_at: new Date().toISOString()
+      })
+      return insights
+    }
+
+    // Analyze hydration consistency
+    const avgHydration = hydration.reduce((sum, h) => sum + h.amount_ml, 0) / hydration.length
+    const lowHydrationDays = hydration.filter(h => h.amount_ml < 2000).length
+
+    if (avgHydration < 2000) {
+      insights.push({
+        id: 'hydration-low-average',
+        type: 'hydration',
+        priority: 'high',
+        title: 'Increase Your Water Intake',
+        message: `Your average daily hydration is ${Math.round(avgHydration)}ml.`,
+        recommendation: 'Set reminders to drink water throughout the day and carry a reusable water bottle.',
+        data: { avgHydration: Math.round(avgHydration) },
+        created_at: new Date().toISOString()
+      })
+    }
+
+    if (lowHydrationDays > 3) {
+      insights.push({
+        id: 'hydration-inconsistent',
+        type: 'hydration',
+        priority: 'medium',
+        title: 'Inconsistent Hydration',
+        message: `${lowHydrationDays} out of the last 7 days had low hydration (<2000ml).`,
+        recommendation: 'Create a hydration routine - drink a glass of water with each meal and between workouts.',
+        data: { lowHydrationDays },
+        created_at: new Date().toISOString()
+      })
+    }
+
+    return insights
+  } catch (error) {
+    console.error('Error generating hydration insights:', error)
+    return []
+  }
+}
+
+export async function getAllInsights(): Promise<Insight[]> {
+  try {
+    const [workoutInsights, nutritionInsights, healthInsights, goalInsights, hydrationInsights] = await Promise.all([
+      generateWorkoutInsights(),
+      generateNutritionInsights(),
+      generateHealthInsights(),
+      generateGoalInsights(),
+      generateHydrationInsights()
+    ])
+
+    const allInsights = [
+      ...workoutInsights,
+      ...nutritionInsights,
+      ...healthInsights,
+      ...goalInsights,
+      ...hydrationInsights
+    ]
+
+    // Sort by priority (high -> medium -> low) and then by creation time
+    return allInsights.sort((a, b) => {
+      const priorityOrder = { high: 3, medium: 2, low: 1 }
+      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
+      if (priorityDiff !== 0) return priorityDiff
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  } catch (error) {
+    console.error('Error getting all insights:', error)
+    return []
+  }
+}

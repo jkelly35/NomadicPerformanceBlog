@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar"
 import Footer from "@/components/Footer"
+import InsightsDisplay from "@/components/InsightsDisplay"
 import {
   NutritionTrendsChart,
   WorkoutVolumeChart,
@@ -19,7 +20,7 @@ import {
 
 export default function AnalyticsClient() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'nutrition' | 'workouts' | 'health' | 'hydration'>('nutrition')
+  const [activeTab, setActiveTab] = useState<'nutrition' | 'workouts' | 'health' | 'hydration' | 'insights'>('insights')
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(30)
   const [loading, setLoading] = useState(true)
 
@@ -55,6 +56,7 @@ export default function AnalyticsClient() {
   }
 
   const tabs = [
+    { id: 'insights', label: 'AI Insights', icon: '🧠' },
     { id: 'nutrition', label: 'Nutrition Trends', icon: '📊' },
     { id: 'workouts', label: 'Workout Volume', icon: '💪' },
     { id: 'health', label: 'Health Metrics', icon: '❤️' },
@@ -126,6 +128,16 @@ export default function AnalyticsClient() {
         {/* Charts */}
         {!loading && (
           <div className="space-y-8">
+            {activeTab === 'insights' && (
+              <div>
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">AI-Powered Insights</h2>
+                  <p className="text-gray-600">Personalized recommendations based on your fitness data patterns</p>
+                </div>
+                <InsightsDisplay showHeader={false} />
+              </div>
+            )}
+
             {activeTab === 'nutrition' && (
               <div>
                 <div className="mb-4">
