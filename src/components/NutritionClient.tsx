@@ -82,7 +82,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
       if (caffeineResult) {
         setCaffeineLogs(caffeineResult)
-        // Recalculate daily caffeine total
+        // Recalculate daily caffeine total (including from meals)
         const today = (() => {
           const d = new Date()
           const year = d.getFullYear()
@@ -90,9 +90,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           const day = String(d.getDate()).padStart(2, '0')
           return `${year}-${month}-${day}`
         })()
-        const todayCaffeine = caffeineResult
-          .filter(log => log.logged_time.startsWith(today))
-          .reduce((sum, log) => sum + (log.amount_mg || 0), 0)
+        const todayCaffeine = await getDailyCaffeineTotal(today)
         setDailyCaffeineTotal(todayCaffeine)
       }
 
@@ -709,18 +707,29 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           localStorage.setItem('nutritionDataUpdated', Date.now().toString())
         }
 
-        // Reset form
-        setSelectedFoods([])
-        setMealNotes('')
-        setMealTime('')
-        setEditingMealId(null)
-        
-        // Switch to meals tab to show the updated meal
-        setActiveTab('meals')
-        alert(editingMealId ? 'Meal updated successfully!' : 'Meal logged successfully!')
-        
-        // Refresh data to update weekly chart and other displays
-        await refreshNutritionData()
+        // Log caffeine intake from caffeinated foods
+        const totalCaffeine = selectedFoods.reduce((total, { food, quantity }) => {
+          const caffeinePerServing = food.caffeine_mg || 0
+          const servingsConsumed = quantity / food.serving_size
+          return total + (caffeinePerServing * servingsConsumed)
+        }, 0)
+
+        if (totalCaffeine > 0) {
+          try {
+            const caffeineData = new FormData()
+            caffeineData.append('amount_mg', totalCaffeine.toString())
+            caffeineData.append('source', `Meal: ${selectedMealType} (${selectedFoods.map(f => f.food.name).join(', ')})`)
+            
+            const caffeineResult = await logCaffeine(caffeineData)
+            if (!caffeineResult.success) {
+              console.warn('Failed to log caffeine intake:', caffeineResult.error)
+              // Don't show error to user as meal was logged successfully
+            }
+          } catch (caffeineError) {
+            console.warn('Error logging caffeine intake:', caffeineError)
+            // Don't show error to user as meal was logged successfully
+          }
+        }
       } else {
         alert(result.error || 'Failed to log meal')
       }
@@ -2119,6 +2128,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     <div><strong>Carbs:</strong> {food.carbs_grams}g</div>
                     <div><strong>Fat:</strong> {food.fat_grams}g</div>
                     <div><strong>Fiber:</strong> {food.fiber_grams}g</div>
+                    {food.caffeine_mg && food.caffeine_mg > 0 && (
+                      <div><strong>Caffeine:</strong> {food.caffeine_mg}mg</div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -2190,6 +2202,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         formData.append('fiber_grams', selectedUSDAFood.nutrition.fiber.toString());
                         formData.append('sugar_grams', selectedUSDAFood.nutrition.sugar.toString());
                         formData.append('sodium_mg', selectedUSDAFood.nutrition.sodium.toString());
+                        formData.append('caffeine_mg', '0');
 
                         await createFoodItem(formData);
                         alert('Food saved to your personal database!');
@@ -2329,6 +2342,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         formData.append('fiber_grams', selectedBarcodeFood.nutrition.fiber.toString());
                         formData.append('sugar_grams', selectedBarcodeFood.nutrition.sugar.toString());
                         formData.append('sodium_mg', selectedBarcodeFood.nutrition.sodium.toString());
+                        formData.append('caffeine_mg', '0');
 
                         await createFoodItem(formData);
                         alert('Food saved to your personal database!');
@@ -4719,6 +4733,24 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     }}
                   />
                 </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Caffeine (mg)
+                  </label>
+                  <input
+                    name="caffeine_mg"
+                    type="number"
+                    step="0.1"
+                    defaultValue={editingFood?.caffeine_mg || ''}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                </div>
               </div>
 
               <div style={{
@@ -5143,6 +5175,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           formData.append('fiber_grams', usdaFood.nutrition.fiber.toString());
                           formData.append('sugar_grams', usdaFood.nutrition.sugar.toString());
                           formData.append('sodium_mg', usdaFood.nutrition.sodium.toString());
+                          formData.append('caffeine_mg', '0');
 
                           const result = await createFoodItem(formData);
                           if (result.success && result.data && result.data.id) {
@@ -5175,6 +5208,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           fiber_grams: usdaFood.nutrition.fiber,
                           sugar_grams: usdaFood.nutrition.sugar,
                           sodium_mg: usdaFood.nutrition.sodium,
+                          caffeine_mg: 0,
                           created_at: new Date().toISOString()
                         };
                         setSelectedFoods(prev => [...prev, { food: localFood, quantity: usdaFood.nutrition.servingSizeGrams }]);
@@ -5206,6 +5240,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                             formData.append('fiber_grams', barcodeFood.nutrition.fiber.toString());
                             formData.append('sugar_grams', barcodeFood.nutrition.sugar.toString());
                             formData.append('sodium_mg', barcodeFood.nutrition.sodium.toString());
+                            formData.append('caffeine_mg', '0');
 
                             const result = await createFoodItem(formData);
                             if (result.success && result.data && result.data.id) {

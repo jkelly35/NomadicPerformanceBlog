@@ -66,6 +66,7 @@ export interface FoodItem {
   fiber_grams: number
   sugar_grams?: number
   sodium_mg?: number
+  caffeine_mg?: number
   created_at: string
 }
 
@@ -1285,7 +1286,8 @@ export async function createFoodItem(formData: FormData): Promise<{ success: boo
       fat_grams: parseFloat(formData.get('fat_grams') as string) || 0,
       fiber_grams: parseFloat(formData.get('fiber_grams') as string) || 0,
       sugar_grams: parseFloat(formData.get('sugar_grams') as string) || 0,
-      sodium_mg: parseFloat(formData.get('sodium_mg') as string) || 0
+      sodium_mg: parseFloat(formData.get('sodium_mg') as string) || 0,
+      caffeine_mg: parseFloat(formData.get('caffeine_mg') as string) || 0
     }
 
     const { data, error } = await supabase
@@ -1324,6 +1326,7 @@ export async function updateFoodItem(foodId: string, formData: FormData): Promis
       fiber_grams: parseFloat(formData.get('fiber_grams') as string) || 0,
       sugar_grams: parseFloat(formData.get('sugar_grams') as string) || 0,
       sodium_mg: parseFloat(formData.get('sodium_mg') as string) || 0,
+      caffeine_mg: parseFloat(formData.get('caffeine_mg') as string) || 0,
       updated_at: new Date().toISOString()
     }
 
@@ -1957,18 +1960,56 @@ export async function getDailyCaffeineTotal(date: string): Promise<number> {
     const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
     const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
 
-    const { data, error } = await supabase
+    // Get caffeine from manual logs
+    const { data: manualLogs, error: manualError } = await supabase
       .from('caffeine_logs')
       .select('amount_mg')
       .gte('logged_time', startOfDay.toISOString())
       .lte('logged_time', endOfDay.toISOString())
 
-    if (error) {
-      console.error('Error fetching daily caffeine:', error)
-      return 0
+    if (manualError) {
+      console.error('Error fetching manual caffeine logs:', manualError)
     }
 
-    return data?.reduce((total, log) => total + log.amount_mg, 0) || 0
+    const manualCaffeine = manualLogs?.reduce((total, log) => total + log.amount_mg, 0) || 0
+
+    // Get caffeine from meals logged on this date
+    const { data: meals, error: mealsError } = await supabase
+      .from('meals')
+      .select('id')
+      .eq('meal_date', date)
+
+    if (mealsError) {
+      console.error('Error fetching meals for caffeine calculation:', mealsError)
+    }
+
+    let mealCaffeine = 0
+    if (meals && meals.length > 0) {
+      const mealIds = meals.map(meal => meal.id)
+
+      // Get meal items with food data
+      const { data: mealItems, error: itemsError } = await supabase
+        .from('meal_items')
+        .select(`
+          quantity,
+          food_items!inner(caffeine_mg, serving_size)
+        `)
+        .in('meal_id', mealIds)
+
+      if (itemsError) {
+        console.error('Error fetching meal items for caffeine calculation:', itemsError)
+      } else if (mealItems) {
+        for (const item of mealItems) {
+          const foodItem = item.food_items as any
+          if (foodItem?.caffeine_mg && foodItem?.serving_size) {
+            const multiplier = item.quantity / foodItem.serving_size
+            mealCaffeine += foodItem.caffeine_mg * multiplier
+          }
+        }
+      }
+    }
+
+    return manualCaffeine + mealCaffeine
   } catch (error) {
     console.error('Error in getDailyCaffeineTotal:', error)
     return 0

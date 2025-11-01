@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import SkeletonLoader from '@/components/SkeletonLoader'
+import { getDailyCaffeineTotal } from '@/lib/fitness-data'
 
 // Dynamically import the heavy NutritionClient component
 const NutritionClient = dynamic(() => import('../../components/NutritionClient'), {
@@ -149,9 +150,7 @@ export default async function NutritionPage() {
   const dailyHydrationTotal = (hydrationLogs || [])
     .filter(log => log.logged_time.startsWith(today))
     .reduce((total, log) => total + log.amount_ml, 0)
-  const dailyCaffeineTotal = (caffeineLogs || [])
-    .filter(log => log.logged_time.startsWith(today))
-    .reduce((total, log) => total + log.amount_mg, 0)
+  const dailyCaffeineTotal = await getDailyCaffeineTotal(today)
 
   return (
     <Suspense fallback={<SkeletonLoader type="nutrition" />}>
