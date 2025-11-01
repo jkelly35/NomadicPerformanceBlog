@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import FoodSearch from "@/components/FoodSearch";
 import NutritionFacts from "@/components/NutritionFacts";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
+import BarcodeScanner from './BarcodeScanner';
+import { BarcodeFood } from '@/lib/barcode-api';
 import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake } from '@/lib/fitness-data'
 
 interface NutritionData {
@@ -43,9 +45,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const router = useRouter()
 
   const [data, setData] = useState<NutritionData>(initialData)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
   const [selectedUSDAFood, setSelectedUSDAFood] = useState<USDAFoodItem | null>(null)
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
+  const [selectedBarcodeFood, setSelectedBarcodeFood] = useState<BarcodeFood | null>(null)
 
   // Refresh data function
   const refreshNutritionData = async () => {
@@ -177,7 +181,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Food selector context
   const [foodSelectorContext, setFoodSelectorContext] = useState<'meal' | 'template'>('meal')
-  const [foodSelectorFilter, setFoodSelectorFilter] = useState<'database' | 'templates' | 'saved' | 'usda'>('database')
+  const [foodSelectorFilter, setFoodSelectorFilter] = useState<'database' | 'templates' | 'saved' | 'usda' | 'barcode'>('database')
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -1131,6 +1135,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               { id: 'dashboard', label: 'Overview', icon: '📊' },
               { id: 'foods', label: 'Food Database', icon: '🥕' },
               { id: 'usda-search', label: 'USDA Search', icon: '🔍' },
+              { id: 'barcode-scan', label: 'Scan Barcode', icon: '📱' },
               { id: 'meals', label: 'Meal History', icon: '🍽️' },
               { id: 'templates', label: 'Meal Templates', icon: '📋' },
               { id: 'saved', label: 'Saved Foods', icon: '⭐' },
@@ -2230,6 +2235,166 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   <li>Click on a food to see its nutrition facts</li>
                   <li>Get accurate nutrition data from the USDA's comprehensive database</li>
                   <li>Perfect for meal planning and tracking</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Barcode Scanning Tab */}
+        {activeTab === 'barcode-scan' && (
+          <div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2rem'
+            }}>
+              <h2 style={{ margin: 0, color: '#1a3a2a' }}>📱 Scan Product Barcode</h2>
+              <button
+                onClick={() => setShowBarcodeScanner(true)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#ff6b35',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '1rem'
+                }}
+              >
+                📷 Open Scanner
+              </button>
+            </div>
+
+            {selectedBarcodeFood && (
+              <div style={{
+                background: '#f8f9fa',
+                borderRadius: '12px',
+                padding: '2rem',
+                marginBottom: '2rem',
+                border: '1px solid #dee2e6'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  marginBottom: '1rem'
+                }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#1a3a2a' }}>
+                      {selectedBarcodeFood.product_name}
+                    </h3>
+                    {selectedBarcodeFood.brands && (
+                      <p style={{ margin: '0 0 0.5rem 0', color: '#666', fontSize: '0.9rem' }}>
+                        Brand: {selectedBarcodeFood.brands}
+                      </p>
+                    )}
+                    <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
+                      Barcode: {selectedBarcodeFood.code}
+                    </p>
+                  </div>
+                  {selectedBarcodeFood.image_url && (
+                    <img
+                      src={selectedBarcodeFood.image_url}
+                      alt={selectedBarcodeFood.product_name}
+                      style={{
+                        width: '80px',
+                        height: '80px',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        border: '1px solid #dee2e6'
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                  <button
+                    onClick={async () => {
+                      if (!selectedBarcodeFood) return;
+
+                      try {
+                        // Convert barcode food to FormData for saving
+                        const formData = new FormData();
+                        formData.append('name', selectedBarcodeFood.product_name);
+                        formData.append('brand', selectedBarcodeFood.brands || '');
+                        formData.append('serving_size', selectedBarcodeFood.nutrition.servingSizeGrams.toString());
+                        formData.append('serving_unit', 'g');
+                        formData.append('calories_per_serving', selectedBarcodeFood.nutrition.calories.toString());
+                        formData.append('protein_grams', selectedBarcodeFood.nutrition.protein.toString());
+                        formData.append('carbs_grams', selectedBarcodeFood.nutrition.carbs.toString());
+                        formData.append('fat_grams', selectedBarcodeFood.nutrition.fat.toString());
+                        formData.append('fiber_grams', selectedBarcodeFood.nutrition.fiber.toString());
+                        formData.append('sugar_grams', selectedBarcodeFood.nutrition.sugar.toString());
+                        formData.append('sodium_mg', selectedBarcodeFood.nutrition.sodium.toString());
+
+                        await createFoodItem(formData);
+                        alert('Food saved to your personal database!');
+                        // Refresh food items
+                        await loadFoodItems();
+                        setSelectedBarcodeFood(null);
+                      } catch (error) {
+                        console.error('Error saving barcode food:', error);
+                        alert('Failed to save food. It may already exist in your database.');
+                      }
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#28a745',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    💾 Save to Database
+                  </button>
+                  <button
+                    onClick={() => setSelectedBarcodeFood(null)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#6c757d',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                <NutritionFacts
+                  food={{
+                    fdcId: parseInt(selectedBarcodeFood.code) || 0,
+                    description: selectedBarcodeFood.product_name,
+                    brandName: selectedBarcodeFood.brands,
+                    nutrition: selectedBarcodeFood.nutrition
+                  }}
+                  className="max-w-md mx-auto"
+                />
+              </div>
+            )}
+
+            <div style={{ marginTop: '2rem' }}>
+              <div style={{
+                background: '#e8f5e8',
+                border: '1px solid #c8e6c9',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginBottom: '1rem'
+              }}>
+                <h4 style={{ color: '#2e7d32', marginBottom: '0.5rem' }}>💡 How to use Barcode Scanning</h4>
+                <ul style={{ color: '#2e7d32', margin: 0, paddingLeft: '1.5rem' }}>
+                  <li>Click "Open Scanner" to use your camera to scan product barcodes</li>
+                  <li>Or manually enter a barcode number if scanning doesn't work</li>
+                  <li>Get nutrition data from Open Food Facts database</li>
+                  <li>Perfect for packaged foods, supplements, and ready-to-eat products</li>
                 </ul>
               </div>
             </div>
@@ -4733,6 +4898,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 >
                   🔍 USDA Search
                 </button>
+                <button
+                  onClick={() => setFoodSelectorFilter('barcode')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: foodSelectorFilter === 'barcode' ? '#ff6b35' : '#f8f9fa',
+                    color: foodSelectorFilter === 'barcode' ? '#fff' : '#1a3a2a',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '20px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  📱 Scan Barcode
+                </button>
               </div>
 
               {/* Search */}
@@ -5004,6 +5184,70 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   />
                 </div>
               )}
+
+              {/* Barcode Scanning */}
+              {foodSelectorFilter === 'barcode' && (
+                <div style={{ padding: '1rem' }}>
+                  <BarcodeScanner
+                    onFoodFound={(barcodeFood) => {
+                      if (foodSelectorContext === 'template') {
+                        // For templates, save barcode food to database first, then add to template
+                        (async () => {
+                          try {
+                            const formData = new FormData();
+                            formData.append('name', barcodeFood.product_name);
+                            formData.append('brand', barcodeFood.brands || '');
+                            formData.append('serving_size', barcodeFood.nutrition.servingSizeGrams.toString());
+                            formData.append('serving_unit', 'g');
+                            formData.append('calories_per_serving', barcodeFood.nutrition.calories.toString());
+                            formData.append('protein_grams', barcodeFood.nutrition.protein.toString());
+                            formData.append('carbs_grams', barcodeFood.nutrition.carbs.toString());
+                            formData.append('fat_grams', barcodeFood.nutrition.fat.toString());
+                            formData.append('fiber_grams', barcodeFood.nutrition.fiber.toString());
+                            formData.append('sugar_grams', barcodeFood.nutrition.sugar.toString());
+                            formData.append('sodium_mg', barcodeFood.nutrition.sodium.toString());
+
+                            const result = await createFoodItem(formData);
+                            if (result.success && result.data && result.data.id) {
+                              // Add the newly saved food to the template
+                              setTemplateForm(prev => ({
+                                ...prev,
+                                food_items: [...prev.food_items, { food_item_id: result.data!.id, quantity: barcodeFood.nutrition.servingSizeGrams }]
+                              }));
+                              setFoodSelectorOpen(false);
+                              setFoodSelectorSearch('');
+                              // Refresh food items to include the new one
+                              await loadFoodItems();
+                            }
+                          } catch (error) {
+                            console.error('Error saving barcode food for template:', error);
+                            alert('Failed to save food. It may already exist in your database.');
+                          }
+                        })();
+                      } else {
+                        // For meal logging, convert barcode food to local format
+                        const localFood: FoodItem = {
+                          id: barcodeFood.code,
+                          name: barcodeFood.product_name,
+                          brand: barcodeFood.brands,
+                          serving_size: barcodeFood.nutrition.servingSizeGrams,
+                          serving_unit: 'g',
+                          calories_per_serving: barcodeFood.nutrition.calories,
+                          protein_grams: barcodeFood.nutrition.protein,
+                          carbs_grams: barcodeFood.nutrition.carbs,
+                          fat_grams: barcodeFood.nutrition.fat,
+                          fiber_grams: barcodeFood.nutrition.fiber,
+                          sugar_grams: barcodeFood.nutrition.sugar,
+                          sodium_mg: barcodeFood.nutrition.sodium,
+                          created_at: new Date().toISOString()
+                        };
+                        setSelectedFoods(prev => [...prev, { food: localFood, quantity: barcodeFood.nutrition.servingSizeGrams }]);
+                      }
+                    }}
+                    onClose={() => setFoodSelectorFilter('database')}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -5269,6 +5513,17 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Barcode Scanner Modal */}
+        {showBarcodeScanner && (
+          <BarcodeScanner
+            onFoodFound={(food) => {
+              setSelectedBarcodeFood(food)
+              setShowBarcodeScanner(false)
+            }}
+            onClose={() => setShowBarcodeScanner(false)}
+          />
         )}
 
       <Footer />
