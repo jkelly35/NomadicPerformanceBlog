@@ -1570,13 +1570,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     fat: acc.fat + (meal.total_fat || 0)
                   }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
 
-                  // Get hydration for the day
-                  const dayHydration = hydrationLogs
-                    .filter(log => {
-                      const logDate = new Date(log.logged_time)
-                      return logDate.toDateString() === dayDate.toDateString()
-                    })
-                    .reduce((sum, log) => sum + (log.amount_ml || 0), 0)
+                  // Get hydration for the day from meals table
+                  const dayHydrationMeals = dayMeals.filter(meal => meal.meal_type === 'hydration')
+                  const dayHydration = dayHydrationMeals.reduce((sum, meal) => {
+                    const match = meal.notes?.match(/💧 Hydration: (\d+)ml/)
+                    return sum + (match ? parseInt(match[1]) : 0)
+                  }, 0)
 
                   return {
                     day,
@@ -1785,13 +1784,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                               fat: acc.fat + (meal.total_fat || 0)
                             }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
 
-                            // Get hydration for the day
-                            const dayHydration = hydrationLogs
-                              .filter(log => {
-                                const logDate = new Date(log.logged_time)
-                                return logDate.toDateString() === dayDate.toDateString()
-                              })
-                              .reduce((sum, log) => sum + (log.amount_ml || 0), 0)
+                            // Get hydration for the day from meals table
+                            const dayHydrationMeals = dayMeals.filter(meal => meal.meal_type === 'hydration')
+                            const dayHydration = dayHydrationMeals.reduce((sum, meal) => {
+                              const match = meal.notes?.match(/💧 Hydration: (\d+)ml/)
+                              return sum + (match ? parseInt(match[1]) : 0)
+                            }, 0)
 
                             return {
                               day: dayNumber,
