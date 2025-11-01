@@ -498,6 +498,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         setMeals(prev => [newMeal, ...prev])
         loadDailyMicronutrientIntake()
 
+        // Notify dashboard that nutrition data has been updated
+        localStorage.setItem('nutritionDataUpdated', Date.now().toString())
+
         // Also refresh data from server to ensure consistency
         setTimeout(async () => {
           await refreshNutritionData()
@@ -615,6 +618,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           // Also update the separate meals state used for meal history display
           setMeals(prev => prev.filter(meal => meal.id !== editingMealId).concat(newMeal))
           loadDailyMicronutrientIntake()
+
+          // Notify dashboard that nutrition data has been updated
+          localStorage.setItem('nutritionDataUpdated', Date.now().toString())
         } else {
           // For new meals
           setData(prev => {
@@ -658,6 +664,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           // Also update the separate meals state used for meal history display
           setMeals(prev => [newMeal, ...prev])
           loadDailyMicronutrientIntake()
+
+          // Notify dashboard that nutrition data has been updated
+          localStorage.setItem('nutritionDataUpdated', Date.now().toString())
         }
 
         // Reset form
@@ -841,6 +850,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         // Also update the separate meals state used for meal history display
         setMeals(prev => [newMeal, ...prev])
         loadDailyMicronutrientIntake()
+
+        // Notify dashboard that nutrition data has been updated
+        localStorage.setItem('nutritionDataUpdated', Date.now().toString())
 
         alert('Meal logged successfully!')
         // Refresh data to update weekly chart
@@ -2083,7 +2095,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 })
                 .sort((a, b) => {
                   // Sort by time descending (most recent first)
-                  return b.meal_time.localeCompare(a.meal_time)
+                  // Handle null meal_time values by treating them as empty strings
+                  const aTime = a.meal_time || ''
+                  const bTime = b.meal_time || ''
+                  return bTime.localeCompare(aTime)
                 })
                 .map((meal: Meal) => (
                   <div key={meal.id} style={{

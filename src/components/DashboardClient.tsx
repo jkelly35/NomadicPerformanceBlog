@@ -24,7 +24,8 @@ import {
   SavedFood,
   logMealFromTemplate,
   getMealTemplateWithItems,
-  logHydration
+  logHydration,
+  getDailyNutritionStats
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -61,7 +62,11 @@ function DashboardContent({
   onHealthSubmit,
   onHydrationSubmit,
   isSubmitting,
-  localHydrationTotal
+  localHydrationTotal,
+  localNutritionStats,
+  setLocalNutritionStats,
+  user,
+  loading
 }: { 
   data: DashboardData
   showWorkoutModal: boolean
@@ -78,8 +83,25 @@ function DashboardContent({
   onHydrationSubmit: (formData: FormData) => Promise<void>
   isSubmitting: boolean
   localHydrationTotal: number
+  localNutritionStats: {
+    total_calories: number
+    total_protein: number
+    total_carbs: number
+    total_fat: number
+    total_fiber: number
+    meals_count: number
+  }
+  setLocalNutritionStats: (stats: {
+    total_calories: number
+    total_protein: number
+    total_carbs: number
+    total_fat: number
+    total_fiber: number
+    meals_count: number
+  }) => void
+  user: any
+  loading: boolean
 }) {
-  const { user } = useAuth()
   const router = useRouter()
   const [activityFilter, setActivityFilter] = useState<string>('All')
 
@@ -93,8 +115,7 @@ function DashboardContent({
   const [savedFoods, setSavedFoods] = useState<SavedFood[]>([])
   const [isLoadingFoods, setIsLoadingFoods] = useState(false)
 
-  // Local state for immediate UI updates
-  const [localNutritionStats, setLocalNutritionStats] = useState(data.dailyNutritionStats)
+  // Local nutrition stats are now passed as props
 
   // Helper functions to get data
   const getStatValue = (statType: string) => {
@@ -125,7 +146,7 @@ function DashboardContent({
   }
 
   // Food selector functions
-  const loadFoodData = async () => {
+  async function loadFoodData() {
     if (!user) {
       return
     }
@@ -219,7 +240,7 @@ function DashboardContent({
               total_carbs: acc.total_carbs + (food.carbs_grams * multiplier),
               total_fat: acc.total_fat + (food.fat_grams * multiplier),
               total_fiber: acc.total_fiber + (food.fiber_grams * multiplier),
-              meals_count: acc.meals_count + 1
+              meals_count: acc.meals_count // Don't increment per food item
             }
           },
           {
@@ -228,7 +249,7 @@ function DashboardContent({
             total_carbs: localNutritionStats.total_carbs,
             total_fat: localNutritionStats.total_fat,
             total_fiber: localNutritionStats.total_fiber,
-            meals_count: localNutritionStats.meals_count
+            meals_count: localNutritionStats.meals_count + 1 // Increment by 1 for the entire meal
           }
         )
         setLocalNutritionStats(newStats)
@@ -253,12 +274,10 @@ function DashboardContent({
     setLocalNutritionStats(data.dailyNutritionStats)
   }, [data.dailyNutritionStats])
 
-  // Load food data when component mounts
+  // Sync local hydration with server data when it changes
   useEffect(() => {
-    if (user && foodItems.length === 0) {
-      loadFoodData()
-    }
-  }, [user, foodItems.length])
+    // Note: localHydrationTotal is passed as prop, not set here
+  }, [data.dailyHydrationTotal])
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -503,7 +522,10 @@ function DashboardContent({
               {/* Quick Add Buttons */}
               <div className="mt-4 flex justify-center gap-4">
                 <button
-                  onClick={() => setFoodSelectorOpen(true)}
+                  onClick={() => {
+                    setFoodSelectorOpen(true)
+                    loadFoodData()
+                  }}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                   ⚡ Quick Add Food
@@ -1674,14 +1696,93 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [showHydrationModal, setShowHydrationModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Local hydration state
+  // Local state for immediate UI updates
+  const [localNutritionStats, setLocalNutritionStats] = useState(data.dailyNutritionStats)
   const [localHydrationTotal, setLocalHydrationTotal] = useState(data.dailyHydrationTotal)
+
+  // Update local state when data changes
+  useEffect(() => {
+    setLocalNutritionStats(data.dailyNutritionStats)
+    setLocalHydrationTotal(data.dailyHydrationTotal)
+  }, [data.dailyNutritionStats, data.dailyHydrationTotal])
+
+  // Function to refresh nutrition stats from server
+  const refreshNutritionStats = async () => {
+    try {
+      // Use local date instead of UTC to match meal logging
+      const today = (() => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
+      const freshStats = await getDailyNutritionStats(today)
+      setLocalNutritionStats(freshStats)
+    } catch (error) {
+      console.error('Error refreshing nutrition stats:', error)
+    }
+  }
+
+  // Load fresh nutrition data when component mounts
+  useEffect(() => {
+    if (user && !loading) {
+      refreshNutritionStats()
+    }
+  }, [user, loading])
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login')
     }
   }, [user, loading, router])
+
+  // Refresh nutrition stats when component mounts (user navigates back to dashboard)
+  useEffect(() => {
+    if (!loading && user) {
+      refreshNutritionStats()
+    }
+  }, [loading, user])
+
+  // Refresh nutrition stats when page becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && !loading) {
+        refreshNutritionStats()
+      }
+    }
+
+    const handleFocus = () => {
+      if (user && !loading) {
+        refreshNutritionStats()
+      }
+    }
+
+    // Listen for storage events (cross-tab communication)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'nutritionDataUpdated' && user && !loading) {
+        refreshNutritionStats()
+      }
+    }
+
+    // Also refresh periodically every 30 seconds
+    const interval = setInterval(() => {
+      if (user && !loading && !document.hidden) {
+        refreshNutritionStats()
+      }
+    }, 30000)
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [user, loading])
 
   // Form submission handlers
   const handleWorkoutSubmit = async (formData: FormData) => {
@@ -1706,10 +1807,23 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     setIsSubmitting(true)
     try {
       const result = await logMeal(formData)
-      if (result.success) {
+      if (result.success && result.data) {
         setShowMealModal(false)
-        // Refresh the page to show new data
-        window.location.reload()
+        // Update local nutrition stats immediately for better UX
+        const newMeal = result.data
+        const newStats = {
+          total_calories: localNutritionStats.total_calories + (newMeal.total_calories || 0),
+          total_protein: localNutritionStats.total_protein + (newMeal.total_protein || 0),
+          total_carbs: localNutritionStats.total_carbs + (newMeal.total_carbs || 0),
+          total_fat: localNutritionStats.total_fat + (newMeal.total_fat || 0),
+          total_fiber: localNutritionStats.total_fiber + (newMeal.total_fiber || 0),
+          meals_count: localNutritionStats.meals_count + 1
+        }
+        setLocalNutritionStats(newStats)
+        // Refresh the page to sync with server data after a short delay
+        setTimeout(() => {
+          router.refresh()
+        }, 1000)
       } else {
         alert('Error logging meal: ' + result.error)
       }
@@ -1810,5 +1924,9 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     onHydrationSubmit={handleHydrationSubmit}
     isSubmitting={isSubmitting}
     localHydrationTotal={localHydrationTotal}
+    localNutritionStats={localNutritionStats}
+    setLocalNutritionStats={setLocalNutritionStats}
+    user={user}
+    loading={loading}
   />
 }

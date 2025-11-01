@@ -39,7 +39,14 @@ interface DashboardData {
 }
 
 async function getDashboardData(): Promise<DashboardData> {
-  const today = new Date().toISOString().split('T')[0]
+  // Use local date instead of UTC to match meal logging
+  const today = (() => {
+    const d = new Date()
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })()
 
   // Fetch all dashboard data
   const [workouts, healthMetrics, goals, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats, dailyHydrationTotal] = await Promise.all([

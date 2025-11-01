@@ -53,7 +53,13 @@ export default async function NutritionPage() {
     // Calculate daily nutrition stats
     supabase.from('meals')
       .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
-      .eq('meal_date', new Date().toISOString().split('T')[0]),
+      .eq('meal_date', (() => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()),
     // Hydration data for the current week
     (() => {
       const today = new Date()
