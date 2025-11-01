@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import FoodSearch from "@/components/FoodSearch";
+import NutritionFacts from "@/components/NutritionFacts";
+import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake } from '@/lib/fitness-data'
 
 interface NutritionData {
@@ -40,8 +43,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const router = useRouter()
 
   const [data, setData] = useState<NutritionData>(initialData)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
+  const [selectedUSDAFood, setSelectedUSDAFood] = useState<USDAFoodItem | null>(null)
 
   // Refresh data function
   const refreshNutritionData = async () => {
@@ -1126,6 +1130,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             {[
               { id: 'dashboard', label: 'Overview', icon: '📊' },
               { id: 'foods', label: 'Food Database', icon: '🥕' },
+              { id: 'usda-search', label: 'USDA Search', icon: '🔍' },
               { id: 'meals', label: 'Meal History', icon: '🍽️' },
               { id: 'templates', label: 'Meal Templates', icon: '📋' },
               { id: 'saved', label: 'Saved Foods', icon: '⭐' },
@@ -2125,6 +2130,58 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 Loading foods...
               </div>
             )}
+          </div>
+        )}
+
+        {/* USDA Food Search Tab */}
+        {activeTab === 'usda-search' && (
+          <div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2rem'
+            }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
+                🔍 USDA Food Search
+              </h2>
+            </div>
+
+            <div style={{ marginBottom: '2rem' }}>
+              <FoodSearch
+                onFoodSelect={(food: USDAFoodItem) => {
+                  setSelectedUSDAFood(food);
+                }}
+                placeholder="Search USDA food database..."
+              />
+            </div>
+
+            {selectedUSDAFood && (
+              <div style={{ marginTop: '2rem' }}>
+                <NutritionFacts
+                  food={selectedUSDAFood}
+                  className="max-w-md mx-auto"
+                />
+              </div>
+            )}
+
+            <div style={{ marginTop: '2rem' }}>
+              <div style={{
+                background: '#e8f5e8',
+                border: '1px solid #c8e6c9',
+                borderRadius: '8px',
+                padding: '1rem',
+                marginBottom: '1rem'
+              }}>
+                <h4 style={{ color: '#2e7d32', marginBottom: '0.5rem' }}>💡 How to use USDA Food Search</h4>
+                <ul style={{ color: '#2e7d32', margin: 0, paddingLeft: '1.5rem' }}>
+                  <li>Search for any food by name (e.g., "banana", "chicken breast", "brown rice")</li>
+                  <li>Click on a food to see its nutrition facts</li>
+                  <li>Get accurate nutrition data from the USDA's comprehensive database</li>
+                  <li>Perfect for meal planning and tracking</li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
 
