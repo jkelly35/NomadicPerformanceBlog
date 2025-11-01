@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import DashboardClient from '@/components/DashboardClient'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+import SkeletonLoader from '@/components/SkeletonLoader'
 import {
   getRecentWorkouts,
   getHealthMetrics,
@@ -24,6 +26,11 @@ import {
   getRecentSends,
   Send
 } from '@/lib/fitness-data'
+
+// Dynamically import the heavy DashboardClient component
+const DashboardClient = dynamic(() => import('@/components/DashboardClient'), {
+  loading: () => <SkeletonLoader type="dashboard" />
+})
 
 interface DashboardData {
   workouts: Workout[]
@@ -101,5 +108,9 @@ export default async function DashboardPage() {
   // Fetch dashboard data on server side
   const data = await getDashboardData()
 
-  return <DashboardClient data={data} />
+  return (
+    <Suspense fallback={<SkeletonLoader type="dashboard" />}>
+      <DashboardClient data={data} />
+    </Suspense>
+  )
 }

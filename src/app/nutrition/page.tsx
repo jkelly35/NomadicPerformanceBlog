@@ -1,7 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-// Update the import path to match the actual location of NutritionClient
-import NutritionClient from '../../components/NutritionClient'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+import SkeletonLoader from '@/components/SkeletonLoader'
+
+// Dynamically import the heavy NutritionClient component
+const NutritionClient = dynamic(() => import('../../components/NutritionClient'), {
+  loading: () => <SkeletonLoader type="nutrition" />
+})
 
 export default async function NutritionPage() {
   const supabase = await createClient()
@@ -148,23 +154,25 @@ export default async function NutritionPage() {
     .reduce((total, log) => total + log.amount_mg, 0)
 
   return (
-    <NutritionClient
-      initialData={{
-        foodItems: foodItems || [],
-        meals: meals || [],
-        nutritionGoals: nutritionGoals || [],
-        mealTemplates: mealTemplates || [],
-        savedFoods: savedFoods || [],
-        dailyNutritionStats: dailyStats,
-        hydrationLogs: hydrationLogs || [],
-        caffeineLogs: caffeineLogs || [],
-        micronutrients: micronutrients || [],
-        userInsights: userInsights || [],
-        habitPatterns: habitPatterns || [],
-        metricCorrelations: metricCorrelations || [],
-        dailyHydrationTotal,
-        dailyCaffeineTotal
-      }}
-    />
+    <Suspense fallback={<SkeletonLoader type="nutrition" />}>
+      <NutritionClient
+        initialData={{
+          foodItems: foodItems || [],
+          meals: meals || [],
+          nutritionGoals: nutritionGoals || [],
+          mealTemplates: mealTemplates || [],
+          savedFoods: savedFoods || [],
+          dailyNutritionStats: dailyStats,
+          hydrationLogs: hydrationLogs || [],
+          caffeineLogs: caffeineLogs || [],
+          micronutrients: micronutrients || [],
+          userInsights: userInsights || [],
+          habitPatterns: habitPatterns || [],
+          metricCorrelations: metricCorrelations || [],
+          dailyHydrationTotal,
+          dailyCaffeineTotal
+        }}
+      />
+    </Suspense>
   )
 }
