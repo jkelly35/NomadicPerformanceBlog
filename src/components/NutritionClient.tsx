@@ -1181,171 +1181,470 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div>
+            {/* Quick Actions Bar */}
+            <div style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '16px',
+              padding: '2rem',
+              marginBottom: '2rem',
+              color: '#fff',
+              textAlign: 'center'
+            }}>
+              <h2 style={{
+                fontSize: '1.8rem',
+                fontWeight: 700,
+                marginBottom: '1rem',
+                color: '#fff'
+              }}>
+                🚀 Quick Actions
+              </h2>
+              <p style={{
+                fontSize: '1rem',
+                marginBottom: '1.5rem',
+                opacity: 0.9
+              }}>
+                What would you like to do today?
+              </p>
+
+              {/* Quick Meal Buttons */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                gap: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                <button
+                  onClick={() => {
+                    setSelectedMealType('breakfast')
+                    setActiveTab('log')
+                  }}
+                  style={{
+                    padding: '1rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  🌅 Breakfast
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMealType('lunch')
+                    setActiveTab('log')
+                  }}
+                  style={{
+                    padding: '1rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  ☀️ Lunch
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMealType('dinner')
+                    setActiveTab('log')
+                  }}
+                  style={{
+                    padding: '1rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  🌙 Dinner
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMealType('snack')
+                    setActiveTab('log')
+                  }}
+                  style={{
+                    padding: '1rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  🍿 Snack
+                </button>
+              </div>
+
+              {/* Secondary Actions */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '1rem',
+                flexWrap: 'wrap'
+              }}>
+                <button
+                  onClick={() => setShowBarcodeScanner(true)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '25px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                >
+                  📱 Scan Barcode
+                </button>
+                <button
+                  onClick={() => setActiveTab('usda-search')}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '25px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                >
+                  🔍 Search Foods
+                </button>
+                <button
+                  onClick={() => {
+                    const amount = prompt('Quick hydration log (ml):', '500')
+                    if (amount && !isNaN(parseInt(amount))) {
+                      handleLogHydration(parseInt(amount))
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '25px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                >
+                  💧 Log Water
+                </button>
+              </div>
+            </div>
+
             <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
               Today's Nutrition
             </h2>
 
-            {/* Nutrition Overview Cards */}
+            {/* Habit Actions */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
-              marginBottom: '2rem'
+              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              marginBottom: '2rem',
+              textAlign: 'center'
             }}>
+              <h3 style={{
+                fontSize: '1.3rem',
+                fontWeight: 600,
+                color: '#fff',
+                marginBottom: '1rem'
+              }}>
+                🔄 Quick Habits
+              </h3>
               <div style={{
-                background: '#f8f9fa',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '1rem',
+                flexWrap: 'wrap'
+              }}>
+                <button
+                  onClick={async () => {
+                    if (confirm('Copy yesterday\'s meals to today?')) {
+                      try {
+                        const yesterday = new Date()
+                        yesterday.setDate(yesterday.getDate() - 1)
+                        const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+                        // Get yesterday's meals
+                        const yesterdayMeals = data.meals.filter(meal => meal.meal_date === yesterdayStr)
+
+                        // Copy each meal to today (simplified - just the totals, not individual food items)
+                        for (const meal of yesterdayMeals) {
+                          if (meal.meal_type !== 'hydration') { // Skip hydration for now
+                            // Create a simple meal entry with the same totals
+                            const formData = new FormData()
+                            formData.append('meal_type', meal.meal_type)
+                            formData.append('meal_date', new Date().toISOString().split('T')[0])
+                            if (meal.meal_time) formData.append('meal_time', meal.meal_time)
+                            if (meal.notes) formData.append('notes', meal.notes)
+                            
+                            // Add a dummy food item to satisfy the requirement
+                            // In a real implementation, you'd need to get the actual food items
+                            formData.append('food_0', 'dummy-food-id') // This won't work, but shows the concept
+                            formData.append('quantity_0', '1')
+                            
+                            // Note: This simplified version won't work without proper food items
+                            // For now, we'll skip this functionality
+                            console.log('Would copy meal:', meal)
+                          }
+                        }
+
+                        // For now, just show a message
+                        alert('Same as yesterday feature coming soon! This requires copying individual food items.')
+                      } catch (error) {
+                        console.error('Error copying yesterday\'s meals:', error)
+                        alert('Failed to copy yesterday\'s meals')
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderRadius: '25px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  📅 Same as Yesterday
+                </button>
+                <button
+                  onClick={() => {
+                    // Show recent meals for quick logging
+                    const recentMeals = data.meals
+                      .filter(meal => meal.meal_date !== new Date().toISOString().split('T')[0])
+                      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      .slice(0, 5)
+
+                    if (recentMeals.length === 0) {
+                      alert('No recent meals found')
+                      return
+                    }
+
+                    const mealOptions = recentMeals.map((meal, i) =>
+                      `${i + 1}. ${meal.meal_type}: ${meal.notes || 'Meal'} (${meal.total_calories} cal)`
+                    ).join('\n')
+
+                    const choice = prompt(`Recent meals:\n${mealOptions}\n\nEnter number to log again:`)
+                    if (choice && !isNaN(parseInt(choice))) {
+                      const selectedMeal = recentMeals[parseInt(choice) - 1]
+                      if (selectedMeal) {
+                        // For now, create a simplified meal log
+                        // In a real implementation, you'd need to get the actual food items
+                        alert(`Would repeat: ${selectedMeal.meal_type} - ${selectedMeal.total_calories} calories\n\nFeature coming soon - requires copying individual food items.`)
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderRadius: '25px',
+                    color: '#fff',
+                    fontSize: '0.9rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                >
+                  🔁 Repeat Recent Meal
+                </button>
+              </div>
+            </div>
+
+            {/* Consolidated Nutrition Card */}
+            <div style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '16px',
+              padding: '2rem',
+              marginBottom: '2rem',
+              color: '#fff'
+            }}>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 600,
+                marginBottom: '1.5rem',
+                textAlign: 'center',
+                color: '#fff'
+              }}>
+                🍎 Today's Macros
+              </h3>
+
+              {/* Calories - Main Focus */}
+              <div style={{
+                textAlign: 'center',
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.1)',
                 borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
+                backdropFilter: 'blur(10px)'
               }}>
                 <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
+                  fontSize: '2.5rem',
                   fontWeight: 'bold',
-                  color: '#fff'
+                  color: '#fff',
+                  marginBottom: '0.5rem'
                 }}>
                   {Math.round(data.dailyNutritionStats.total_calories)}
                 </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
+                <div style={{
+                  fontSize: '1rem',
+                  color: 'rgba(255,255,255,0.8)',
                   marginBottom: '0.5rem'
                 }}>
                   Calories
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
+                </div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: 'rgba(255,255,255,0.6)'
                 }}>
                   Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200}
-                </p>
+                </div>
               </div>
 
+              {/* Macro Breakdown */}
               <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '1rem'
               }}>
                 <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
+                  textAlign: 'center',
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  backdropFilter: 'blur(10px)'
                 }}>
-                  {Math.round(data.dailyNutritionStats.total_protein)}g
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {Math.round(data.dailyNutritionStats.total_protein)}g
+                  </div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: 'rgba(255,255,255,0.8)',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Protein
+                  </div>
+                  <div style={{
+                    fontSize: '0.8rem',
+                    color: 'rgba(255,255,255,0.6)'
+                  }}>
+                    Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150}g
+                  </div>
                 </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Protein
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150}g
-                </p>
-              </div>
 
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
                 <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
+                  textAlign: 'center',
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  backdropFilter: 'blur(10px)'
                 }}>
-                  {Math.round(data.dailyNutritionStats.total_carbs)}g
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {Math.round(data.dailyNutritionStats.total_carbs)}g
+                  </div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: 'rgba(255,255,255,0.8)',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Carbs
+                  </div>
+                  <div style={{
+                    fontSize: '0.8rem',
+                    color: 'rgba(255,255,255,0.6)'
+                  }}>
+                    Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250}g
+                  </div>
                 </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Carbs
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250}g
-                </p>
-              </div>
 
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
                 <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
+                  textAlign: 'center',
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  backdropFilter: 'blur(10px)'
                 }}>
-                  {Math.round(data.dailyNutritionStats.total_fat)}g
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '0.25rem'
+                  }}>
+                    {Math.round(data.dailyNutritionStats.total_fat)}g
+                  </div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: 'rgba(255,255,255,0.8)',
+                    marginBottom: '0.25rem'
+                  }}>
+                    Fat
+                  </div>
+                  <div style={{
+                    fontSize: '0.8rem',
+                    color: 'rgba(255,255,255,0.6)'
+                  }}>
+                    Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70}g
+                  </div>
                 </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Fat
-                </h4>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70}g
-                </p>
               </div>
             </div>
 

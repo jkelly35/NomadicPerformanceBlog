@@ -2474,7 +2474,7 @@ export async function getDailyMicronutrientIntake(date: string): Promise<{ [key:
     // Get micronutrients for all food items
     const { data: foodMicronutrients, error: micronutrientsError } = await supabase
       .from('food_micronutrients')
-      .select('food_item_id, micronutrient_id, amount')
+      .select('food_item_id, micronutrient_id, amount_per_serving')
       .in('food_item_id', foodItemIds)
 
     if (micronutrientsError) {
@@ -2491,7 +2491,7 @@ export async function getDailyMicronutrientIntake(date: string): Promise<{ [key:
       for (const micro of itemMicronutrients) {
         const nutrientName = micronutrientMap.get(micro.micronutrient_id)
         if (nutrientName) {
-          const amount = (micro.amount || 0) * mealItem.quantity
+          const amount = (micro.amount_per_serving || 0) * mealItem.quantity
           intakeByMicronutrient[nutrientName] = (intakeByMicronutrient[nutrientName] || 0) + amount
         }
       }
