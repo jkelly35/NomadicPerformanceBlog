@@ -4602,6 +4602,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     <option value="tsp">teaspoon</option>
                     <option value="piece">piece</option>
                     <option value="slice">slice</option>
+                    <option value="can">can</option>
+                    <option value="bar">bar</option>
                   </select>
                 </div>
               </div>

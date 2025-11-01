@@ -61,6 +61,26 @@ const DEMO_BARCODE_FOODS: Record<string, BarcodeFood> = {
     },
     serving_size: '150g',
     serving_quantity: 150
+  },
+  '111111111111': {
+    code: '111111111111',
+    product_name: 'Monster Energy Drink',
+    brands: 'Monster',
+    categories: 'Beverages, Energy drinks',
+    image_url: 'https://via.placeholder.com/200x200?text=Monster+Energy',
+    nutrition: {
+      calories: 110,
+      protein: 0,
+      carbs: 28,
+      fat: 0,
+      fiber: 0,
+      sugar: 27,
+      sodium: 180,
+      servingSize: '1 can (16 fl oz)',
+      servingSizeGrams: 473
+    },
+    serving_size: '1 can',
+    serving_quantity: 1
   }
 }
 
