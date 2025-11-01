@@ -60,7 +60,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (hydrationResult) {
         setHydrationLogs(hydrationResult)
         // Recalculate daily hydration total
-        const today = new Date().toISOString().split('T')[0]
+        const today = (() => {
+          const d = new Date()
+          const year = d.getFullYear()
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        })()
         const todayHydration = hydrationResult
           .filter(log => log.logged_time.startsWith(today))
           .reduce((sum, log) => sum + (log.amount_ml || 0), 0)
@@ -70,7 +76,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (caffeineResult) {
         setCaffeineLogs(caffeineResult)
         // Recalculate daily caffeine total
-        const today = new Date().toISOString().split('T')[0]
+        const today = (() => {
+          const d = new Date()
+          const year = d.getFullYear()
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        })()
         const todayCaffeine = caffeineResult
           .filter(log => log.logged_time.startsWith(today))
           .reduce((sum, log) => sum + (log.amount_mg || 0), 0)
@@ -261,7 +273,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   const loadHydrationData = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0]
+      // Use local date instead of UTC to match meal logging
+      const today = (() => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
       const [logs, total] = await Promise.all([
         getHydrationLogs(today, today),
         getDailyHydrationTotal(today)
@@ -275,7 +294,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   const loadCaffeineData = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0]
+      // Use local date instead of UTC to match meal logging
+      const today = (() => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
       const [logs, total] = await Promise.all([
         getCaffeineLogs(today, today),
         getDailyCaffeineTotal(today)
@@ -298,7 +324,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   const loadDailyMicronutrientIntake = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0]
+      // Use local date instead of UTC
+      const today = (() => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
       const intake = await getDailyMicronutrientIntake(today)
       setDailyMicronutrientIntake(intake)
     } catch (error) {
@@ -754,6 +787,61 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   }
 
   const handleEditMeal = async (meal: Meal) => {
+    // Handle hydration entries differently
+    if (meal.meal_type === 'hydration') {
+      const currentAmount = meal.notes?.match(/(\d+)ml/)?.[1] || '0'
+      const newAmount = prompt('Enter new hydration amount in ml:', currentAmount)
+      
+      if (newAmount && newAmount !== currentAmount) {
+        try {
+          const amount_ml = parseInt(newAmount)
+          if (isNaN(amount_ml) || amount_ml <= 0) {
+            alert('Please enter a valid amount in ml')
+            return
+          }
+
+          // Update the hydration log
+          const { createClient } = await import('@/lib/supabase')
+          const supabase = createClient()
+          
+          // Find and update the hydration log
+          const { error: hydrationError } = await supabase
+            .from('hydration_logs')
+            .update({ amount_ml })
+            .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+            .eq('amount_ml', parseInt(currentAmount))
+            .eq('created_at', meal.meal_date)
+
+          if (hydrationError) {
+            console.error('Error updating hydration log:', hydrationError)
+            alert('Failed to update hydration log')
+            return
+          }
+
+          // Update the meal notes
+          const updatedNotes = meal.notes?.replace(/(\d+)ml/, `${amount_ml}ml`) || `💧 Hydration: ${amount_ml}ml`
+          const { error: mealError } = await supabase
+            .from('meals')
+            .update({ notes: updatedNotes })
+            .eq('id', meal.id)
+
+          if (mealError) {
+            console.error('Error updating meal:', mealError)
+            alert('Failed to update meal')
+            return
+          }
+
+          // Refresh data
+          await refreshNutritionData()
+          alert('Hydration entry updated successfully!')
+        } catch (error) {
+          console.error('Error updating hydration:', error)
+          alert('Failed to update hydration entry')
+        }
+      }
+      return
+    }
+
     // Switch to log meal tab
     setActiveTab('log')
     
@@ -794,6 +882,25 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
+  const handleLogHydration = async (amount_ml: number) => {
+    try {
+      const formData = new FormData()
+      formData.append('amount_ml', amount_ml.toString())
+      
+      const result = await logHydration(formData)
+      if (result.success) {
+        // Refresh data
+        await refreshNutritionData()
+        alert('Hydration logged successfully!')
+      } else {
+        alert('Failed to log hydration: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error logging hydration:', error)
+      alert('Failed to log hydration')
+    }
+  }
+
   const handleGoalChange = (goalType: string, value: number) => {
     setGoalChanges(prev => ({
       ...prev,
@@ -803,7 +910,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Meal Template handlers
   const handleQuickLog = async (templateId: string) => {
-    const today = new Date().toISOString().split('T')[0]
+    // Use local date instead of UTC
+    const today = (() => {
+      const d = new Date()
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })()
     try {
       const result = await logMealFromTemplate(templateId, today, undefined, user!.id)
       if (result.success && result.data) {
@@ -1230,7 +1344,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 padding: '1.5rem',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
                 border: '1px solid #e9ecef',
-                textAlign: 'center'
+                textAlign: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                const amount = prompt('Enter hydration amount in ml:', '500')
+                if (amount && !isNaN(parseInt(amount))) {
+                  handleLogHydration(parseInt(amount))
+                }
               }}>
                 <div style={{
                   width: '60px',
@@ -1268,6 +1389,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   color: '#666'
                 }}>
                   Goal: 3000ml
+                </p>
+                <p style={{
+                  fontSize: '0.8rem',
+                  color: '#2196f3',
+                  fontWeight: 'bold',
+                  marginTop: '0.5rem'
+                }}>
+                  Click to log hydration
                 </p>
               </div>
 
@@ -2044,6 +2173,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   <option value="lunch">Lunch</option>
                   <option value="dinner">Dinner</option>
                   <option value="snack">Snacks</option>
+                  <option value="hydration">💧 Hydration</option>
                 </select>
               </div>
 
@@ -2122,7 +2252,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                           marginBottom: '0.5rem',
                           textTransform: 'capitalize'
                         }}>
-                          {meal.meal_type}
+                          {meal.meal_type === 'hydration' ? '💧 Hydration' : meal.meal_type}
                         </h3>
                         <div style={{ fontSize: '0.9rem', color: '#666' }}>
                           {(() => {
@@ -2144,59 +2274,72 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         fontSize: '0.9rem',
                         color: '#666'
                       }}>
-                        <div><strong>{Math.round(meal.total_calories)}</strong> calories</div>
-                        <div>{Math.round(meal.total_protein)}g protein</div>
+                        {meal.meal_type === 'hydration' ? (
+                          <div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#2196f3' }}>
+                              {meal.notes?.match(/(\d+)ml/)?.[1] || '0'}ml
+                            </div>
+                            <div>Hydration</div>
+                          </div>
+                        ) : (
+                          <>
+                            <div><strong>{Math.round(meal.total_calories)}</strong> calories</div>
+                            <div>{Math.round(meal.total_protein)}g protein</div>
+                          </>
+                        )}
                       </div>
                     </div>
 
-                    {/* Nutrition Breakdown */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
-                      gap: '1rem',
-                      marginBottom: '1rem'
-                    }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{
-                          fontSize: '1.1rem',
-                          fontWeight: 'bold',
-                          color: '#ff6b35'
-                        }}>
-                          {Math.round(meal.total_protein)}g
+                    {/* Nutrition Breakdown - only show for actual meals, not hydration */}
+                    {meal.meal_type !== 'hydration' && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '1rem'
+                      }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            color: '#ff6b35'
+                          }}>
+                            {Math.round(meal.total_protein)}g
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Protein</div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>Protein</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{
-                          fontSize: '1.1rem',
-                          fontWeight: 'bold',
-                          color: '#f7931e'
-                        }}>
-                          {Math.round(meal.total_carbs)}g
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            color: '#f7931e'
+                          }}>
+                            {Math.round(meal.total_carbs)}g
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Carbs</div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>Carbs</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{
-                          fontSize: '1.1rem',
-                          fontWeight: 'bold',
-                          color: '#4ecdc4'
-                        }}>
-                          {Math.round(meal.total_fat)}g
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            color: '#4ecdc4'
+                          }}>
+                            {Math.round(meal.total_fat)}g
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Fat</div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>Fat</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{
-                          fontSize: '1.1rem',
-                          fontWeight: 'bold',
-                          color: '#667eea'
-                        }}>
-                          {Math.round(meal.total_fiber)}g
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            color: '#667eea'
+                          }}>
+                            {Math.round(meal.total_fiber)}g
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>Fiber</div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>Fiber</div>
                       </div>
-                    </div>
+                    )}
 
                     {meal.notes && (
                       <div style={{

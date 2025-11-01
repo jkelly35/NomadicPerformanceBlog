@@ -1,5 +1,9 @@
--- Fix hydration logging RLS policy
--- Run this in your Supabase SQL editor if you're getting RLS policy errors
+-- Fix hydration logging RLS policy and meal_type constraint
+-- Run this in your Supabase SQL editor if you're getting RLS policy errors or hydration not appearing in meal history
+
+-- First, update the meals table to allow 'hydration' as a meal_type
+ALTER TABLE meals DROP CONSTRAINT IF EXISTS meals_meal_type_check;
+ALTER TABLE meals ADD CONSTRAINT meals_meal_type_check CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack', 'hydration'));
 
 -- Enable RLS on hydration_logs table
 ALTER TABLE hydration_logs ENABLE ROW LEVEL SECURITY;

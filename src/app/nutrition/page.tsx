@@ -33,15 +33,28 @@ export default async function NutritionPage() {
       const today = new Date()
       const monday = new Date(today)
       monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
-      monday.setHours(0, 0, 0, 0)
       
       const sunday = new Date(monday)
       sunday.setDate(monday.getDate() + 6) // Sunday of current week
-      sunday.setHours(23, 59, 59, 999)
+      
+      // Use local date strings instead of UTC
+      const mondayStr = (() => {
+        const year = monday.getFullYear()
+        const month = String(monday.getMonth() + 1).padStart(2, '0')
+        const day = String(monday.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
+      
+      const sundayStr = (() => {
+        const year = sunday.getFullYear()
+        const month = String(sunday.getMonth() + 1).padStart(2, '0')
+        const day = String(sunday.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
       
       return supabase.from('meals').select('*')
-        .gte('meal_date', monday.toISOString().split('T')[0])
-        .lte('meal_date', sunday.toISOString().split('T')[0])
+        .gte('meal_date', mondayStr)
+        .lte('meal_date', sundayStr)
         .order('meal_date', { ascending: false })
     })(),
     supabase.from('nutrition_goals').select('*').eq('is_active', true),
@@ -120,8 +133,19 @@ export default async function NutritionPage() {
   )
 
   // Calculate daily hydration and caffeine totals
-  const dailyHydrationTotal = (hydrationLogs || []).reduce((total, log) => total + log.amount_ml, 0)
-  const dailyCaffeineTotal = (caffeineLogs || []).reduce((total, log) => total + log.amount_mg, 0)
+  const today = (() => {
+    const d = new Date()
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })()
+  const dailyHydrationTotal = (hydrationLogs || [])
+    .filter(log => log.logged_time.startsWith(today))
+    .reduce((total, log) => total + log.amount_ml, 0)
+  const dailyCaffeineTotal = (caffeineLogs || [])
+    .filter(log => log.logged_time.startsWith(today))
+    .reduce((total, log) => total + log.amount_mg, 0)
 
   return (
     <NutritionClient

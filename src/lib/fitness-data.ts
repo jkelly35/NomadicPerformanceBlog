@@ -143,7 +143,7 @@ export interface MetricCorrelation {
 
 export interface Meal {
   id: string
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'hydration'
   meal_date: string
   meal_time?: string
   total_calories: number
@@ -858,6 +858,39 @@ export async function deleteMeal(mealId: string): Promise<{ success: boolean; er
       return { success: false, error: 'User not authenticated' }
     }
 
+    // First get the meal to check if it's a hydration entry
+    const { data: meal, error: getMealError } = await supabase
+      .from('meals')
+      .select('meal_type, notes, meal_date')
+      .eq('id', mealId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (getMealError) {
+      console.error('Error getting meal:', getMealError)
+      return { success: false, error: 'Failed to get meal' }
+    }
+
+    // If this is a hydration meal, also delete the corresponding hydration log
+    if (meal.meal_type === 'hydration') {
+      // Parse amount from notes (format: "💧 Hydration: 500ml - notes" or "💧 Hydration: 500ml")
+      const amountMatch = meal.notes?.match(/(\d+)ml/)
+      if (amountMatch) {
+        const amount_ml = parseInt(amountMatch[1])
+        const { error: hydrationError } = await supabase
+          .from('hydration_logs')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('amount_ml', amount_ml)
+          .eq('created_at', meal.meal_date) // Assuming hydration logs are created on the same date
+
+        if (hydrationError) {
+          console.error('Error deleting hydration log:', hydrationError)
+          // Don't fail the whole operation if hydration log deletion fails
+        }
+      }
+    }
+
     // Delete meal items first (due to foreign key constraint)
     const { error: itemsError } = await supabase
       .from('meal_items')
@@ -1418,7 +1451,8 @@ export async function logHydration(formData: FormData): Promise<{ success: boole
     const amount_ml = parseInt(formData.get('amount_ml') as string)
     const notes = formData.get('notes') as string
 
-    const { data, error } = await supabase
+    // Insert hydration log
+    const { data: hydrationData, error: hydrationError } = await supabase
       .from('hydration_logs')
       .insert({
         user_id: user.id,
@@ -1429,9 +1463,37 @@ export async function logHydration(formData: FormData): Promise<{ success: boole
       .select()
       .single()
 
-    if (error) {
-      console.error('Error logging hydration:', error)
-      return { success: false, error: error.message }
+    if (hydrationError) {
+      console.error('Error logging hydration:', hydrationError)
+      return { success: false, error: hydrationError.message }
+    }
+
+    // Also create a meal entry for hydration so it appears in meal history
+    const hydrationNotes = notes ? `💧 Hydration: ${amount_ml}ml - ${notes}` : `💧 Hydration: ${amount_ml}ml`
+    const today = (() => {
+      const d = new Date()
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })()
+    const { error: mealError } = await supabase
+      .from('meals')
+      .insert({
+        user_id: user.id,
+        meal_type: 'hydration',
+        meal_date: today,
+        total_calories: 0,
+        total_protein: 0,
+        total_carbs: 0,
+        total_fat: 0,
+        total_fiber: 0,
+        notes: hydrationNotes
+      })
+
+    if (mealError) {
+      console.error('Error creating hydration meal entry:', mealError)
+      // Don't fail the whole operation if meal creation fails, but log it
     }
 
     revalidatePath('/nutrition')
@@ -1479,24 +1541,25 @@ export async function getDailyHydrationTotal(date: string): Promise<number> {
   try {
     const supabase = await createClient()
 
-    const startOfDay = new Date(date)
-    startOfDay.setHours(0, 0, 0, 0)
-
-    const endOfDay = new Date(date)
-    endOfDay.setHours(23, 59, 59, 999)
-
+    // Get hydration from meals table where meal_type = 'hydration'
     const { data, error } = await supabase
-      .from('hydration_logs')
-      .select('amount_ml')
-      .gte('logged_time', startOfDay.toISOString())
-      .lte('logged_time', endOfDay.toISOString())
+      .from('meals')
+      .select('notes')
+      .eq('meal_date', date)
+      .eq('meal_type', 'hydration')
 
     if (error) {
-      console.error('Error fetching daily hydration:', error)
+      console.error('Error fetching daily hydration from meals:', error)
       return 0
     }
 
-    return data?.reduce((total, log) => total + log.amount_ml, 0) || 0
+    // Parse hydration amounts from notes (format: "💧 Hydration: 500ml" or "💧 Hydration: 500ml - notes")
+    const total = (data || []).reduce((sum, meal) => {
+      const match = meal.notes?.match(/💧 Hydration: (\d+)ml/)
+      return sum + (match ? parseInt(match[1]) : 0)
+    }, 0)
+
+    return total
   } catch (error) {
     console.error('Error in getDailyHydrationTotal:', error)
     return 0
@@ -1571,11 +1634,10 @@ export async function getDailyCaffeineTotal(date: string): Promise<number> {
   try {
     const supabase = await createClient()
 
-    const startOfDay = new Date(date)
-    startOfDay.setHours(0, 0, 0, 0)
-
-    const endOfDay = new Date(date)
-    endOfDay.setHours(23, 59, 59, 999)
+    // Parse the date string as local date and create UTC boundaries
+    const [year, month, day] = date.split('-').map(Number)
+    const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
 
     const { data, error } = await supabase
       .from('caffeine_logs')

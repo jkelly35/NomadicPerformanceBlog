@@ -25,7 +25,8 @@ import {
   logMealFromTemplate,
   getMealTemplateWithItems,
   logHydration,
-  getDailyNutritionStats
+  getDailyNutritionStats,
+  getDailyHydrationTotal
 } from '@/lib/fitness-data'
 
 interface DashboardData {
@@ -1717,8 +1718,12 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         const day = String(d.getDate()).padStart(2, '0')
         return `${year}-${month}-${day}`
       })()
-      const freshStats = await getDailyNutritionStats(today)
+      const [freshStats, freshHydrationTotal] = await Promise.all([
+        getDailyNutritionStats(today),
+        getDailyHydrationTotal(today)
+      ])
       setLocalNutritionStats(freshStats)
+      setLocalHydrationTotal(freshHydrationTotal)
     } catch (error) {
       console.error('Error refreshing nutrition stats:', error)
     }
