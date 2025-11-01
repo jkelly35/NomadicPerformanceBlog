@@ -1,6 +1,7 @@
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import Link from "next/link";
+import BackgroundImage from "../../components/BackgroundImage";
 
 export const metadata = {
   title: "About Me - Nomadic Performance",
@@ -13,47 +14,24 @@ export default function AboutPage() {
       <NavBar />
 
       {/* Hero Section with Background Image */}
-      <section style={{
-        minHeight: '60vh',
-        background: 'linear-gradient(135deg, rgba(26,58,42,0.85) 0%, rgba(45,90,61,0.85) 100%), url("/images/MTNme.jpeg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        textAlign: 'center',
-        padding: '4rem 5vw'
-      }}>
-        <div style={{ maxWidth: '800px' }}>
-          <h1 style={{
-            fontSize: '3.5rem',
-            fontWeight: 900,
-            marginBottom: '1.5rem',
-            letterSpacing: '0.05em',
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-          }}>
+      <BackgroundImage
+        src="/images/MTNme.jpeg"
+        alt="Joe in the mountains"
+        className="min-h-[60vh] flex items-center justify-center text-white text-center px-20 py-16"
+        style={{
+          background: 'linear-gradient(135deg, rgba(26,58,42,0.85) 0%, rgba(45,90,61,0.85) 100%)'
+        }}
+      >
+        <div className="max-w-4xl">
+          <h1 className="text-5xl font-black mb-6 tracking-wide drop-shadow-2xl">
             Meet Joe
           </h1>
-          <p style={{
-            fontSize: '1.4rem',
-            opacity: 0.95,
-            lineHeight: '1.6',
-            marginBottom: '2rem',
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-          }}>
+          <p className="text-xl opacity-95 leading-relaxed mb-8 drop-shadow-lg">
             Doctor of Physical Therapy • Certified Strength & Conditioning Specialist • Outdoor Enthusiast
           </p>
-          <div style={{
-            width: '100px',
-            height: '4px',
-            background: '#fff',
-            margin: '0 auto',
-            borderRadius: '2px'
-          }}></div>
+          <div className="w-24 h-1 bg-white mx-auto rounded"></div>
         </div>
-      </section>
+      </BackgroundImage>
 
       {/* Main Content Section */}
       <section style={{ padding: '5rem 5vw', background: '#fff' }}>
