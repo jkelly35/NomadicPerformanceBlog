@@ -58,7 +58,13 @@ export default function TrainingClient({ initialData }: TrainingClientProps) {
         formData.append('calories_burned', newWorkout.calories_burned.toString())
       }
       formData.append('notes', newWorkout.notes)
-      formData.append('workout_date', new Date().toISOString().split('T')[0])
+      // Use local date instead of UTC to avoid timezone issues
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const localDate = `${year}-${month}-${day}`
+      formData.append('workout_date', localDate)
 
       await logWorkout(formData)
       setNewWorkout({

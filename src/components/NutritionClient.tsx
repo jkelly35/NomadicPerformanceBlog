@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
-import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood } from '@/lib/fitness-data'
+import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake } from '@/lib/fitness-data'
 
 interface NutritionData {
   foodItems: FoodItem[]
@@ -79,6 +79,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
       // For meals, we rely on the local state updates and router.refresh
       // In a production app, you'd want a getMeals function to fetch fresh meal data
+      await loadDailyMicronutrientIntake()
       router.refresh()
     } catch (error) {
       console.error('Error refreshing data:', error)
@@ -145,6 +146,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   // Micronutrients state
   const [micronutrients, setMicronutrients] = useState<Micronutrient[]>(initialData.micronutrients)
   const [foodMicronutrients, setFoodMicronutrients] = useState<FoodMicronutrient[]>([])
+  const [dailyMicronutrientIntake, setDailyMicronutrientIntake] = useState<{ [key: string]: number }>({})
 
   // Insights state
   const [userInsights, setUserInsights] = useState<UserInsight[]>(initialData.userInsights)
@@ -294,6 +296,16 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
+  const loadDailyMicronutrientIntake = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const intake = await getDailyMicronutrientIntake(today)
+      setDailyMicronutrientIntake(intake)
+    } catch (error) {
+      console.error('Error loading daily micronutrient intake:', error)
+    }
+  }
+
   const loadInsightsData = async () => {
     try {
       const insights = await getUserInsights()
@@ -346,6 +358,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   useEffect(() => {
     if (activeTab === 'dashboard') {
       loadMicronutrientsData()
+      loadDailyMicronutrientIntake()
     }
   }, [activeTab])
 
@@ -421,7 +434,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       // else remains 'snack' for evening
 
       mealData.append('meal_type', mealType)
-      mealData.append('meal_date', new Date().toISOString().split('T')[0])
+      // Use local date instead of UTC to avoid timezone issues
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const localDate = `${year}-${month}-${day}`
+      mealData.append('meal_date', localDate)
       mealData.append('meal_time', new Date().toLocaleTimeString('en-US', {
         hour12: false,
         hour: '2-digit',
@@ -477,6 +496,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
         // Also update the separate meals state used for meal history display
         setMeals(prev => [newMeal, ...prev])
+        loadDailyMicronutrientIntake()
 
         // Also refresh data from server to ensure consistency
         setTimeout(async () => {
@@ -594,6 +614,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
           // Also update the separate meals state used for meal history display
           setMeals(prev => prev.filter(meal => meal.id !== editingMealId).concat(newMeal))
+          loadDailyMicronutrientIntake()
         } else {
           // For new meals
           setData(prev => {
@@ -636,6 +657,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
           // Also update the separate meals state used for meal history display
           setMeals(prev => [newMeal, ...prev])
+          loadDailyMicronutrientIntake()
         }
 
         // Reset form
@@ -710,6 +732,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
         // Also update the separate meals state used for meal history display
         setMeals(prev => prev.filter(meal => meal.id !== mealId))
+        loadDailyMicronutrientIntake()
       } else {
         alert('Failed to delete meal: ' + result.error)
       }
@@ -817,6 +840,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
         // Also update the separate meals state used for meal history display
         setMeals(prev => [newMeal, ...prev])
+        loadDailyMicronutrientIntake()
 
         alert('Meal logged successfully!')
         // Refresh data to update weekly chart
@@ -1302,9 +1326,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                   {micronutrients.slice(0, 6).map((micronutrient, index) => {
-                    // Use static values instead of Math.random() to prevent hydration mismatch
-                    const staticProgressValues = [45, 78, 23, 67, 89, 34]
-                    const progress = staticProgressValues[index] || 0
+                    // Calculate actual progress based on daily intake vs RDA
+                    const intake = dailyMicronutrientIntake[micronutrient.nutrient_name] || 0
+                    const rda = micronutrient.rda_male || micronutrient.rda_female || 100 // fallback RDA
+                    const progress = Math.min((intake / rda) * 100, 100) // Cap at 100%
                     return (
                       <div key={micronutrient.id} style={{
                         background: '#fff',
@@ -1317,7 +1342,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                             {micronutrient.nutrient_name}
                           </div>
                           <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                            {micronutrient.rda_male || micronutrient.rda_female || 'N/A'}{micronutrient.unit}
+                            {intake.toFixed(1)}{micronutrient.unit} / {micronutrient.rda_male || micronutrient.rda_female || 'N/A'}{micronutrient.unit}
                           </div>
                         </div>
                         <div style={{

@@ -190,10 +190,16 @@ function DashboardContent({
     if (selectedFoods.length === 0) return
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      // Use local date instead of UTC to avoid timezone issues
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      const localDate = `${year}-${month}-${day}`
+      
       const mealData = new FormData()
       mealData.append('meal_type', 'snack')
-      mealData.append('meal_date', today)
+      mealData.append('meal_date', localDate)
 
       // Add meal items
       selectedFoods.forEach(({ food, quantity }, index) => {

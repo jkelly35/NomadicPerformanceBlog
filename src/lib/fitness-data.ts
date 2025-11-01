@@ -396,7 +396,13 @@ export async function logWorkout(formData: FormData) {
     const calories_burned = formData.get('calories_burned') ? parseInt(formData.get('calories_burned') as string) : null
     const intensity = formData.get('intensity') as 'Low' | 'Medium' | 'High'
     const notes = formData.get('notes') as string
-    const workout_date = formData.get('workout_date') as string || new Date().toISOString().split('T')[0]
+    const workout_date = formData.get('workout_date') as string || (() => {
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })()
 
     const { data, error } = await supabase
       .from('workouts')
@@ -723,7 +729,13 @@ export async function logMeal(formData: FormData): Promise<{ success: boolean; e
 
     // Parse meal data
     const mealType = formData.get('meal_type') as string
-    const mealDate = formData.get('meal_date') as string || new Date().toISOString().split('T')[0]
+    const mealDate = formData.get('meal_date') as string || (() => {
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })()
     const mealTime = formData.get('meal_time') as string || null
     const notes = formData.get('notes') as string || null
 
@@ -1838,5 +1850,90 @@ export async function removeSavedFood(savedFoodId: string): Promise<{ success: b
   } catch (error) {
     console.error('Error in removeSavedFood:', error)
     return { success: false, error: 'Failed to remove saved food' }
+  }
+}
+
+// Get daily micronutrient intake for a specific date
+export async function getDailyMicronutrientIntake(date: string): Promise<{ [key: string]: number }> {
+  try {
+    const supabase = await createClient()
+
+    // Get all meals for the date
+    const { data: meals, error: mealsError } = await supabase
+      .from('meals')
+      .select('id')
+      .eq('meal_date', date)
+
+    if (mealsError) {
+      console.error('Error fetching meals for micronutrient calculation:', mealsError)
+      return {}
+    }
+
+    if (!meals || meals.length === 0) {
+      return {}
+    }
+
+    const mealIds = meals.map(meal => meal.id)
+
+    // Get all meal items for these meals
+    const { data: mealItems, error: itemsError } = await supabase
+      .from('meal_items')
+      .select('food_item_id, quantity')
+      .in('meal_id', mealIds)
+
+    if (itemsError) {
+      console.error('Error fetching meal items for micronutrient calculation:', itemsError)
+      return {}
+    }
+
+    if (!mealItems || mealItems.length === 0) {
+      return {}
+    }
+
+    // Get unique food item IDs
+    const foodItemIds = [...new Set(mealItems.map(item => item.food_item_id))]
+
+    // Get all micronutrients data first
+    const { data: allMicronutrients, error: microError } = await supabase
+      .from('micronutrients')
+      .select('id, nutrient_name')
+
+    if (microError) {
+      console.error('Error fetching micronutrients:', microError)
+      return {}
+    }
+
+    const micronutrientMap = new Map(allMicronutrients?.map(m => [m.id, m.nutrient_name]) || [])
+
+    // Get micronutrients for all food items
+    const { data: foodMicronutrients, error: micronutrientsError } = await supabase
+      .from('food_micronutrients')
+      .select('food_item_id, micronutrient_id, amount')
+      .in('food_item_id', foodItemIds)
+
+    if (micronutrientsError) {
+      console.error('Error fetching food micronutrients:', micronutrientsError)
+      return {}
+    }
+
+    // Calculate total intake by micronutrient
+    const intakeByMicronutrient: { [key: string]: number } = {}
+
+    for (const mealItem of mealItems) {
+      const itemMicronutrients = foodMicronutrients?.filter(m => m.food_item_id === mealItem.food_item_id) || []
+
+      for (const micro of itemMicronutrients) {
+        const nutrientName = micronutrientMap.get(micro.micronutrient_id)
+        if (nutrientName) {
+          const amount = (micro.amount || 0) * mealItem.quantity
+          intakeByMicronutrient[nutrientName] = (intakeByMicronutrient[nutrientName] || 0) + amount
+        }
+      }
+    }
+
+    return intakeByMicronutrient
+  } catch (error) {
+    console.error('Error in getDailyMicronutrientIntake:', error)
+    return {}
   }
 }
