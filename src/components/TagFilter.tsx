@@ -79,6 +79,7 @@ export default function TagFilter({ posts }: TagFilterProps) {
         {selectedTags.length > 0 && (
           <button
             onClick={clearAllTags}
+            aria-label={`Clear all filters (${selectedTags.length} selected)`}
             style={{
               background: 'none',
               border: 'none',
@@ -94,20 +95,26 @@ export default function TagFilter({ posts }: TagFilterProps) {
         )}
       </div>
 
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '0.75rem',
-        justifyContent: 'center',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
+      <div
+        role="group"
+        aria-label="Article topic filters"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          justifyContent: 'center',
+          maxWidth: '800px',
+          margin: '0 auto'
+        }}
+      >
         {allTags.map((tag: string) => {
           const isSelected = selectedTags.includes(tag);
           return (
             <button
               key={tag}
               onClick={() => handleTagClick(tag)}
+              aria-pressed={isSelected}
+              aria-label={`${isSelected ? 'Remove' : 'Add'} filter for ${tag}`}
               style={{
                 background: isSelected ? '#1a3a2a' : '#fff',
                 color: isSelected ? '#fff' : '#1a3a2a',

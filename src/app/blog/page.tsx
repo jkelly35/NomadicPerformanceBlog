@@ -21,7 +21,7 @@ export default async function BlogIndex() {
   ]);
 
   return (
-    <main>
+    <main id="main-content">
       <StructuredData data={breadcrumbStructuredData} />
       <NavBar />
       <section style={{ padding: '4rem 5vw', background: 'linear-gradient(135deg, #f9f9f9 0%, #e8f4f8 100%)', minHeight: '30vh', position: 'relative', overflow: 'hidden' }}>

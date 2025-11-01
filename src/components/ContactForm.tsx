@@ -25,6 +25,54 @@ export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof FormData, boolean>>>({});
+
+  const validateField = (name: keyof FormData, value: string) => {
+    const newErrors = { ...errors };
+
+    switch (name) {
+      case 'name':
+        if (!value.trim()) {
+          newErrors.name = 'Name is required';
+        } else if (value.trim().length < 2) {
+          newErrors.name = 'Name must be at least 2 characters';
+        } else {
+          delete newErrors.name;
+        }
+        break;
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!value.trim()) {
+          newErrors.email = 'Email is required';
+        } else if (!emailRegex.test(value)) {
+          newErrors.email = 'Please enter a valid email address';
+        } else {
+          delete newErrors.email;
+        }
+        break;
+      case 'subject':
+        if (!value.trim()) {
+          newErrors.subject = 'Subject is required';
+        } else if (value.trim().length < 5) {
+          newErrors.subject = 'Subject must be at least 5 characters';
+        } else {
+          delete newErrors.subject;
+        }
+        break;
+      case 'message':
+        if (!value.trim()) {
+          newErrors.message = 'Message is required';
+        } else if (value.trim().length < 10) {
+          newErrors.message = 'Message must be at least 10 characters';
+        } else {
+          delete newErrors.message;
+        }
+        break;
+    }
+
+    setErrors(newErrors);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -32,6 +80,17 @@ export default function ContactForm() {
       ...prev,
       [name]: value
     }));
+
+    // Validate field on change if it has been touched
+    if (touched[name as keyof FormData]) {
+      validateField(name as keyof FormData, value);
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    validateField(name as keyof FormData, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +154,11 @@ export default function ContactForm() {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+      <form
+        onSubmit={handleSubmit}
+        aria-label="Contact form"
+        style={{ background: '#fff', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+      >
 
         {/* Name and Email Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
@@ -109,19 +172,36 @@ export default function ContactForm() {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
+              onBlur={handleBlur}
               required
+              aria-required="true"
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "name-error" : undefined}
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                border: '2px solid #e9ecef',
+                border: `2px solid ${errors.name ? '#dc3545' : '#e9ecef'}`,
                 borderRadius: '6px',
                 fontSize: '1rem',
                 outline: 'none',
                 transition: 'border-color 0.2s'
               }}
               onFocus={(e) => e.target.style.borderColor = '#1a3a2a'}
-              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
             />
+            {errors.name && (
+              <div
+                id="name-error"
+                role="alert"
+                aria-live="polite"
+                style={{
+                  color: '#dc3545',
+                  fontSize: '0.875rem',
+                  marginTop: '0.25rem'
+                }}
+              >
+                {errors.name}
+              </div>
+            )}
           </div>
 
           <div>
@@ -287,69 +367,75 @@ export default function ContactForm() {
         </button>
 
         {/* Status Messages */}
-        {submitStatus === 'success' && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            background: '#d4edda',
-            color: '#155724',
-            borderRadius: '6px',
-            border: '1px solid #c3e6cb',
-            textAlign: 'center'
-          }}>
-            ✅ Message sent successfully! We&apos;ll get back to you soon.
-          </div>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {submitStatus === 'success' && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              background: '#d4edda',
+              color: '#155724',
+              borderRadius: '6px',
+              border: '1px solid #c3e6cb',
+              textAlign: 'center'
+            }}>
+              ✅ Message sent successfully! We&apos;ll get back to you soon.
+            </div>
+          )}
 
-        {submitStatus === 'error' && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            background: '#f8d7da',
-            color: '#721c24',
-            borderRadius: '6px',
-            border: '1px solid #f5c6cb'
-          }}>
-            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-              ❌ {errorMessage}
+          {submitStatus === 'error' && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              style={{
+                marginTop: '1rem',
+                padding: '1rem',
+                background: '#f8d7da',
+                color: '#721c24',
+                borderRadius: '6px',
+                border: '1px solid #f5c6cb'
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                ❌ {errorMessage}
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubmitStatus('idle');
+                    setErrorMessage('');
+                  }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: '#dc3545',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    marginRight: '0.5rem'
+                  }}
+                >
+                  Try Again
+                </button>
+                <a
+                  href="mailto:contact@nomadicperformance.com"
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: '#1a3a2a',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    display: 'inline-block'
+                  }}
+                >
+                  Email Directly
+                </a>
+              </div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSubmitStatus('idle');
-                  setErrorMessage('');
-                }}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#dc3545',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  marginRight: '0.5rem'
-                }}
-              >
-                Try Again
-              </button>
-              <a
-                href="mailto:contact@nomadicperformance.com"
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: '#1a3a2a',
-                  color: '#fff',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  fontSize: '0.9rem',
-                  display: 'inline-block'
-                }}
-              >
-                Email Directly
-              </a>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Privacy Note */}
         <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '1rem', textAlign: 'center' }}>

@@ -33,18 +33,25 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
   };
 
   return (
-    <form onSubmit={handleSearch} className={`search-bar ${className}`} style={{
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center',
-      maxWidth: '300px',
-      width: '100%'
-    }}>
+    <form
+      onSubmit={handleSearch}
+      role="search"
+      aria-label="Search articles"
+      className={`search-bar ${className}`}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        maxWidth: '300px',
+        width: '100%'
+      }}
+    >
       <input
         type="text"
         value={searchTerm}
         onChange={handleInputChange}
         placeholder={placeholder}
+        aria-label="Search articles"
         style={{
           width: '100%',
           padding: '0.5rem 2.5rem 0.5rem 1rem',
@@ -62,6 +69,7 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
         <button
           type="button"
           onClick={handleClear}
+          aria-label="Clear search"
           style={{
             position: 'absolute',
             right: '35px',
@@ -80,13 +88,13 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
             width: '20px',
             height: '20px'
           }}
-          title="Clear search"
         >
           ×
         </button>
       )}
       <button
         type="submit"
+        aria-label="Submit search"
         style={{
           position: 'absolute',
           right: '8px',
@@ -108,7 +116,6 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
         }}
         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-        title="Search"
       >
         🔍
       </button>

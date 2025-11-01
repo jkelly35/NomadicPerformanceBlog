@@ -21,27 +21,35 @@ export default function NavBar() {
   };
 
   return (
-    <nav style={{
-      width: '100vw',
-      maxWidth: '100%',
-      boxSizing: 'border-box',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '1.5rem 5vw',
-      background: '#111',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-      borderBottom: '1px solid #222',
-      position: 'sticky',
-      top: 0,
-      zIndex: 10
-    }}>
-      <Link href="/" style={{
+    <nav
+      role="navigation"
+      aria-label="Main navigation"
+      style={{
+        width: '100vw',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
-        gap: '1rem',
-        textDecoration: 'none'
-      }}>
+        justifyContent: 'space-between',
+        padding: '1.5rem 5vw',
+        background: '#111',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+        borderBottom: '1px solid #222',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10
+      }}
+    >
+      <Link
+        href="/"
+        aria-label="Nomadic Performance - Go to homepage"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          textDecoration: 'none'
+        }}
+      >
         <Image
           src="/images/NPLogo.png"
           alt="Nomadic Performance Logo"
@@ -66,11 +74,15 @@ export default function NavBar() {
       </Link>
 
       {/* Desktop Navigation */}
-      <div style={{
-        display: 'none',
-        alignItems: 'center',
-        gap: '1rem'
-      }} className="desktop-nav">
+      <div
+        role="menubar"
+        style={{
+          display: 'none',
+          alignItems: 'center',
+          gap: '1rem'
+        }}
+        className="desktop-nav"
+      >
         {showPublicLinks ? (
           <>
             <Link href="/about" style={{
@@ -149,6 +161,9 @@ export default function NavBar() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
+        aria-expanded={isMenuOpen}
+        aria-controls="mobile-navigation"
+        aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
         style={{
           display: 'block',
           background: 'none',
@@ -159,26 +174,31 @@ export default function NavBar() {
           padding: '0.5rem'
         }}
         className="mobile-menu-btn"
-        aria-label="Toggle menu"
       >
         {isMenuOpen ? '✕' : '☰'}
       </button>
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          background: '#111',
-          borderTop: '1px solid #222',
-          padding: '1rem 0',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1rem'
-        }} className="mobile-nav">
+        <div
+          id="mobile-navigation"
+          role="menu"
+          aria-label="Mobile navigation menu"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: '#111',
+            borderTop: '1px solid #222',
+            padding: '1rem 0',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1rem'
+          }}
+          className="mobile-nav"
+        >
           {showPublicLinks ? (
             <>
               <Link

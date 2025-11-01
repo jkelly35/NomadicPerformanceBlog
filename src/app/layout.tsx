@@ -6,6 +6,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import StructuredData, { organizationStructuredData } from '@/components/StructuredData';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import SkipLink from '@/components/SkipLink';
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Physical Therapy & Outdoor Performance Training",
@@ -85,6 +86,7 @@ export default function RootLayout({
         <StructuredData data={organizationStructuredData} />
       </head>
       <body>
+        <SkipLink />
         <ErrorBoundary>
           <AuthProvider>
             {children}
