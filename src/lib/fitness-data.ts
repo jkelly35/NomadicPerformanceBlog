@@ -3154,3 +3154,318 @@ export async function getSendStats(): Promise<{
     recentActivity: recentActivity || []
   }
 }
+
+// Chart Data Functions
+export async function getNutritionTrends(days: number = 30): Promise<Array<{
+  date: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber: number
+}>> {
+  try {
+    const supabase = await createClient()
+
+    // Calculate date range
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - days)
+
+    const { data: meals, error } = await supabase
+      .from('meals')
+      .select('meal_date, total_calories, total_protein, total_carbs, total_fat, total_fiber')
+      .gte('meal_date', startDate.toISOString().split('T')[0])
+      .lte('meal_date', endDate.toISOString().split('T')[0])
+      .order('meal_date')
+
+    if (error) {
+      console.error('Error fetching nutrition trends:', error)
+      return []
+    }
+
+    // Group by date and sum values
+    const dateMap = new Map<string, {
+      calories: number
+      protein: number
+      carbs: number
+      fat: number
+      fiber: number
+    }>()
+
+    meals?.forEach(meal => {
+      const date = meal.meal_date
+      const existing = dateMap.get(date) || { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+
+      dateMap.set(date, {
+        calories: existing.calories + (meal.total_calories || 0),
+        protein: existing.protein + (meal.total_protein || 0),
+        carbs: existing.carbs + (meal.total_carbs || 0),
+        fat: existing.fat + (meal.total_fat || 0),
+        fiber: existing.fiber + (meal.total_fiber || 0)
+      })
+    })
+
+    // Convert to array and fill missing dates
+    const result: Array<{
+      date: string
+      calories: number
+      protein: number
+      carbs: number
+      fat: number
+      fiber: number
+    }> = []
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+
+      const data = dateMap.get(dateStr) || { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+      result.push({
+        date: dateStr,
+        ...data
+      })
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error in getNutritionTrends:', error)
+    return []
+  }
+}
+
+export async function getWorkoutTrends(days: number = 30): Promise<Array<{
+  date: string
+  workouts: number
+  totalMinutes: number
+  totalCalories: number
+}>> {
+  try {
+    const supabase = await createClient()
+
+    // Calculate date range
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - days)
+
+    const { data: workouts, error } = await supabase
+      .from('workouts')
+      .select('workout_date, duration_minutes, calories_burned')
+      .gte('workout_date', startDate.toISOString().split('T')[0])
+      .lte('workout_date', endDate.toISOString().split('T')[0])
+      .order('workout_date')
+
+    if (error) {
+      console.error('Error fetching workout trends:', error)
+      return []
+    }
+
+    // Group by date
+    const dateMap = new Map<string, {
+      workouts: number
+      totalMinutes: number
+      totalCalories: number
+    }>()
+
+    workouts?.forEach(workout => {
+      const date = workout.workout_date
+      const existing = dateMap.get(date) || { workouts: 0, totalMinutes: 0, totalCalories: 0 }
+
+      dateMap.set(date, {
+        workouts: existing.workouts + 1,
+        totalMinutes: existing.totalMinutes + (workout.duration_minutes || 0),
+        totalCalories: existing.totalCalories + (workout.calories_burned || 0)
+      })
+    })
+
+    // Convert to array and fill missing dates
+    const result: Array<{
+      date: string
+      workouts: number
+      totalMinutes: number
+      totalCalories: number
+    }> = []
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+
+      const data = dateMap.get(dateStr) || { workouts: 0, totalMinutes: 0, totalCalories: 0 }
+      result.push({
+        date: dateStr,
+        ...data
+      })
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error in getWorkoutTrends:', error)
+    return []
+  }
+}
+
+export async function getHealthMetricsTrends(days: number = 30): Promise<Array<{
+  date: string
+  weight?: number
+  bodyFat?: number
+  restingHR?: number
+  sleepQuality?: number
+}>> {
+  try {
+    const supabase = await createClient()
+
+    // Calculate date range
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - days)
+
+    const { data: metrics, error } = await supabase
+      .from('health_metrics')
+      .select('recorded_date, metric_type, value')
+      .gte('recorded_date', startDate.toISOString().split('T')[0])
+      .lte('recorded_date', endDate.toISOString().split('T')[0])
+      .order('recorded_date')
+
+    if (error) {
+      console.error('Error fetching health metrics trends:', error)
+      return []
+    }
+
+    // Group by date
+    const dateMap = new Map<string, {
+      weight?: number
+      bodyFat?: number
+      restingHR?: number
+      sleepQuality?: number
+    }>()
+
+    metrics?.forEach(metric => {
+      const date = metric.recorded_date
+      const existing = dateMap.get(date) || {}
+
+      switch (metric.metric_type) {
+        case 'weight':
+          existing.weight = metric.value
+          break
+        case 'body_fat':
+          existing.bodyFat = metric.value
+          break
+        case 'resting_hr':
+          existing.restingHR = metric.value
+          break
+        case 'sleep_quality':
+          existing.sleepQuality = metric.value
+          break
+      }
+
+      dateMap.set(date, existing)
+    })
+
+    // Convert to array and fill missing dates
+    const result: Array<{
+      date: string
+      weight?: number
+      bodyFat?: number
+      restingHR?: number
+      sleepQuality?: number
+    }> = []
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+
+      const data = dateMap.get(dateStr) || {}
+      result.push({
+        date: dateStr,
+        ...data
+      })
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error in getHealthMetricsTrends:', error)
+    return []
+  }
+}
+
+export async function getHydrationCaffeineTrends(days: number = 30): Promise<Array<{
+  date: string
+  hydration: number
+  caffeine: number
+}>> {
+  try {
+    const supabase = await createClient()
+
+    // Calculate date range
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - days)
+
+    // Get hydration data
+    const { data: hydrationData, error: hydrationError } = await supabase
+      .from('hydration_logs')
+      .select('logged_time, amount_ml')
+      .gte('logged_time', startDate.toISOString())
+      .lte('logged_time', endDate.toISOString())
+
+    // Get caffeine data
+    const { data: caffeineData, error: caffeineError } = await supabase
+      .from('caffeine_logs')
+      .select('logged_time, amount_mg')
+      .gte('logged_time', startDate.toISOString())
+      .lte('logged_time', endDate.toISOString())
+
+    if (hydrationError) {
+      console.error('Error fetching hydration trends:', hydrationError)
+    }
+    if (caffeineError) {
+      console.error('Error fetching caffeine trends:', caffeineError)
+    }
+
+    // Group by date
+    const dateMap = new Map<string, { hydration: number, caffeine: number }>()
+
+    // Process hydration data
+    hydrationData?.forEach(log => {
+      const date = log.logged_time.split('T')[0]
+      const existing = dateMap.get(date) || { hydration: 0, caffeine: 0 }
+      existing.hydration += log.amount_ml || 0
+      dateMap.set(date, existing)
+    })
+
+    // Process caffeine data
+    caffeineData?.forEach(log => {
+      const date = log.logged_time.split('T')[0]
+      const existing = dateMap.get(date) || { hydration: 0, caffeine: 0 }
+      existing.caffeine += log.amount_mg || 0
+      dateMap.set(date, existing)
+    })
+
+    // Convert to array and fill missing dates
+    const result: Array<{
+      date: string
+      hydration: number
+      caffeine: number
+    }> = []
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+
+      const data = dateMap.get(dateStr) || { hydration: 0, caffeine: 0 }
+      result.push({
+        date: dateStr,
+        ...data
+      })
+    }
+
+    return result
+  } catch (error) {
+    console.error('Error in getHydrationCaffeineTrends:', error)
+    return []
+  }
+}

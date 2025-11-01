@@ -121,6 +121,14 @@ export default function NavBar() {
               fontWeight: 600,
               transition: 'color 0.2s'
             }} className="nav-link">Dashboard</Link>
+            <Link href="/analytics" style={{
+              margin: '0 1rem',
+              fontSize: '1.1rem',
+              color: '#fff',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.2s'
+            }} className="nav-link">Analytics</Link>
             <Link href="/profile" style={{
               margin: '0 1rem',
               fontSize: '1.1rem',
