@@ -563,11 +563,11 @@ export default function SendsClient({ initialData }: SendsClientProps) {
           <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-bold mb-2">🎯 Sends Dashboard</h1>
-                <p className="text-blue-100 text-lg">Track your successful sends and achievements across all sports</p>
+                <h1 className="text-4xl font-bold mb-2">🎯 Activities Dashboard</h1>
+                <p className="text-blue-100 text-lg">Track your successful activities and achievements across all sports</p>
                 <div className="flex items-center mt-4 space-x-4">
                   <div className="flex items-center bg-white/10 rounded-full px-3 py-1">
-                    <span className="text-sm">🏆 Total Sends: {stats.totalSends}</span>
+                    <span className="text-sm">🏆 Total Activities: {stats.totalSends}</span>
                   </div>
                   <div className="flex items-center bg-white/10 rounded-full px-3 py-1">
                     <span className="text-sm">📅 This Week: {weeklyStats.count} activities</span>
@@ -586,7 +586,7 @@ export default function SendsClient({ initialData }: SendsClientProps) {
           <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Total Sends</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Total Activities</p>
                 <p className="text-3xl font-bold text-blue-600">{stats.totalSends}</p>
                 <p className="text-sm text-gray-500">All activities</p>
               </div>
@@ -677,12 +677,12 @@ export default function SendsClient({ initialData }: SendsClientProps) {
           </div>
         </div>
 
-        {/* Recent Sends */}
+        {/* Recent Activities */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 mb-8">
           <div className="px-6 py-5 border-b border-gray-100">
             <h3 className="text-xl font-semibold text-gray-900 flex items-center">
               <span className="mr-2">📅</span>
-              Recent Sends
+              Recent Activities
             </h3>
           </div>
           <div className="p-6">

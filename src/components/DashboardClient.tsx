@@ -470,10 +470,10 @@ function DashboardContent({
                 <p className="opacity-90">Log meals, track macros, and fuel your adventures</p>
               </div>
             </Link>
-            <Link href="/training" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
+            <Link href="/activities" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="text-center">
                 <div className="text-6xl mb-4">🏔️</div>
-                <h3 className="text-2xl font-bold mb-2">Training Dashboard</h3>
+                <h3 className="text-2xl font-bold mb-2">Activities Dashboard</h3>
                 <p className="opacity-90">Track workouts, monitor progress, and conquer new peaks</p>
               </div>
             </Link>
@@ -482,6 +482,13 @@ function DashboardContent({
                 <div className="text-6xl mb-4">🎒</div>
                 <h3 className="text-2xl font-bold mb-2">Equipment Tracking</h3>
                 <p className="opacity-90">Manage gear, track maintenance, and optimize your kit</p>
+              </div>
+            </Link>
+            <Link href="/training" className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
+              <div className="text-center">
+                <div className="text-6xl mb-4">💪</div>
+                <h3 className="text-2xl font-bold mb-2">Training Dashboard</h3>
+                <p className="opacity-90">Plan strength training, track exercises, and build power</p>
               </div>
             </Link>
           </div>
