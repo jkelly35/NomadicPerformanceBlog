@@ -242,6 +242,54 @@ CREATE TABLE IF NOT EXISTS metric_correlations (
   UNIQUE(user_id, primary_metric, secondary_metric, time_window_days)
 );
 
+-- Readiness metrics table (for athlete readiness scoring)
+CREATE TABLE IF NOT EXISTS readiness_metrics (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  recorded_date DATE NOT NULL DEFAULT CURRENT_DATE,
+
+  -- Recovery metrics (45% weight)
+  hrv DECIMAL, -- Heart rate variability (ms)
+  resting_hr DECIMAL, -- Resting heart rate (bpm)
+  sleep_hours DECIMAL, -- Hours of sleep
+  sleep_quality INTEGER CHECK (sleep_quality >= 0 AND sleep_quality <= 100), -- Sleep quality score 0-100
+
+  -- Subjective wellness (20% weight)
+  fatigue INTEGER CHECK (fatigue >= 1 AND fatigue <= 5), -- 1-5 scale (1=very tired, 5=very energetic)
+  soreness INTEGER CHECK (soreness >= 1 AND soreness <= 5), -- 1-5 scale (1=no soreness, 5=severe soreness)
+  mood INTEGER CHECK (mood >= 1 AND mood <= 5), -- 1-5 scale (1=very bad, 5=excellent)
+  stress INTEGER CHECK (stress >= 1 AND stress <= 5), -- 1-5 scale (1=no stress, 5=extreme stress)
+
+  -- Fueling and hydration (10% weight)
+  energy_intake DECIMAL, -- Calories consumed (kcal)
+  energy_burn DECIMAL, -- Calories burned (kcal)
+  hydration_ml DECIMAL, -- Hydration amount (ml)
+
+  -- Training load (20% weight)
+  training_load DECIMAL, -- RPE × duration (arbitrary units)
+  acute_load DECIMAL, -- 7-day training load
+  chronic_load DECIMAL, -- 28-day training load
+
+  -- Environmental/context factors (5% weight)
+  temperature DECIMAL, -- Ambient temperature (°C)
+  altitude DECIMAL, -- Altitude (meters)
+  illness BOOLEAN DEFAULT false, -- Illness flag
+  travel BOOLEAN DEFAULT false, -- Travel/recovery disruption flag
+
+  -- Calculated scores
+  recovery_score DECIMAL, -- 0-100 score for recovery category
+  wellness_score DECIMAL, -- 0-100 score for subjective wellness
+  fueling_score DECIMAL, -- 0-100 score for fueling/hydration
+  load_score DECIMAL, -- 0-100 score for training load
+  context_score DECIMAL, -- 0-100 score for environmental factors
+  overall_readiness DECIMAL, -- 0-100 final readiness score
+
+  notes TEXT, -- Optional notes
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, recorded_date)
+);
+
 -- Enhanced food_items table with additional micronutrient fields
 -- Note: We'll add micronutrient columns to existing food_items via ALTER TABLE in migration
 
@@ -385,6 +433,7 @@ ALTER TABLE caffeine_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE habit_patterns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_insights ENABLE ROW LEVEL SECURITY;
 ALTER TABLE metric_correlations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE readiness_metrics ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for micronutrients (public read, admin write)
 DROP POLICY IF EXISTS "Anyone can view micronutrients" ON micronutrients;
@@ -426,6 +475,11 @@ DROP POLICY IF EXISTS "Users can manage own correlations" ON metric_correlations
 CREATE POLICY "Users can manage own correlations" ON metric_correlations
   FOR ALL USING (auth.uid() = user_id);
 
+-- RLS Policies for readiness metrics
+DROP POLICY IF EXISTS "Users can manage own readiness metrics" ON readiness_metrics;
+CREATE POLICY "Users can manage own readiness metrics" ON readiness_metrics
+  FOR ALL USING (auth.uid() = user_id);
+
 -- Create indexes for better performance
 DROP INDEX IF EXISTS idx_workouts_user_date;
 CREATE INDEX idx_workouts_user_date ON workouts(user_id, workout_date DESC);
@@ -451,6 +505,9 @@ CREATE INDEX idx_nutrition_goals_user_active ON nutrition_goals(user_id, is_acti
 
 DROP INDEX IF EXISTS idx_food_items_name;
 CREATE INDEX idx_food_items_name ON food_items(name);
+
+DROP INDEX IF EXISTS idx_readiness_metrics_user_date;
+CREATE INDEX idx_readiness_metrics_user_date ON readiness_metrics(user_id, recorded_date DESC);
 
 -- Insert some sample data for testing (optional)
 -- You can remove this section after testing

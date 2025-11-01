@@ -1999,3 +1999,381 @@ export async function getDailyMicronutrientIntake(date: string): Promise<{ [key:
     return {}
   }
 }
+
+// Readiness scoring types and functions
+export interface ReadinessMetric {
+  id: string
+  recorded_date: string
+  // Recovery metrics
+  hrv?: number
+  resting_hr?: number
+  sleep_hours?: number
+  sleep_quality?: number
+  // Subjective wellness
+  fatigue?: number
+  soreness?: number
+  mood?: number
+  stress?: number
+  // Fueling and hydration
+  energy_intake?: number
+  energy_burn?: number
+  hydration_ml?: number
+  // Training load
+  training_load?: number
+  acute_load?: number
+  chronic_load?: number
+  // Environmental factors
+  temperature?: number
+  altitude?: number
+  illness?: boolean
+  travel?: boolean
+  // Calculated scores
+  recovery_score?: number
+  wellness_score?: number
+  fueling_score?: number
+  load_score?: number
+  context_score?: number
+  overall_readiness?: number
+  notes?: string
+}
+
+export async function getReadinessMetrics(date: string): Promise<ReadinessMetric | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    const { data, error } = await supabase
+      .from('readiness_metrics')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('recorded_date', date)
+      .single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      console.error('Error fetching readiness metrics:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error in getReadinessMetrics:', error)
+    return null
+  }
+}
+
+export async function getReadinessHistory(days: number = 30): Promise<ReadinessMetric[]> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return []
+
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    const { data, error } = await supabase
+      .from('readiness_metrics')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('recorded_date', startDate.toISOString().split('T')[0])
+      .order('recorded_date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching readiness history:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getReadinessHistory:', error)
+    return []
+  }
+}
+
+export async function getLatestReadinessScore(): Promise<ReadinessMetric | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    const { data, error } = await supabase
+      .from('readiness_metrics')
+      .select('*')
+      .eq('user_id', user.id)
+      .not('overall_readiness', 'is', null)
+      .order('recorded_date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching latest readiness score:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error in getLatestReadinessScore:', error)
+    return null
+  }
+}
+
+export async function createOrUpdateReadinessMetrics(metrics: Partial<ReadinessMetric>): Promise<ReadinessMetric | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    // Calculate readiness scores
+    const calculatedMetrics = calculateReadinessScores(metrics)
+
+    const { data, error } = await supabase
+      .from('readiness_metrics')
+      .upsert({
+        user_id: user.id,
+        recorded_date: metrics.recorded_date || new Date().toISOString().split('T')[0],
+        ...metrics,
+        ...calculatedMetrics,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error saving readiness metrics:', error)
+      return null
+    }
+
+    revalidatePath('/readiness')
+    revalidatePath('/dashboard')
+    return data
+  } catch (error) {
+    console.error('Error in createOrUpdateReadinessMetrics:', error)
+    return null
+  }
+}
+
+// Readiness scoring algorithm
+function calculateReadinessScores(metrics: Partial<ReadinessMetric>): Partial<ReadinessMetric> {
+  const scores: Partial<ReadinessMetric> = {}
+
+  // Recovery Score (45% weight) - HRV, RHR, Sleep
+  let recoveryScore = 0
+  let recoveryCount = 0
+
+  if (metrics.hrv !== undefined) {
+    // Higher HRV is better (normalize to 0-100, assuming 20-100ms range)
+    const hrvScore = Math.min(Math.max((metrics.hrv - 20) / 80 * 100, 0), 100)
+    recoveryScore += hrvScore
+    recoveryCount++
+  }
+
+  if (metrics.resting_hr !== undefined) {
+    // Lower RHR is better (normalize to 0-100, assuming 40-80bpm range)
+    const rhrScore = Math.min(Math.max((80 - metrics.resting_hr) / 40 * 100, 0), 100)
+    recoveryScore += rhrScore
+    recoveryCount++
+  }
+
+  if (metrics.sleep_hours !== undefined) {
+    // 7-9 hours is optimal
+    let sleepHoursScore = 0
+    if (metrics.sleep_hours >= 7 && metrics.sleep_hours <= 9) {
+      sleepHoursScore = 100
+    } else if (metrics.sleep_hours >= 6 && metrics.sleep_hours < 7) {
+      sleepHoursScore = 75
+    } else if (metrics.sleep_hours > 9 && metrics.sleep_hours <= 10) {
+      sleepHoursScore = 75
+    } else if (metrics.sleep_hours >= 5 && metrics.sleep_hours < 6) {
+      sleepHoursScore = 50
+    } else if (metrics.sleep_hours > 10 && metrics.sleep_hours <= 12) {
+      sleepHoursScore = 50
+    } else {
+      sleepHoursScore = 25
+    }
+    recoveryScore += sleepHoursScore
+    recoveryCount++
+  }
+
+  if (metrics.sleep_quality !== undefined) {
+    // Sleep quality is already 0-100
+    recoveryScore += metrics.sleep_quality
+    recoveryCount++
+  }
+
+  scores.recovery_score = recoveryCount > 0 ? recoveryScore / recoveryCount : undefined
+
+  // Wellness Score (20% weight) - Fatigue, Soreness, Mood, Stress
+  let wellnessScore = 0
+  let wellnessCount = 0
+
+  if (metrics.fatigue !== undefined) {
+    // Convert 1-5 scale to 0-100 (5 = very energetic = 100, 1 = very tired = 20)
+    const fatigueScore = ((metrics.fatigue - 1) / 4) * 100
+    wellnessScore += fatigueScore
+    wellnessCount++
+  }
+
+  if (metrics.soreness !== undefined) {
+    // Convert 1-5 scale to 0-100 (1 = no soreness = 100, 5 = severe = 20)
+    const sorenessScore = ((6 - metrics.soreness) / 4) * 100
+    wellnessScore += sorenessScore
+    wellnessCount++
+  }
+
+  if (metrics.mood !== undefined) {
+    // Convert 1-5 scale to 0-100 (5 = excellent = 100, 1 = very bad = 20)
+    const moodScore = ((metrics.mood - 1) / 4) * 100
+    wellnessScore += moodScore
+    wellnessCount++
+  }
+
+  if (metrics.stress !== undefined) {
+    // Convert 1-5 scale to 0-100 (1 = no stress = 100, 5 = extreme = 20)
+    const stressScore = ((6 - metrics.stress) / 4) * 100
+    wellnessScore += stressScore
+    wellnessCount++
+  }
+
+  scores.wellness_score = wellnessCount > 0 ? wellnessScore / wellnessCount : undefined
+
+  // Fueling Score (10% weight) - Energy balance, Hydration
+  let fuelingScore = 0
+  let fuelingCount = 0
+
+  if (metrics.energy_intake !== undefined && metrics.energy_burn !== undefined) {
+    // Energy balance: aim for slight surplus/deficit
+    const balance = metrics.energy_intake - metrics.energy_burn
+    let balanceScore = 0
+    if (Math.abs(balance) <= 200) { // Within 200kcal is good
+      balanceScore = 100
+    } else if (Math.abs(balance) <= 500) {
+      balanceScore = 75
+    } else if (Math.abs(balance) <= 1000) {
+      balanceScore = 50
+    } else {
+      balanceScore = 25
+    }
+    fuelingScore += balanceScore
+    fuelingCount++
+  }
+
+  if (metrics.hydration_ml !== undefined) {
+    // 2000-4000ml is good range
+    let hydrationScore = 0
+    if (metrics.hydration_ml >= 2000 && metrics.hydration_ml <= 4000) {
+      hydrationScore = 100
+    } else if (metrics.hydration_ml >= 1500 && metrics.hydration_ml < 2000) {
+      hydrationScore = 75
+    } else if (metrics.hydration_ml > 4000 && metrics.hydration_ml <= 5000) {
+      hydrationScore = 75
+    } else if (metrics.hydration_ml >= 1000 && metrics.hydration_ml < 1500) {
+      hydrationScore = 50
+    } else {
+      hydrationScore = 25
+    }
+    fuelingScore += hydrationScore
+    fuelingCount++
+  }
+
+  scores.fueling_score = fuelingCount > 0 ? fuelingScore / fuelingCount : undefined
+
+  // Load Score (20% weight) - Training load ratios
+  let loadScore = 100 // Default to 100 if no load data
+  let loadCount = 0
+
+  if (metrics.acute_load !== undefined && metrics.chronic_load !== undefined && metrics.chronic_load > 0) {
+    // Acute:Chronic ratio - 0.8-1.3 is optimal
+    const acRatio = metrics.acute_load / metrics.chronic_load
+    if (acRatio >= 0.8 && acRatio <= 1.3) {
+      loadScore = 100
+    } else if (acRatio >= 0.6 && acRatio < 0.8) {
+      loadScore = 75
+    } else if (acRatio > 1.3 && acRatio <= 1.5) {
+      loadScore = 75
+    } else if (acRatio >= 0.4 && acRatio < 0.6) {
+      loadScore = 50
+    } else if (acRatio > 1.5 && acRatio <= 2.0) {
+      loadScore = 50
+    } else {
+      loadScore = 25
+    }
+    loadCount++
+  }
+
+  scores.load_score = loadCount > 0 ? loadScore : undefined
+
+  // Context Score (5% weight) - Environmental factors
+  let contextScore = 100 // Default to 100
+  let contextCount = 0
+
+  if (metrics.illness) {
+    contextScore -= 30
+    contextCount++
+  }
+
+  if (metrics.travel) {
+    contextScore -= 20
+    contextCount++
+  }
+
+  if (metrics.temperature !== undefined) {
+    // Extreme temperatures affect performance
+    if (metrics.temperature < 5 || metrics.temperature > 30) {
+      contextScore -= 15
+      contextCount++
+    }
+  }
+
+  if (metrics.altitude !== undefined && metrics.altitude > 2000) {
+    // High altitude affects performance
+    contextScore -= Math.min(metrics.altitude / 100, 20)
+    contextCount++
+  }
+
+  scores.context_score = Math.max(contextScore, 0)
+
+  // Overall Readiness Score - Weighted average
+  const weights = {
+    recovery: 0.45,
+    wellness: 0.20,
+    load: 0.20,
+    fueling: 0.10,
+    context: 0.05
+  }
+
+  let totalScore = 0
+  let totalWeight = 0
+
+  if (scores.recovery_score !== undefined) {
+    totalScore += scores.recovery_score * weights.recovery
+    totalWeight += weights.recovery
+  }
+
+  if (scores.wellness_score !== undefined) {
+    totalScore += scores.wellness_score * weights.wellness
+    totalWeight += weights.wellness
+  }
+
+  if (scores.load_score !== undefined) {
+    totalScore += scores.load_score * weights.load
+    totalWeight += weights.load
+  }
+
+  if (scores.fueling_score !== undefined) {
+    totalScore += scores.fueling_score * weights.fueling
+    totalWeight += weights.fueling
+  }
+
+  if (scores.context_score !== undefined) {
+    totalScore += scores.context_score * weights.context
+    totalWeight += weights.context
+  }
+
+  scores.overall_readiness = totalWeight > 0 ? Math.round(totalScore / totalWeight) : undefined
+
+  return scores
+}

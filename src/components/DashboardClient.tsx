@@ -317,30 +317,30 @@ function DashboardContent({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Readiness Score */}
-              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
+              <Link href="/readiness" className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer block">
                 <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">
                   {(() => {
                     // Calculate readiness score based on recent activity (last 3 days)
                     const today = new Date();
                     const threeDaysAgo = new Date(today);
                     threeDaysAgo.setDate(today.getDate() - 3);
-                    
+
                     const recentWorkouts = data.workouts.filter(w => {
                       const workoutDate = new Date(w.workout_date);
                       return workoutDate >= threeDaysAgo;
                     });
-                    
+
                     // Base score from recent activity (0-50 points)
                     const activityScore = Math.min(recentWorkouts.length * 10, 50);
-                    
+
                     // Add recovery bonus if available (0-30 points)
                     const recoveryScore = getStatValue('recovery_score') || 0;
                     const recoveryBonus = Math.min(recoveryScore * 0.3, 30);
-                    
+
                     // Add fitness level bonus (0-20 points)
                     const fitnessScore = getStatValue('fitness_score') || 0;
                     const fitnessBonus = Math.min(fitnessScore * 0.2, 20);
-                    
+
                     return Math.round(activityScore + recoveryBonus + fitnessBonus);
                   })()}
                 </div>
@@ -349,9 +349,9 @@ function DashboardContent({
                 </h3>
                 <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-semibold">
                   <span>⚡</span>
-                  <span>Training ready</span>
+                  <span>View Details →</span>
                 </div>
-              </div>
+              </Link>
 
               {/* Today's Active Minutes */}
               <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-shadow">
