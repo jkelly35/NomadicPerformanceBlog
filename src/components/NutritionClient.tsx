@@ -41,7 +41,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const router = useRouter()
 
   const [data, setData] = useState<NutritionData>(initialData)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'insights' | 'habits' | 'correlations'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
+  const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
 
   // Refresh data function
   const refreshNutritionData = async () => {
@@ -350,21 +351,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Load insights data when insights tab is active
   useEffect(() => {
-    if (activeTab === 'insights') {
+    if (activeTab === 'ai-insights' && aiInsightsSubTab === 'insights') {
       loadInsightsData()
     }
   }, [activeTab])
 
   // Load habits data when habits tab is active
   useEffect(() => {
-    if (activeTab === 'habits') {
+    if (activeTab === 'ai-insights' && aiInsightsSubTab === 'habits') {
       loadHabitsData()
     }
   }, [activeTab])
 
   // Load correlations data when correlations tab is active
   useEffect(() => {
-    if (activeTab === 'correlations') {
+    if (activeTab === 'ai-insights' && aiInsightsSubTab === 'correlations') {
       loadCorrelationsData()
     }
   }, [activeTab])
@@ -981,9 +982,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               { id: 'saved', label: 'Saved Foods', icon: '⭐' },
               { id: 'log', label: 'Log Meal', icon: '➕' },
               { id: 'goals', label: 'Goals', icon: '🎯' },
-              { id: 'insights', label: 'Insights', icon: '💡' },
-              { id: 'habits', label: 'Habits', icon: '🔄' },
-              { id: 'correlations', label: 'Correlations', icon: '📈' }
+              { id: 'ai-insights', label: 'AI Insights', icon: '🤖' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -3296,8 +3295,66 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           </div>
         )}
 
-        {/* Insights Tab */}
-        {activeTab === 'insights' && (
+        {/* AI Insights Tab */}
+        {activeTab === 'ai-insights' && (
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '2rem',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+            border: '1px solid #e9ecef',
+            marginBottom: '2rem'
+          }}>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: 700,
+              color: '#1a3a2a',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              🤖 AI Insights
+            </h2>
+
+            {/* AI Insights Sub-navigation */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '1rem',
+              marginBottom: '2rem',
+              flexWrap: 'wrap'
+            }}>
+              {[
+                { id: 'insights', label: 'Insights', icon: '💡' },
+                { id: 'habits', label: 'Habits', icon: '🔄' },
+                { id: 'correlations', label: 'Correlations', icon: '📈' }
+              ].map(subTab => (
+                <button
+                  key={subTab.id}
+                  onClick={() => setAiInsightsSubTab(subTab.id as any)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '20px',
+                    border: 'none',
+                    background: aiInsightsSubTab === subTab.id
+                      ? 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)'
+                      : '#f8f9fa',
+                    color: aiInsightsSubTab === subTab.id ? '#fff' : '#1a3a2a',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.3s ease',
+                    boxShadow: aiInsightsSubTab === subTab.id ? '0 4px 16px rgba(255,107,53,0.3)' : 'none'
+                  }}
+                >
+                  {subTab.icon} {subTab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Insights Sub-Tab */}
+        {activeTab === 'ai-insights' && aiInsightsSubTab === 'insights' && (
           <div style={{
             background: '#fff',
             borderRadius: '12px',
@@ -3512,7 +3569,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         )}
 
         {/* Habits Tab */}
-        {activeTab === 'habits' && (
+        {activeTab === 'ai-insights' && aiInsightsSubTab === 'habits' && (
           <div style={{
             background: '#fff',
             borderRadius: '12px',
@@ -3728,7 +3785,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         )}
 
         {/* Correlations Tab */}
-        {activeTab === 'correlations' && (
+        {activeTab === 'ai-insights' && aiInsightsSubTab === 'correlations' && (
           <div style={{
             background: '#fff',
             borderRadius: '12px',
