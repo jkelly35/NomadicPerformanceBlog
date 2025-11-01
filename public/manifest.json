@@ -1,0 +1,28 @@
+{
+  "name": "Nomadic Performance Blog",
+  "short_name": "NomadicPerf",
+  "description": "Track your outdoor adventures and fitness activities",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a3a2a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/images/NPLogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/NPLogo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "fitness", "lifestyle"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

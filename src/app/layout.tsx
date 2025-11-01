@@ -2,6 +2,8 @@ import React from 'react';
 import type { Metadata } from "next";
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import OfflineIndicator from '@/components/OfflineIndicator';
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Outdoor Fitness & Adventure Blog",
@@ -15,7 +17,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/favicon.ico',
+    apple: '/images/NPLogo.png',
   },
+  manifest: '/manifest.json',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  themeColor: '#1a3a2a',
 };
 
 export default function RootLayout({
@@ -28,6 +34,8 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
+          <PWAInstallPrompt />
+          <OfflineIndicator />
         </AuthProvider>
       </body>
     </html>
