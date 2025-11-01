@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import StructuredData, { organizationStructuredData } from '@/components/StructuredData';
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Physical Therapy & Outdoor Performance Training",
@@ -79,6 +80,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <StructuredData data={organizationStructuredData} />
+      </head>
       <body>
         <AuthProvider>
           {children}

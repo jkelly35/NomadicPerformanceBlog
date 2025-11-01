@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getAllPostsMeta, getPostBySlug } from "@/lib/posts";
 import NavBar from "../../../components/NavBar";
 import Footer from "../../../components/Footer";
+import StructuredData, { generateArticleStructuredData, generateBreadcrumbStructuredData } from "@/components/StructuredData";
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
@@ -22,9 +23,42 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { meta } = await getPostBySlug(slug).catch(() => ({ meta: null }));
   if (!meta) return {};
+
+  const postUrl = `https://nomadicperformance.com/blog/${slug}`;
+
   return {
     title: `${meta.title} — Nomadic Performance`,
     description: meta.excerpt,
+    keywords: meta.tags?.join(", "),
+    authors: [{ name: "Nomadic Performance" }],
+    openGraph: {
+      title: meta.title,
+      description: meta.excerpt,
+      url: postUrl,
+      siteName: "Nomadic Performance",
+      type: "article",
+      publishedTime: meta.date,
+      authors: ["Nomadic Performance"],
+      tags: meta.tags,
+      images: [
+        {
+          url: "/NPLogo.png",
+          width: 1200,
+          height: 630,
+          alt: meta.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: meta.title,
+      description: meta.excerpt,
+      images: ["/NPLogo.png"],
+      creator: "@nomadicperformance",
+    },
+    alternates: {
+      canonical: postUrl,
+    },
   };
 }
 
@@ -44,8 +78,26 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   const htmlContent = processedContent.toString();
 
+  // Generate structured data
+  const articleStructuredData = generateArticleStructuredData({
+    title: meta.title,
+    excerpt: meta.excerpt,
+    date: meta.date,
+    slug: meta.slug,
+    tags: meta.tags,
+    author: "Nomadic Performance"
+  });
+
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog" },
+    { name: meta.title, url: `/blog/${meta.slug}` }
+  ]);
+
   return (
     <main>
+      <StructuredData data={articleStructuredData} />
+      <StructuredData data={breadcrumbStructuredData} />
       <NavBar />
       <section style={{ padding: '2rem 1rem', background: '#f9f9f9', minHeight: '20vh' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>

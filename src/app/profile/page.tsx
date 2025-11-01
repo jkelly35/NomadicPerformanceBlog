@@ -56,7 +56,7 @@ export default function ProfilePage() {
       } else {
         setMessage('Profile updated successfully!')
       }
-    } catch (err) {
+    } catch {
       setMessage('An unexpected error occurred')
     } finally {
       setUpdating(false)

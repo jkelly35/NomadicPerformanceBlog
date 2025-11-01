@@ -2,6 +2,7 @@
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import Link from "next/link";
+import StructuredData, { generateServiceStructuredData, generateBreadcrumbStructuredData } from "@/components/StructuredData";
 
 export const metadata = {
   title: "Services - Nomadic Performance",
@@ -9,8 +10,41 @@ export const metadata = {
 };
 
 export default function ServicesPage() {
+  // Define services for structured data
+  const services = [
+    {
+      name: "Virtual Consultations",
+      description: "Remote physical therapy and coaching from anywhere. Includes initial assessments and follow-up sessions.",
+      url: "https://nomadicperformance.com/services#virtual"
+    },
+    {
+      name: "Injury Assessment & Treatment",
+      description: "Comprehensive evaluation and treatment for acute injuries, chronic pain, and movement dysfunctions.",
+      url: "https://nomadicperformance.com/services#in-person"
+    },
+    {
+      name: "Performance Optimization",
+      description: "Advanced training programs, movement analysis, and strength coaching for athletes and adventurers.",
+      url: "https://nomadicperformance.com/services#in-person"
+    },
+    {
+      name: "Specialized Programs",
+      description: "Structured rehabilitation and return-to-activity programs for post-injury recovery with progressive loading and functional training.",
+      url: "https://nomadicperformance.com/services#specialized"
+    }
+  ];
+
+  // Generate structured data
+  const serviceStructuredData = generateServiceStructuredData(services);
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    { name: "Home", url: "/" },
+    { name: "Services", url: "/services" }
+  ]);
+
   return (
     <main>
+      <StructuredData data={serviceStructuredData} />
+      <StructuredData data={breadcrumbStructuredData} />
       <NavBar />
 
       {/* Hero Section */}

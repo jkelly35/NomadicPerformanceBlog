@@ -7,14 +7,22 @@ import TagFilter from "../../components/TagFilter";
 import BlogContent from "../../components/BlogContent";
 import { getAllPostsMeta } from "@/lib/posts";
 import { Suspense } from 'react';
+import StructuredData, { generateBreadcrumbStructuredData } from "@/components/StructuredData";
 
 export const metadata = { title: "Blog — Nomadic Performance" };
 
 export default async function BlogIndex() {
   const posts = await getAllPostsMeta();
 
+  // Generate breadcrumb structured data
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    { name: "Home", url: "/" },
+    { name: "Blog", url: "/blog" }
+  ]);
+
   return (
     <main>
+      <StructuredData data={breadcrumbStructuredData} />
       <NavBar />
       <section style={{ padding: '4rem 5vw', background: 'linear-gradient(135deg, #f9f9f9 0%, #e8f4f8 100%)', minHeight: '30vh', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%231a3a2a" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")', opacity: 0.3 }}></div>

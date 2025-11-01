@@ -1,6 +1,7 @@
 // src/app/faq/page.tsx
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
+import StructuredData, { generateFAQStructuredData, generateBreadcrumbStructuredData } from "@/components/StructuredData";
 
 export const metadata = {
   title: "FAQ - Nomadic Performance",
@@ -43,8 +44,17 @@ export default function FAQPage() {
     }
   ];
 
+  // Generate structured data
+  const faqStructuredData = generateFAQStructuredData(faqs);
+  const breadcrumbStructuredData = generateBreadcrumbStructuredData([
+    { name: "Home", url: "/" },
+    { name: "FAQ", url: "/faq" }
+  ]);
+
   return (
     <main>
+      <StructuredData data={faqStructuredData} />
+      <StructuredData data={breadcrumbStructuredData} />
       <NavBar />
 
       {/* Hero Section */}
