@@ -3,13 +3,17 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase';
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
+  const pathname = usePathname();
   const supabase = createClient();
+
+  const showPublicLinks = !user || ["/", "/about", "/contact", "/blog"].includes(pathname);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -67,30 +71,34 @@ export default function NavBar() {
         alignItems: 'center',
         gap: '1rem'
       }} className="desktop-nav">
-        <Link href="/about" style={{
-          margin: '0 1rem',
-          fontSize: '1.1rem',
-          color: '#fff',
-          textDecoration: 'none',
-          fontWeight: 600,
-          transition: 'color 0.2s'
-        }} className="nav-link">About Me</Link>
-        <Link href="/blog" style={{
-          margin: '0 1rem',
-          fontSize: '1.1rem',
-          color: '#fff',
-          textDecoration: 'none',
-          fontWeight: 600,
-          transition: 'color 0.2s'
-        }} className="nav-link">Blog</Link>
-        <Link href="/contact" style={{
-          margin: '0 1rem',
-          fontSize: '1.1rem',
-          color: '#fff',
-          textDecoration: 'none',
-          fontWeight: 600,
-          transition: 'color 0.2s'
-        }} className="nav-link">Contact</Link>
+        {showPublicLinks ? (
+          <>
+            <Link href="/about" style={{
+              margin: '0 1rem',
+              fontSize: '1.1rem',
+              color: '#fff',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.2s'
+            }} className="nav-link">About Me</Link>
+            <Link href="/blog" style={{
+              margin: '0 1rem',
+              fontSize: '1.1rem',
+              color: '#fff',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.2s'
+            }} className="nav-link">Blog</Link>
+            <Link href="/contact" style={{
+              margin: '0 1rem',
+              fontSize: '1.1rem',
+              color: '#fff',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.2s'
+            }} className="nav-link">Contact</Link>
+          </>
+        ) : null}
         {user ? (
           <>
             <Link href="/dashboard" style={{
@@ -171,51 +179,55 @@ export default function NavBar() {
           alignItems: 'center',
           gap: '1rem'
         }} className="mobile-nav">
-          <Link
-            href="/about"
-            style={{
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              padding: '0.5rem 1rem',
-              width: '100%',
-              textAlign: 'center'
-            }}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            About Me
-          </Link>
-          <Link
-            href="/blog"
-            style={{
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              padding: '0.5rem 1rem',
-              width: '100%',
-              textAlign: 'center'
-            }}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Blog
-          </Link>
-          <Link
-            href="/contact"
-            style={{
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '1.2rem',
-              fontWeight: 600,
-              padding: '0.5rem 1rem',
-              width: '100%',
-              textAlign: 'center'
-            }}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Contact
-          </Link>
+          {showPublicLinks ? (
+            <>
+              <Link
+                href="/about"
+                style={{
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 1rem',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About Me
+              </Link>
+              <Link
+                href="/blog"
+                style={{
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 1rem',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Blog
+              </Link>
+              <Link
+                href="/contact"
+                style={{
+                  color: '#fff',
+                  textDecoration: 'none',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 1rem',
+                  width: '100%',
+                  textAlign: 'center'
+                }}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+            </>
+          ) : null}
           {user ? (
             <>
               <Link

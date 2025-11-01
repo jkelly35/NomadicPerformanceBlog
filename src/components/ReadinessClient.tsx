@@ -695,10 +695,10 @@ export default function ReadinessClient({ initialData }: ReadinessClientProps) {
 
                   {/* Data points and line */}
                   {data.readinessHistory
-                    .filter(entry => entry.overall_readiness !== undefined)
+                    .filter(entry => entry.overall_readiness !== undefined && entry.overall_readiness !== null)
                     .slice(-30) // Last 30 days
                     .map((entry, index, arr) => {
-                      const x = 80 + (index / (arr.length - 1)) * 670
+                      const x = arr.length > 1 ? 80 + (index / (arr.length - 1)) * 670 : 80 + index * 50
                       const y = 260 - ((entry.overall_readiness || 0) / 100) * 200
                       const color = getReadinessColor(entry.overall_readiness)
 
@@ -709,7 +709,7 @@ export default function ReadinessClient({ initialData }: ReadinessClientProps) {
                             <line
                               x1={x}
                               y1={y}
-                              x2={80 + ((index + 1) / (arr.length - 1)) * 670}
+                              x2={arr.length > 1 ? 80 + ((index + 1) / (arr.length - 1)) * 670 : 80 + (index + 1) * 50}
                               y2={260 - ((arr[index + 1].overall_readiness || 0) / 100) * 200}
                               stroke="#3b82f6"
                               strokeWidth="3"

@@ -1113,7 +1113,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             marginBottom: '1rem',
             textAlign: 'center'
           }}>
-            🍎 Nutrition Tracker
+            🍎 Nutrition Dashboard
           </h1>
 
           {/* Tab Navigation */}

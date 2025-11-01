@@ -396,14 +396,14 @@ function DashboardContent({
             <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="text-center">
                 <div className="text-6xl mb-4">🥗</div>
-                <h3 className="text-2xl font-bold mb-2">Fueling Log</h3>
+                <h3 className="text-2xl font-bold mb-2">Nutrition Dashboard</h3>
                 <p className="opacity-90">Log meals, track macros, and fuel your adventures</p>
               </div>
             </Link>
             <Link href="/training" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-8 text-white no-underline block transition-transform hover:scale-105 shadow-lg hover:shadow-xl">
               <div className="text-center">
                 <div className="text-6xl mb-4">🏔️</div>
-                <h3 className="text-2xl font-bold mb-2">Training Log</h3>
+                <h3 className="text-2xl font-bold mb-2">Training Dashboard</h3>
                 <p className="opacity-90">Track workouts, monitor progress, and conquer new peaks</p>
               </div>
             </Link>
