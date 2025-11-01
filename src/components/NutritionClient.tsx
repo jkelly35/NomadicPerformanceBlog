@@ -5516,15 +5516,15 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1100,
-            padding: '2rem'
+            padding: 'clamp(1rem, 5vw, 2rem)'
           }}>
             <div style={{
               background: '#fff',
-              borderRadius: '12px',
-              padding: '2rem',
-              maxWidth: '600px',
+              borderRadius: 'clamp(8px, 3vw, 12px)',
+              padding: 'clamp(1.5rem, 4vw, 2rem)',
+              maxWidth: 'min(90vw, 600px)',
               width: '100%',
-              maxHeight: '80vh',
+              maxHeight: 'min(85vh, 600px)',
               overflow: 'hidden',
               boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
               display: 'flex',
@@ -5534,12 +5534,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '1.5rem'
+                marginBottom: 'clamp(1rem, 3vw, 1.5rem)'
               }}>
                 <h3 style={{
-                  fontSize: '1.5rem',
+                  fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
                   fontWeight: 600,
-                  color: '#1a3a2a'
+                  color: '#1a3a2a',
+                  margin: 0
                 }}>
                   Select Food
                 </h3>
@@ -5549,17 +5550,19 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     setFoodSelectorSearch('')
                   }}
                   style={{
-                    padding: '0.5rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                     background: '#6c757d',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '50%',
                     cursor: 'pointer',
-                    width: '30px',
-                    height: '30px',
+                    width: 'clamp(30px, 8vw, 40px)',
+                    height: 'clamp(30px, 8vw, 40px)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    minWidth: '44px',
+                    minHeight: '44px'
                   }}
                 >
                   ✕
@@ -5569,22 +5572,30 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {/* Filter Tabs */}
               <div style={{
                 display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '1.5rem',
+                gap: 'clamp(0.25rem, 1vw, 0.5rem)',
+                marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
                 borderBottom: '1px solid #e9ecef',
-                paddingBottom: '1rem'
+                paddingBottom: 'clamp(0.75rem, 2vw, 1rem)',
+                flexWrap: 'wrap',
+                justifyContent: 'center'
               }}>
                 <button
                   onClick={() => setFoodSelectorFilter('database')}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem)',
                     background: foodSelectorFilter === 'database' ? '#ff6b35' : '#f8f9fa',
                     color: foodSelectorFilter === 'database' ? '#fff' : '#1a3a2a',
                     border: '1px solid #e9ecef',
-                    borderRadius: '20px',
+                    borderRadius: 'clamp(16px, 5vw, 20px)',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                    fontWeight: '500',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   🍎 Food Database
@@ -5592,14 +5603,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <button
                   onClick={() => setFoodSelectorFilter('templates')}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem)',
                     background: foodSelectorFilter === 'templates' ? '#ff6b35' : '#f8f9fa',
                     color: foodSelectorFilter === 'templates' ? '#fff' : '#1a3a2a',
                     border: '1px solid #e9ecef',
-                    borderRadius: '20px',
+                    borderRadius: 'clamp(16px, 5vw, 20px)',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                    fontWeight: '500',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   📋 Meal Templates
@@ -5607,14 +5624,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <button
                   onClick={() => setFoodSelectorFilter('saved')}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem)',
                     background: foodSelectorFilter === 'saved' ? '#ff6b35' : '#f8f9fa',
                     color: foodSelectorFilter === 'saved' ? '#fff' : '#1a3a2a',
                     border: '1px solid #e9ecef',
-                    borderRadius: '20px',
+                    borderRadius: 'clamp(16px, 5vw, 20px)',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                    fontWeight: '500',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   ⭐ Saved Foods
@@ -5622,14 +5645,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <button
                   onClick={() => setFoodSelectorFilter('usda')}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem)',
                     background: foodSelectorFilter === 'usda' ? '#ff6b35' : '#f8f9fa',
                     color: foodSelectorFilter === 'usda' ? '#fff' : '#1a3a2a',
                     border: '1px solid #e9ecef',
-                    borderRadius: '20px',
+                    borderRadius: 'clamp(16px, 5vw, 20px)',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                    fontWeight: '500',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   🔍 USDA Search
@@ -5637,14 +5666,20 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <button
                   onClick={() => setFoodSelectorFilter('barcode')}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem)',
                     background: foodSelectorFilter === 'barcode' ? '#ff6b35' : '#f8f9fa',
                     color: foodSelectorFilter === 'barcode' ? '#fff' : '#1a3a2a',
                     border: '1px solid #e9ecef',
-                    borderRadius: '20px',
+                    borderRadius: 'clamp(16px, 5vw, 20px)',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
+                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                    fontWeight: '500',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   📱 Scan Barcode
@@ -5652,7 +5687,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               </div>
 
               {/* Search */}
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: 'clamp(1rem, 3vw, 1.5rem)' }}>
                 <input
                   type="text"
                   placeholder="Search foods..."
@@ -5660,11 +5695,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   onChange={(e) => setFoodSelectorSearch(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '1rem',
+                    padding: 'clamp(0.75rem, 3vw, 1rem)',
                     border: '2px solid #e9ecef',
-                    borderRadius: '25px',
-                    fontSize: '1rem',
-                    outline: 'none'
+                    borderRadius: 'clamp(20px, 6vw, 25px)',
+                    fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
+                    outline: 'none',
+                    minHeight: '44px'
                   }}
                 />
               </div>
