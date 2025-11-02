@@ -267,7 +267,20 @@ function DashboardContent({
   }
 
   const addFoodToMeal = (food: FoodItem) => {
-    setSelectedFoods(prev => [...prev, { food, quantity: food.serving_size }])
+    setSelectedFoods(prev => {
+      const existingIndex = prev.findIndex(({ food: selectedFood }) => selectedFood.id === food.id)
+      if (existingIndex >= 0) {
+        // Food is already selected, remove it
+        return prev.filter((_, index) => index !== existingIndex)
+      } else {
+        // Food is not selected, add it
+        return [...prev, { food, quantity: food.serving_size }]
+      }
+    })
+  }
+
+  const removeFoodFromMeal = (foodId: string) => {
+    setSelectedFoods(prev => prev.filter(({ food }) => food.id !== foodId))
   }
 
   const addMealTemplateToMeal = async (template: MealTemplate) => {
@@ -287,7 +300,16 @@ function DashboardContent({
 
   const addSavedFoodToMeal = (savedFood: SavedFood) => {
     if (savedFood.food_item) {
-      setSelectedFoods(prev => [...prev, { food: savedFood.food_item!, quantity: savedFood.food_item!.serving_size }])
+      setSelectedFoods(prev => {
+        const existingIndex = prev.findIndex(({ food: selectedFood }) => selectedFood.id === savedFood.food_item!.id)
+        if (existingIndex >= 0) {
+          // Food is already selected, remove it
+          return prev.filter((_, index) => index !== existingIndex)
+        } else {
+          // Food is not selected, add it
+          return [...prev, { food: savedFood.food_item!, quantity: savedFood.food_item!.serving_size }]
+        }
+      })
     }
   }
 
@@ -1760,62 +1782,73 @@ function DashboardContent({
                       food.name.toLowerCase().includes(foodSelectorSearch.toLowerCase()) ||
                       (food.brand && food.brand.toLowerCase().includes(foodSelectorSearch.toLowerCase()))
                     )
-                    .map((food) => (
-                      <div
-                        key={food.id}
-                        onClick={() => addFoodToMeal(food)}
-                        style={{
-                          padding: '1rem',
-                          border: '1px solid #e9ecef',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          background: '#f8f9fa',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                      >
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start'
-                        }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{
-                              fontWeight: '600',
-                              color: '#1a3a2a',
-                              marginBottom: '0.25rem'
-                            }}>
-                              {food.name}
-                            </div>
-                            {food.brand && (
+                    .map((food) => {
+                      const isSelected = selectedFoods.some(({ food: selectedFood }) => selectedFood.id === food.id)
+                      return (
+                        <div
+                          key={food.id}
+                          onClick={() => addFoodToMeal(food)}
+                          style={{
+                            padding: '1rem',
+                            border: isSelected ? '2px solid #ff6b35' : '1px solid #e9ecef',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            background: isSelected ? '#fff3cd' : '#f8f9fa',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.background = '#e9ecef'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.background = '#f8f9fa'
+                            }
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start'
+                          }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{
+                                fontWeight: '600',
+                                color: isSelected ? '#ff6b35' : '#1a3a2a',
+                                marginBottom: '0.25rem'
+                              }}>
+                                {food.name} {isSelected && '✓'}
+                              </div>
+                              {food.brand && (
+                                <div style={{
+                                  fontSize: '0.8rem',
+                                  color: '#666',
+                                  marginBottom: '0.5rem'
+                                }}>
+                                  {food.brand}
+                                </div>
+                              )}
                               <div style={{
                                 fontSize: '0.8rem',
-                                color: '#666',
-                                marginBottom: '0.5rem'
+                                color: '#666'
                               }}>
-                                {food.brand}
+                                {food.serving_size} {food.serving_unit} • {food.calories_per_serving} cal
                               </div>
-                            )}
+                            </div>
                             <div style={{
-                              fontSize: '0.8rem',
+                              textAlign: 'right',
+                              fontSize: '0.9rem',
                               color: '#666'
                             }}>
-                              {food.serving_size} {food.serving_unit} • {food.calories_per_serving} cal
+                              <div>P: {food.protein_grams}g</div>
+                              <div>C: {food.carbs_grams}g</div>
+                              <div>F: {food.fat_grams}g</div>
                             </div>
                           </div>
-                          <div style={{
-                            textAlign: 'right',
-                            fontSize: '0.9rem',
-                            color: '#666'
-                          }}>
-                            <div>P: {food.protein_grams}g</div>
-                            <div>C: {food.carbs_grams}g</div>
-                            <div>F: {food.fat_grams}g</div>
-                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
 
                   {foodSelectorFilter === 'templates' && mealTemplates
                     .filter(template =>
@@ -1865,47 +1898,58 @@ function DashboardContent({
                       savedFood.food_item?.name.toLowerCase().includes(foodSelectorSearch.toLowerCase()) ||
                       (savedFood.food_item?.brand && savedFood.food_item.brand.toLowerCase().includes(foodSelectorSearch.toLowerCase()))
                     )
-                    .map((savedFood) => (
-                      <div
-                        key={savedFood.id}
-                        onClick={() => addSavedFoodToMeal(savedFood)}
-                        style={{
-                          padding: '1rem',
-                          border: '1px solid #e9ecef',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          background: '#f8f9fa',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#e9ecef'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            fontWeight: '600',
-                            color: '#1a3a2a',
-                            marginBottom: '0.25rem'
-                          }}>
-                            ⭐ {savedFood.food_item?.name}
-                          </div>
-                          {savedFood.food_item?.brand && (
+                    .map((savedFood) => {
+                      const isSelected = savedFood.food_item && selectedFoods.some(({ food: selectedFood }) => selectedFood.id === savedFood.food_item!.id)
+                      return (
+                        <div
+                          key={savedFood.id}
+                          onClick={() => addSavedFoodToMeal(savedFood)}
+                          style={{
+                            padding: '1rem',
+                            border: isSelected ? '2px solid #ff6b35' : '1px solid #e9ecef',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            background: isSelected ? '#fff3cd' : '#f8f9fa',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.background = '#e9ecef'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.background = '#f8f9fa'
+                            }
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontWeight: '600',
+                              color: isSelected ? '#ff6b35' : '#1a3a2a',
+                              marginBottom: '0.25rem'
+                            }}>
+                              ⭐ {savedFood.food_item?.name} {isSelected && '✓'}
+                            </div>
+                            {savedFood.food_item?.brand && (
+                              <div style={{
+                                fontSize: '0.8rem',
+                                color: '#666',
+                                marginBottom: '0.5rem'
+                              }}>
+                                {savedFood.food_item.brand}
+                              </div>
+                            )}
                             <div style={{
                               fontSize: '0.8rem',
-                              color: '#666',
-                              marginBottom: '0.5rem'
+                              color: '#666'
                             }}>
-                              {savedFood.food_item.brand}
+                              {savedFood.food_item?.serving_size} {savedFood.food_item?.serving_unit} • {savedFood.food_item?.calories_per_serving} cal
                             </div>
-                          )}
-                          <div style={{
-                            fontSize: '0.8rem',
-                            color: '#666'
-                          }}>
-                            {savedFood.food_item?.serving_size} {savedFood.food_item?.serving_unit} • {savedFood.food_item?.calories_per_serving} cal
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                 </>
               )}
 
@@ -1936,20 +1980,69 @@ function DashboardContent({
                 <div style={{
                   fontWeight: '600',
                   color: '#1a3a2a',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.5rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}>
                   Selected Foods ({selectedFoods.length})
+                  {selectedFoods.length > 0 && (
+                    <button
+                      onClick={() => setSelectedFoods([])}
+                      style={{
+                        padding: '0.125rem 0.5rem',
+                        background: '#6c757d',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold'
+                      }}
+                      title="Clear all selected foods"
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
                 <div style={{
                   fontSize: '0.8rem',
                   color: '#666',
                   marginBottom: '0.5rem',
-                  maxHeight: '60px',
+                  maxHeight: '100px',
                   overflow: 'auto'
                 }}>
                   {selectedFoods.map(({ food, quantity }, index) => (
-                    <div key={index} style={{ marginBottom: '0.25rem' }}>
-                      {food.name} - {quantity} {food.serving_unit} ({(quantity / food.serving_size).toFixed(1)} servings)
+                    <div key={index} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.25rem',
+                      padding: '0.25rem',
+                      background: '#fff',
+                      borderRadius: '4px',
+                      border: '1px solid #e9ecef'
+                    }}>
+                      <span style={{ flex: 1 }}>
+                        {food.name} - {quantity} {food.serving_unit} ({(quantity / food.serving_size).toFixed(1)} servings)
+                      </span>
+                      <button
+                        onClick={() => removeFoodFromMeal(food.id)}
+                        style={{
+                          padding: '0.125rem 0.25rem',
+                          background: '#dc3545',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          fontSize: '0.7rem',
+                          fontWeight: 'bold',
+                          marginLeft: '0.5rem'
+                        }}
+                        title="Remove this food"
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                 </div>
