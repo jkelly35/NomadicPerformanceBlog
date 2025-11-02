@@ -51,6 +51,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
   const [recipeSuggestions, setRecipeSuggestions] = useState<MealDBRecipe[]>([])
   const [loadingRecipes, setLoadingRecipes] = useState(false)
+  const [selectedRecipe, setSelectedRecipe] = useState<MealDBRecipe | null>(null)
+  const [showRecipeModal, setShowRecipeModal] = useState(false)
+  const [loadingRecipeDetails, setLoadingRecipeDetails] = useState(false)
 
   // Dynamic imports for code splitting
   const BarcodeScanner = dynamic(() => import('./BarcodeScanner'), {
@@ -557,6 +560,52 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }))
     setFoodSelectorOpen(false)
     setFoodSelectorSearch('')
+  }
+
+  const openRecipeDetails = async (recipe: MealDBRecipe) => {
+    setLoadingRecipeDetails(true)
+    setShowRecipeModal(true)
+
+    try {
+      // Get full recipe details if we don't have them
+      if (!recipe.strInstructions || !recipe.strIngredient1) {
+        const fullRecipe = await getMealById(recipe.idMeal)
+        if (fullRecipe) {
+          setSelectedRecipe(fullRecipe)
+        } else {
+          setSelectedRecipe(recipe)
+        }
+      } else {
+        setSelectedRecipe(recipe)
+      }
+    } catch (error) {
+      console.error('Error loading recipe details:', error)
+      setSelectedRecipe(recipe)
+    } finally {
+      setLoadingRecipeDetails(false)
+    }
+  }
+
+  const addRecipeToMeal = (recipe: MealDBRecipe) => {
+    const hour = new Date().getHours()
+    setSelectedMealType(hour >= 6 && hour < 10 ? 'breakfast' :
+                      hour >= 10 && hour < 14 ? 'lunch' :
+                      hour >= 14 && hour < 18 ? 'snack' : 'dinner')
+
+    // Set meal notes with recipe information
+    setMealNotes(`Recipe: ${recipe.strMeal} (${recipe.strCategory} • ${recipe.strArea})\n\nIngredients:\n${Array.from({ length: 20 }, (_, i) => {
+      const ingredient = recipe[`strIngredient${i + 1}` as keyof MealDBRecipe] as string
+      const measure = recipe[`strMeasure${i + 1}` as keyof MealDBRecipe] as string
+      if (ingredient && ingredient.trim()) {
+        return `• ${measure ? measure + ' ' : ''}${ingredient}`
+      }
+      return null
+    }).filter(Boolean).join('\n')}\n\nInstructions: ${recipe.strInstructions}`)
+
+    setActiveTab('log')
+    setShowRecipeModal(false)
+
+    addToast(`"${recipe.strMeal}" recipe loaded! Review ingredients and add them to your meal log.`, 'success')
   }
 
   const addMealTemplateToMeal = async (template: MealTemplate) => {
@@ -1805,14 +1854,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   recipeSuggestions.slice(0, 3).map((recipe, index) => (
                     <button
                       key={recipe.idMeal}
-                      onClick={() => {
-                        const hour = new Date().getHours()
-                        setSelectedMealType(hour >= 6 && hour < 10 ? 'breakfast' :
-                                          hour >= 10 && hour < 14 ? 'lunch' :
-                                          hour >= 14 && hour < 18 ? 'snack' : 'dinner')
-                        setActiveTab('log')
-                        alert(`Recipe suggestion: ${recipe.strMeal}\n\n${recipe.strCategory} • ${recipe.strArea}\n\nClick to add this recipe to your meal log!`)
-                      }}
+                      onClick={() => openRecipeDetails(recipe)}
                       style={{
                         padding: 'clamp(0.75rem, 2.5vw, 1rem)',
                         background: 'rgba(255,255,255,0.9)',
@@ -6383,6 +6425,306 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             }}
             onClose={() => setShowBarcodeScanner(false)}
           />
+        )}
+
+        {/* Recipe Details Modal */}
+        {showRecipeModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '16px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}>
+              {/* Close button */}
+              <button
+                onClick={() => setShowRecipeModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  right: '1rem',
+                  background: 'rgba(0,0,0,0.1)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  zIndex: 1
+                }}
+              >
+                ✕
+              </button>
+
+              {loadingRecipeDetails ? (
+                <div style={{
+                  padding: '3rem',
+                  textAlign: 'center',
+                  color: '#666'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '4px solid #f3f3f3',
+                    borderTop: '4px solid #4caf50',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    margin: '0 auto 1rem'
+                  }}></div>
+                  Loading recipe details...
+                </div>
+              ) : selectedRecipe ? (
+                <div>
+                  {/* Recipe Header */}
+                  <div style={{
+                    padding: '2rem 2rem 1rem',
+                    borderBottom: '1px solid #e9ecef'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      gap: '1rem',
+                      marginBottom: '1rem'
+                    }}>
+                      <img
+                        src={selectedRecipe.strMealThumb}
+                        alt={selectedRecipe.strMeal}
+                        style={{
+                          width: '120px',
+                          height: '120px',
+                          borderRadius: '12px',
+                          objectFit: 'cover',
+                          flexShrink: 0
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <h2 style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 'bold',
+                          color: '#1a3a2a',
+                          marginBottom: '0.5rem'
+                        }}>
+                          {selectedRecipe.strMeal}
+                        </h2>
+                        <div style={{
+                          display: 'flex',
+                          gap: '1rem',
+                          marginBottom: '0.5rem',
+                          fontSize: '0.9rem',
+                          color: '#666'
+                        }}>
+                          <span>📍 {selectedRecipe.strArea}</span>
+                          <span>🍽️ {selectedRecipe.strCategory}</span>
+                        </div>
+                        {selectedRecipe.strTags && (
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#888'
+                          }}>
+                            Tags: {selectedRecipe.strTags.split(',').join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ingredients */}
+                  <div style={{
+                    padding: '1.5rem 2rem',
+                    borderBottom: '1px solid #e9ecef'
+                  }}>
+                    <h3 style={{
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      color: '#1a3a2a',
+                      marginBottom: '1rem'
+                    }}>
+                      🥘 Ingredients
+                    </h3>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '0.5rem'
+                    }}>
+                      {Array.from({ length: 20 }, (_, i) => {
+                        const ingredient = selectedRecipe[`strIngredient${i + 1}` as keyof MealDBRecipe] as string
+                        const measure = selectedRecipe[`strMeasure${i + 1}` as keyof MealDBRecipe] as string
+                        if (ingredient && ingredient.trim()) {
+                          return (
+                            <div
+                              key={i}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                padding: '0.5rem',
+                                background: '#f8f9fa',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem'
+                              }}
+                            >
+                              <span style={{ fontWeight: '500' }}>{ingredient}</span>
+                              <span style={{ color: '#666' }}>{measure}</span>
+                            </div>
+                          )
+                        }
+                        return null
+                      }).filter(Boolean)}
+                    </div>
+                  </div>
+
+                  {/* Instructions */}
+                  <div style={{
+                    padding: '1.5rem 2rem',
+                    borderBottom: '1px solid #e9ecef'
+                  }}>
+                    <h3 style={{
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      color: '#1a3a2a',
+                      marginBottom: '1rem'
+                    }}>
+                      📝 Instructions
+                    </h3>
+                    <div style={{
+                      lineHeight: '1.6',
+                      color: '#333',
+                      whiteSpace: 'pre-line'
+                    }}>
+                      {selectedRecipe.strInstructions}
+                    </div>
+                  </div>
+
+                  {/* Nutrition Estimate (placeholder for now) */}
+                  <div style={{
+                    padding: '1.5rem 2rem',
+                    borderBottom: '1px solid #e9ecef',
+                    background: '#f8f9fa'
+                  }}>
+                    <h3 style={{
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      color: '#1a3a2a',
+                      marginBottom: '1rem'
+                    }}>
+                      📊 Estimated Nutrition (per serving)
+                    </h3>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                      gap: '1rem',
+                      fontSize: '0.9rem'
+                    }}>
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '0.5rem',
+                        background: '#fff',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: '#4caf50' }}>~350</div>
+                        <div style={{ color: '#666' }}>Calories</div>
+                      </div>
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '0.5rem',
+                        background: '#fff',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: '#2196f3' }}>~25g</div>
+                        <div style={{ color: '#666' }}>Protein</div>
+                      </div>
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '0.5rem',
+                        background: '#fff',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: '#ff9800' }}>~15g</div>
+                        <div style={{ color: '#666' }}>Fat</div>
+                      </div>
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '0.5rem',
+                        background: '#fff',
+                        borderRadius: '8px'
+                      }}>
+                        <div style={{ fontWeight: 'bold', color: '#9c27b0' }}>~45g</div>
+                        <div style={{ color: '#666' }}>Carbs</div>
+                      </div>
+                    </div>
+                    <div style={{
+                      marginTop: '1rem',
+                      fontSize: '0.8rem',
+                      color: '#888',
+                      textAlign: 'center'
+                    }}>
+                      * Estimates based on typical recipes. Actual values may vary.
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{
+                    padding: '1.5rem 2rem',
+                    display: 'flex',
+                    gap: '1rem',
+                    justifyContent: 'flex-end'
+                  }}>
+                    <button
+                      onClick={() => setShowRecipeModal(false)}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: '#f5f5f5',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        color: '#666',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={() => addRecipeToMeal(selectedRecipe)}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: '#4caf50',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ➕ Add to Meal Log
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '3rem',
+                  textAlign: 'center',
+                  color: '#666'
+                }}>
+                  Recipe not found
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
       <Footer />
