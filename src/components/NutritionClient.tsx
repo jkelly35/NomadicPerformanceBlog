@@ -1579,7 +1579,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       if (selectedMeal) {
                         // For now, create a simplified meal log
                         // In a real implementation, you'd need to get the actual food items
-                        alert(`Would repeat: ${selectedMeal.meal_type} - ${selectedMeal.total_calories} calories\n\nFeature coming soon - requires copying individual food items.`)
+                        addToast(`Would repeat: ${selectedMeal.meal_type} - ${selectedMeal.total_calories} calories\n\nFeature coming soon - requires copying individual food items.`, 'info')
                       }
                     }
                   }}
