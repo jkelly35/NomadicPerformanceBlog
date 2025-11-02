@@ -112,6 +112,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     validateField(fieldName, value)
   }
   const [selectedUSDAFood, setSelectedUSDAFood] = useState<USDAFoodItem | null>(null)
+  const [editingUSDAFood, setEditingUSDAFood] = useState(false)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   const [selectedBarcodeFood, setSelectedBarcodeFood] = useState<BarcodeFood | null>(null)
   const [editingBarcodeFood, setEditingBarcodeFood] = useState(false)
@@ -3093,6 +3094,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               <FoodSearch
                 onFoodSelect={(food: USDAFoodItem) => {
                   setSelectedUSDAFood(food);
+                  setEditingUSDAFood(true);
                 }}
                 placeholder="Search USDA food database..."
               />
@@ -3107,55 +3109,359 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   marginBottom: '1rem'
                 }}>
                   <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a' }}>
-                    Nutrition Facts
+                    {editingUSDAFood ? 'Edit Nutrition Information' : 'Nutrition Facts'}
                   </h3>
-                  <button
-                    onClick={async () => {
-                      if (!selectedUSDAFood) return;
+                  {!editingUSDAFood && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => setEditingUSDAFood(true)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#007bff',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        ✏️ Edit Information
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!selectedUSDAFood) return;
 
-                      try {
-                        // Convert USDA food to FormData for saving
-                        const formData = new FormData();
-                        formData.append('name', selectedUSDAFood.description);
-                        formData.append('brand', selectedUSDAFood.brandName || '');
-                        formData.append('serving_size', selectedUSDAFood.nutrition.servingSizeGrams.toString());
-                        formData.append('serving_unit', 'g');
-                        formData.append('calories_per_serving', selectedUSDAFood.nutrition.calories.toString());
-                        formData.append('protein_grams', selectedUSDAFood.nutrition.protein.toString());
-                        formData.append('carbs_grams', selectedUSDAFood.nutrition.carbs.toString());
-                        formData.append('fat_grams', selectedUSDAFood.nutrition.fat.toString());
-                        formData.append('fiber_grams', selectedUSDAFood.nutrition.fiber.toString());
-                        formData.append('sugar_grams', selectedUSDAFood.nutrition.sugar.toString());
-                        formData.append('sodium_mg', selectedUSDAFood.nutrition.sodium.toString());
-                        formData.append('caffeine_mg', '0');
+                          try {
+                            // Convert USDA food to FormData for saving
+                            const formData = new FormData();
+                            formData.append('name', selectedUSDAFood.description);
+                            formData.append('brand', selectedUSDAFood.brandName || '');
+                            formData.append('serving_size', selectedUSDAFood.nutrition.servingSizeGrams.toString());
+                            formData.append('serving_unit', 'g');
+                            formData.append('calories_per_serving', selectedUSDAFood.nutrition.calories.toString());
+                            formData.append('protein_grams', selectedUSDAFood.nutrition.protein.toString());
+                            formData.append('carbs_grams', selectedUSDAFood.nutrition.carbs.toString());
+                            formData.append('fat_grams', selectedUSDAFood.nutrition.fat.toString());
+                            formData.append('fiber_grams', selectedUSDAFood.nutrition.fiber.toString());
+                            formData.append('sugar_grams', selectedUSDAFood.nutrition.sugar.toString());
+                            formData.append('sodium_mg', selectedUSDAFood.nutrition.sodium.toString());
+                            formData.append('caffeine_mg', '0');
 
-                        await createFoodItem(formData);
-                        addToast('Food saved to your personal database!', 'success');
-                        // Refresh food items
-                        await loadFoodItems();
-                      } catch (error) {
-                        console.error('Error saving food:', error);
-                        addToast('Failed to save food. It may already exist in your database.', 'error');
-                      }
-                    }}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: '#28a745',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '20px',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    💾 Save to Database
-                  </button>
+                            await createFoodItem(formData);
+                            addToast('Food saved to your personal database!', 'success');
+                            // Refresh food items
+                            await loadFoodItems();
+                          } catch (error) {
+                            console.error('Error saving food:', error);
+                            addToast('Failed to save food. It may already exist in your database.', 'error');
+                          }
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#28a745',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        💾 Save to Database
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <NutritionFacts
-                  food={selectedUSDAFood}
-                  className="max-w-md mx-auto"
-                />
+
+                {editingUSDAFood ? (
+                  <form onSubmit={async (e) => {
+                    e.preventDefault()
+                    const formData = new FormData(e.target as HTMLFormElement)
+
+                    try {
+                      await createFoodItem(formData)
+                      addToast('Food saved to your personal database!', 'success')
+                      await loadFoodItems()
+                      setSelectedUSDAFood(null)
+                      setEditingUSDAFood(false)
+                    } catch (error) {
+                      console.error('Error saving USDA food:', error)
+                      addToast('Failed to save food. It may already exist in your database.', 'error')
+                    }
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Product Name *
+                        </label>
+                        <input
+                          name="name"
+                          type="text"
+                          required
+                          defaultValue={selectedUSDAFood.description}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Brand
+                        </label>
+                        <input
+                          name="brand"
+                          type="text"
+                          defaultValue={selectedUSDAFood.brandName || ''}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Serving Size (g) *
+                        </label>
+                        <input
+                          name="serving_size"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedUSDAFood.nutrition.servingSizeGrams}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Serving Unit *
+                        </label>
+                        <select
+                          name="serving_unit"
+                          required
+                          defaultValue="g"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        >
+                          <option value="g">grams (g)</option>
+                          <option value="oz">ounces (oz)</option>
+                          <option value="ml">milliliters (ml)</option>
+                          <option value="cup">cups</option>
+                          <option value="tbsp">tablespoons</option>
+                          <option value="tsp">teaspoons</option>
+                          <option value="piece">pieces</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                        Calories per Serving *
+                      </label>
+                      <input
+                        name="calories_per_serving"
+                        type="number"
+                        min="0"
+                        required
+                        defaultValue={selectedUSDAFood.nutrition.calories}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Protein (g) *
+                        </label>
+                        <input
+                          name="protein_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedUSDAFood.nutrition.protein}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Carbs (g) *
+                        </label>
+                        <input
+                          name="carbs_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedUSDAFood.nutrition.carbs}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Fat (g) *
+                        </label>
+                        <input
+                          name="fat_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedUSDAFood.nutrition.fat}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Fiber (g) *
+                        </label>
+                        <input
+                          name="fiber_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedUSDAFood.nutrition.fiber}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Sugar (g)
+                        </label>
+                        <input
+                          name="sugar_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          defaultValue={selectedUSDAFood.nutrition.sugar}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Sodium (mg)
+                        </label>
+                        <input
+                          name="sodium_mg"
+                          type="number"
+                          min="0"
+                          defaultValue={selectedUSDAFood.nutrition.sodium}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button
+                        type="submit"
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#28a745',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        💾 Save to Database
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedUSDAFood(null)
+                          setEditingUSDAFood(false)
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#6c757d',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        ❌ Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <NutritionFacts
+                    food={selectedUSDAFood}
+                    className="max-w-md mx-auto"
+                  />
+                )}
               </div>
             )}
 
