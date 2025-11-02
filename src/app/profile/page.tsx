@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const { user, loading } = useAuth()
   const { preferences, updatePreferences, loading: preferencesLoading } = usePreferences()
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<'settings' | 'metrics'>('settings')
   const [updating, setUpdating] = useState(false)
   const [message, setMessage] = useState('')
   const [formData, setFormData] = useState({
@@ -27,6 +28,24 @@ export default function ProfilePage() {
     bio: '',
     activities: [] as string[],
     dietaryPreferences: [] as string[]
+  })
+  const [metricsData, setMetricsData] = useState({
+    gender: '',
+    weight: '',
+    height: '',
+    age: '',
+    fitnessGoals: [] as string[],
+    sportsActivities: [] as string[],
+    healthMetrics: {
+      restingHeartRate: '',
+      maxHeartRate: '',
+      bodyFatPercentage: '',
+      muscleMass: '',
+      boneDensity: '',
+      hydrationLevel: '',
+      sleepQuality: '',
+      stressLevel: ''
+    }
   })
   const supabase = createClient()
 
@@ -101,7 +120,89 @@ export default function ProfilePage() {
         }
       };
 
+      // Load user metrics from the database
+      const loadUserMetrics = async () => {
+        console.log('Loading metrics for user:', user.id);
+        try {
+          const { data, error } = await supabase
+            .from('user_metrics')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          console.log('Metrics database query result:', { data, error });
+
+          if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+            console.error('Error loading metrics:', error);
+          }
+
+          if (data) {
+            console.log('Setting metrics data from database:', data);
+            setMetricsData({
+              gender: data.gender || '',
+              weight: data.weight || '',
+              height: data.height || '',
+              age: data.age || '',
+              fitnessGoals: data.fitness_goals || [],
+              sportsActivities: data.sports_activities || [],
+              healthMetrics: {
+                restingHeartRate: data.resting_heart_rate || '',
+                maxHeartRate: data.max_heart_rate || '',
+                bodyFatPercentage: data.body_fat_percentage || '',
+                muscleMass: data.muscle_mass || '',
+                boneDensity: data.bone_density || '',
+                hydrationLevel: data.hydration_level || '',
+                sleepQuality: data.sleep_quality || '',
+                stressLevel: data.stress_level || ''
+              }
+            });
+          } else {
+            console.log('No metrics found, setting defaults');
+            // No metrics found, set defaults
+            setMetricsData({
+              gender: '',
+              weight: '',
+              height: '',
+              age: '',
+              fitnessGoals: [],
+              sportsActivities: [],
+              healthMetrics: {
+                restingHeartRate: '',
+                maxHeartRate: '',
+                bodyFatPercentage: '',
+                muscleMass: '',
+                boneDensity: '',
+                hydrationLevel: '',
+                sleepQuality: '',
+                stressLevel: ''
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error loading user metrics:', error);
+          setMetricsData({
+            gender: '',
+            weight: '',
+            height: '',
+            age: '',
+            fitnessGoals: [],
+            sportsActivities: [],
+            healthMetrics: {
+              restingHeartRate: '',
+              maxHeartRate: '',
+              bodyFatPercentage: '',
+              muscleMass: '',
+              boneDensity: '',
+              hydrationLevel: '',
+              sleepQuality: '',
+              stressLevel: ''
+            }
+          });
+        }
+      };
+
       loadUserPreferences();
+      loadUserMetrics();
     }
   }, [user, loading, router, formData.email])
 
@@ -133,6 +234,50 @@ export default function ProfilePage() {
       } else {
         console.log('Profile saved successfully')
         setMessage('Profile updated successfully!')
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      setMessage('An unexpected error occurred')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleUpdateMetrics = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUpdating(true)
+    setMessage('')
+
+    try {
+      // Upsert user metrics
+      const { error } = await supabase
+        .from('user_metrics')
+        .upsert({
+          user_id: user?.id,
+          gender: metricsData.gender,
+          weight: metricsData.weight,
+          height: metricsData.height,
+          age: metricsData.age,
+          fitness_goals: metricsData.fitnessGoals,
+          sports_activities: metricsData.sportsActivities,
+          resting_heart_rate: metricsData.healthMetrics.restingHeartRate,
+          max_heart_rate: metricsData.healthMetrics.maxHeartRate,
+          body_fat_percentage: metricsData.healthMetrics.bodyFatPercentage,
+          muscle_mass: metricsData.healthMetrics.muscleMass,
+          bone_density: metricsData.healthMetrics.boneDensity,
+          hydration_level: metricsData.healthMetrics.hydrationLevel,
+          sleep_quality: metricsData.healthMetrics.sleepQuality,
+          stress_level: metricsData.healthMetrics.stressLevel
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving metrics:', error)
+        setMessage(error.message)
+      } else {
+        console.log('Metrics saved successfully')
+        setMessage('Metrics updated successfully!')
       }
     } catch (error) {
       console.error('Unexpected error:', error)
@@ -238,58 +383,92 @@ export default function ProfilePage() {
       {/* Profile Content */}
       <section style={{ padding: '4rem 5vw', background: '#fff', position: 'relative' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
 
-            {/* Account Information */}
+          {/* Tab Navigation */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '3rem',
+            position: 'relative'
+          }}>
             <div style={{
+              display: 'flex',
               background: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(10px)',
               borderRadius: '16px',
-              padding: '2rem',
+              padding: '0.5rem',
               boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               position: 'relative'
             }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
+              <button
+                onClick={() => setActiveTab('settings')}
+                style={{
+                  padding: '1rem 2rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: activeTab === 'settings' ? 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)' : 'transparent',
+                  color: activeTab === 'settings' ? '#fff' : '#1a3a2a',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                ⚙️ Settings
+              </button>
+              <button
+                onClick={() => setActiveTab('metrics')}
+                style={{
+                  padding: '1rem 2rem',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: activeTab === 'metrics' ? 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)' : 'transparent',
+                  color: activeTab === 'metrics' ? '#fff' : '#1a3a2a',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                📊 Metrics
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'settings' && (
+            <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
+
+              {/* Account Information */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                position: 'relative'
               }}>
-                👤 Account Information
-              </h2>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: '#1a3a2a',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  👤 Account Information
+                </h2>
 
-              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    color: '#1a3a2a',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: '1rem',
-                      background: '#fff'
-                    }}
-                    disabled
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <div>
                     <label style={{
                       display: 'block',
@@ -298,12 +477,531 @@ export default function ProfilePage() {
                       color: '#1a3a2a',
                       marginBottom: '0.5rem'
                     }}>
-                      First Name
+                      Email Address
                     </label>
                     <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                      disabled
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Bio
+                    </label>
+                    <textarea
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Tell us about yourself..."
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff',
+                        resize: 'vertical'
+                      }}
+                    />
+                  </div>
+
+                  {message && (
+                    <div style={{
+                      padding: '0.75rem',
+                      borderRadius: '6px',
+                      background: message.includes('success') ? '#d4edda' : '#f8d7da',
+                      color: message.includes('success') ? '#155724' : '#721c24',
+                      border: `1px solid ${message.includes('success') ? '#c3e6cb' : '#f5c6cb'}`,
+                      fontSize: '0.9rem'
+                    }}>
+                      {message}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    style={{
+                      width: '100%',
+                      padding: '0.875rem',
+                      background: updating ? '#ccc' : 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: updating ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    {updating ? 'Updating...' : 'Update Profile'}
+                  </button>
+                </form>
+
+                <button
+                  onClick={handleSignOut}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem',
+                    background: '#dc3545',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+
+              {/* Dashboard Preferences */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                position: 'relative'
+              }}>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: '#1a3a2a',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  📊 Dashboard Preferences
+                </h2>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {[
+                    { key: 'main', label: 'Main Dashboard', icon: '📈' },
+                    { key: 'nutrition', label: 'Nutrition Dashboard', icon: '🥗' },
+                    { key: 'training', label: 'Training Dashboard', icon: '💪' },
+                    { key: 'activities', label: 'Activities Dashboard', icon: '🏔️' },
+                    { key: 'equipment', label: 'Equipment Dashboard', icon: '🎒' }
+                  ].map(({ key, label, icon }) => (
+                    <Toggle
+                      key={key}
+                      checked={preferences?.dashboards?.[key as keyof typeof preferences.dashboards] || false}
+                      onChange={(checked) => handleDashboardToggle(key as any, checked)}
+                      label={label}
+                      icon={icon}
+                      size="md"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            /* Wearable Device Integrations */
+            <div style={{
+              gridColumn: '1 / -1',
+              marginTop: '2rem'
+            }}>
+              <WearableIntegrations />
+            </div>
+          )}
+
+          {activeTab === 'metrics' && (
+            <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
+
+              {/* Basic Metrics */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                position: 'relative'
+              }}>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: '#1a3a2a',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  📏 Basic Metrics
+                </h2>
+
+                <form onSubmit={handleUpdateMetrics} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Gender
+                      </label>
+                      <select
+                        value={metricsData.gender}
+                        onChange={(e) => setMetricsData({ ...metricsData, gender: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Age
+                      </label>
+                      <input
+                        type="number"
+                        value={metricsData.age}
+                        onChange={(e) => setMetricsData({ ...metricsData, age: e.target.value })}
+                        placeholder="Years"
+                        min="1"
+                        max="120"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Weight (lbs)
+                      </label>
+                      <input
+                        type="number"
+                        value={metricsData.weight}
+                        onChange={(e) => setMetricsData({ ...metricsData, weight: e.target.value })}
+                        placeholder="150"
+                        min="1"
+                        step="0.1"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Height (inches)
+                      </label>
+                      <input
+                        type="number"
+                        value={metricsData.height}
+                        onChange={(e) => setMetricsData({ ...metricsData, height: e.target.value })}
+                        placeholder="70"
+                        min="1"
+                        step="0.1"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    style={{
+                      width: '100%',
+                      padding: '0.875rem',
+                      background: updating ? '#ccc' : 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: updating ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {updating ? 'Updating...' : 'Update Basic Metrics'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Fitness Goals & Activities */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                position: 'relative'
+              }}>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: '#1a3a2a',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  🎯 Fitness Goals & Activities
+                </h2>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Fitness Goals
+                    </label>
+                    <p style={{
+                      fontSize: '0.8rem',
+                      color: '#666',
+                      marginBottom: '1rem'
+                    }}>
+                      Select your primary fitness objectives.
+                    </p>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      gap: '0.75rem'
+                    }}>
+                      {[
+                        'Weight Loss', 'Muscle Gain', 'Endurance', 'Strength',
+                        'Flexibility', 'General Fitness', 'Sports Performance',
+                        'Injury Recovery', 'Stress Reduction', 'Health Improvement'
+                      ].map((goal) => (
+                        <Toggle
+                          key={goal}
+                          checked={metricsData.fitnessGoals.includes(goal)}
+                          onChange={(checked) => {
+                            const newGoals = checked
+                              ? [...metricsData.fitnessGoals, goal]
+                              : metricsData.fitnessGoals.filter(g => g !== goal);
+                            setMetricsData({ ...metricsData, fitnessGoals: newGoals });
+                          }}
+                          label={goal}
+                          size="sm"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Sports & Activities
+                    </label>
+                    <p style={{
+                      fontSize: '0.8rem',
+                      color: '#666',
+                      marginBottom: '1rem'
+                    }}>
+                      What sports and activities do you participate in?
+                    </p>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      gap: '0.75rem'
+                    }}>
+                      {[
+                        'Running', 'Cycling', 'Swimming', 'Hiking', 'Climbing',
+                        'Yoga', 'Weightlifting', 'CrossFit', 'Martial Arts',
+                        'Tennis', 'Basketball', 'Soccer', 'Skiing', 'Snowboarding',
+                        'Surfing', 'Rock Climbing', 'Trail Running', 'Triathlon'
+                      ].map((activity) => (
+                        <Toggle
+                          key={activity}
+                          checked={metricsData.sportsActivities.includes(activity)}
+                          onChange={(checked) => {
+                            const newActivities = checked
+                              ? [...metricsData.sportsActivities, activity]
+                              : metricsData.sportsActivities.filter(a => a !== activity);
+                            setMetricsData({ ...metricsData, sportsActivities: newActivities });
+                          }}
+                          label={activity}
+                          size="sm"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Health Metrics */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                position: 'relative',
+                gridColumn: '1 / -1'
+              }}>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: '#1a3a2a',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  ❤️ Health Metrics
+                </h2>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Resting Heart Rate (bpm)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.restingHeartRate}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, restingHeartRate: e.target.value }
+                      })}
+                      placeholder="60"
+                      min="30"
+                      max="120"
                       style={{
                         width: '100%',
                         padding: '0.75rem',
@@ -323,12 +1021,207 @@ export default function ProfilePage() {
                       color: '#1a3a2a',
                       marginBottom: '0.5rem'
                     }}>
-                      Last Name
+                      Max Heart Rate (bpm)
                     </label>
                     <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      type="number"
+                      value={metricsData.healthMetrics.maxHeartRate}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, maxHeartRate: e.target.value }
+                      })}
+                      placeholder="190"
+                      min="120"
+                      max="220"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Body Fat (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.bodyFatPercentage}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, bodyFatPercentage: e.target.value }
+                      })}
+                      placeholder="15.5"
+                      min="1"
+                      max="50"
+                      step="0.1"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Muscle Mass (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.muscleMass}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, muscleMass: e.target.value }
+                      })}
+                      placeholder="45.2"
+                      min="1"
+                      max="80"
+                      step="0.1"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Bone Density (T-score)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.boneDensity}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, boneDensity: e.target.value }
+                      })}
+                      placeholder="-1.2"
+                      min="-5"
+                      max="5"
+                      step="0.1"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Hydration Level (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.hydrationLevel}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, hydrationLevel: e.target.value }
+                      })}
+                      placeholder="65"
+                      min="0"
+                      max="100"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Sleep Quality (1-10)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.sleepQuality}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, sleepQuality: e.target.value }
+                      })}
+                      placeholder="8"
+                      min="1"
+                      max="10"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Stress Level (1-10)
+                    </label>
+                    <input
+                      type="number"
+                      value={metricsData.healthMetrics.stressLevel}
+                      onChange={(e) => setMetricsData({
+                        ...metricsData,
+                        healthMetrics: { ...metricsData.healthMetrics, stressLevel: e.target.value }
+                      })}
+                      placeholder="4"
+                      min="1"
+                      max="10"
                       style={{
                         width: '100%',
                         padding: '0.75rem',
@@ -341,51 +1234,59 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
+                <button
+                  onClick={handleUpdateMetrics}
+                  disabled={updating}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem',
+                    background: updating ? '#ccc' : 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
                     fontWeight: 600,
-                    color: '#1a3a2a',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Bio
-                  </label>
-                  <textarea
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="Tell us about yourself..."
-                    rows={3}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: '1rem',
-                      background: '#fff',
-                      resize: 'vertical'
-                    }}
-                  />
-                </div>
+                    cursor: updating ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    marginTop: '2rem'
+                  }}
+                >
+                  {updating ? 'Updating...' : 'Update Health Metrics'}
+                </button>
+              </div>
 
-                {/* Dietary Preferences Section */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    color: '#1a3a2a',
-                    marginBottom: '0.5rem'
-                  }}>
-                    Dietary Preferences & Restrictions
-                  </label>
+              {/* Dietary Preferences & Restrictions */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                position: 'relative',
+                gridColumn: '1 / -1'
+              }}>
+                <h2 style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: '#1a3a2a',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  🥗 Dietary Preferences & Restrictions
+                </h2>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                   <p style={{
-                    fontSize: '0.8rem',
+                    fontSize: '0.9rem',
                     color: '#666',
                     marginBottom: '1rem'
                   }}>
-                    Select your dietary preferences and restrictions to personalize recipe suggestions.
+                    Select your dietary preferences and restrictions to personalize recipe suggestions and nutrition recommendations.
                   </p>
+
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -411,111 +1312,29 @@ export default function ProfilePage() {
                       />
                     ))}
                   </div>
+
+                  <button
+                    onClick={handleUpdateProfile}
+                    disabled={updating}
+                    style={{
+                      width: '100%',
+                      padding: '0.875rem',
+                      background: updating ? '#ccc' : 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: updating ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {updating ? 'Updating...' : 'Update Dietary Preferences'}
+                  </button>
                 </div>
-
-                {message && (
-                  <div style={{
-                    padding: '0.75rem',
-                    borderRadius: '6px',
-                    background: message.includes('success') ? '#d4edda' : '#f8d7da',
-                    color: message.includes('success') ? '#155724' : '#721c24',
-                    border: `1px solid ${message.includes('success') ? '#c3e6cb' : '#f5c6cb'}`,
-                    fontSize: '0.9rem'
-                  }}>
-                    {message}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={updating}
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    background: updating ? '#ccc' : 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    cursor: updating ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s',
-                    marginBottom: '1rem'
-                  }}
-                >
-                  {updating ? 'Updating...' : 'Update Profile'}
-                </button>
-              </form>
-
-              <button
-                onClick={handleSignOut}
-                style={{
-                  width: '100%',
-                  padding: '0.875rem',
-                  background: '#dc3545',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Sign Out
-              </button>
-            </div>
-
-            {/* Dashboard Preferences */}
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '16px',
-              padding: '2rem',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              position: 'relative'
-            }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                📊 Dashboard Preferences
-              </h2>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {[
-                  { key: 'main', label: 'Main Dashboard', icon: '📈' },
-                  { key: 'nutrition', label: 'Nutrition Dashboard', icon: '🥗' },
-                  { key: 'training', label: 'Training Dashboard', icon: '💪' },
-                  { key: 'activities', label: 'Activities Dashboard', icon: '🏔️' },
-                  { key: 'equipment', label: 'Equipment Dashboard', icon: '🎒' }
-                ].map(({ key, label, icon }) => (
-                  <Toggle
-                    key={key}
-                    checked={preferences?.dashboards?.[key as keyof typeof preferences.dashboards] || false}
-                    onChange={(checked) => handleDashboardToggle(key as any, checked)}
-                    label={label}
-                    icon={icon}
-                    size="md"
-                  />
-                ))}
               </div>
             </div>
-          </div>
-
-          {/* Wearable Device Integrations */}
-          <div style={{
-            gridColumn: '1 / -1',
-            marginTop: '2rem'
-          }}>
-            <WearableIntegrations />
-          </div>
+          )}
         </div>
       </section>
 
