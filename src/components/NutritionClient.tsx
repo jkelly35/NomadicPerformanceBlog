@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import dynamic from 'next/dynamic'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import FoodSearch from "@/components/FoodSearch";
 import NutritionFacts from "@/components/NutritionFacts";
-import NutritionInsightsDisplay from "@/components/NutritionInsightsDisplay";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
-import BarcodeScanner from './BarcodeScanner';
 import { BarcodeFood } from '@/lib/barcode-api';
 import { useToast } from '@/components/Toast'
 import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake } from '@/lib/fitness-data'
@@ -50,6 +49,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [data, setData] = useState<NutritionData>(initialData)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
+
+  // Dynamic imports for code splitting
+  const BarcodeScanner = dynamic(() => import('./BarcodeScanner'), {
+    loading: () => <div>Loading scanner...</div>
+  })
+  const NutritionInsightsDisplay = dynamic(() => import('./NutritionInsightsDisplay'), {
+    loading: () => <div>Loading insights...</div>
+  })
   const validateField = (fieldName: string, value: string) => {
     const errors: {[key: string]: string} = {}
 
@@ -6082,7 +6089,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {foodSelectorFilter === 'barcode' && (
                 <div style={{ padding: '1rem' }}>
                   <BarcodeScanner
-                    onFoodFound={(barcodeFood) => {
+                    onFoodFound={(barcodeFood: BarcodeFood) => {
                       if (foodSelectorContext === 'template') {
                         // For templates, save barcode food to database first, then add to template
                         (async () => {
@@ -6412,7 +6419,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         {/* Barcode Scanner Modal */}
         {showBarcodeScanner && (
           <BarcodeScanner
-            onFoodFound={(food) => {
+            onFoodFound={(food: BarcodeFood) => {
               setSelectedBarcodeFood(food)
               setShowBarcodeScanner(false)
             }}

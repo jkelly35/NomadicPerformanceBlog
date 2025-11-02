@@ -107,7 +107,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   ]);
 
   return (
-    <main>
+    <main id="main-content">
       <StructuredData data={articleStructuredData} />
       <StructuredData data={breadcrumbStructuredData} />
       <ReadingProgress />

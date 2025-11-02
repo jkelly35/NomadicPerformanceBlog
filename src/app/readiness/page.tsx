@@ -35,6 +35,8 @@ async function getReadinessData(): Promise<ReadinessData> {
   }
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function ReadinessPage() {
   const data = await getReadinessData()
 

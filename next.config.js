@@ -48,6 +48,15 @@ const nextConfig = {
         ]
       },
       {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, s-maxage=600, stale-while-revalidate=86400'
+          }
+        ]
+      },
+      {
         source: '/_next/static/(.*)',
         headers: [
           {
@@ -62,6 +71,15 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800'
+          }
+        ]
+      },
+      {
+        source: '/fonts/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
           }
         ]
       }
@@ -95,8 +113,23 @@ const nextConfig = {
               chunks: 'all',
               priority: 20,
             },
+            supabase: {
+              test: /[\\/]node_modules[\\/]@supabase[\\/]/,
+              name: 'supabase',
+              chunks: 'all',
+              priority: 15,
+            },
+            recharts: {
+              test: /[\\/]node_modules[\\/]recharts[\\/]/,
+              name: 'recharts',
+              chunks: 'all',
+              priority: 15,
+            },
           },
         },
+        // Enable webpack optimizations
+        moduleIds: 'deterministic',
+        chunkIds: 'deterministic',
       }
     }
     return config

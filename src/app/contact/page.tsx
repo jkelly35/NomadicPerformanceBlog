@@ -3,6 +3,7 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 // import ContactForm from "../../components/ContactForm";
 import ContactForm from "../../components/ContactForm";
+import StructuredData, { generateContactPointStructuredData } from "../../components/StructuredData";
 
 export const metadata = {
   title: "Contact Us - Nomadic Performance",
@@ -10,8 +11,19 @@ export const metadata = {
 };
 
 export default function ContactPage() {
+  const contactPointData = generateContactPointStructuredData([
+    {
+      email: "contact@nomadicperformance.com",
+      contactType: "customer service",
+      areaServed: "Utah",
+      availableLanguage: "English",
+      hoursAvailable: "Monday-Friday 9:00-17:00"
+    }
+  ]);
+
   return (
-    <main>
+    <main id="main-content">
+      <StructuredData data={contactPointData} />
       <NavBar />
 
       {/* Hero Section */}

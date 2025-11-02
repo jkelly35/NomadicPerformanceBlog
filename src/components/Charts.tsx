@@ -29,7 +29,15 @@ interface HealthMetricData {
 
 export function NutritionTrendsChart({ data }: { data: NutritionTrendData[] }) {
   return (
-    <div className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border">
+    <div 
+      className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border"
+      role="img"
+      aria-label="Nutrition trends chart showing calories, protein, carbs, fat, and fiber over time"
+      aria-describedby="nutrition-trends-description"
+    >
+      <div id="nutrition-trends-description" className="sr-only">
+        Interactive line chart displaying daily nutrition data including calories in kcal and macronutrients in grams over the selected time period.
+      </div>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Nutrition Trends</h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
@@ -88,7 +96,15 @@ export function NutritionTrendsChart({ data }: { data: NutritionTrendData[] }) {
 
 export function WorkoutVolumeChart({ data }: { data: WorkoutTrendData[] }) {
   return (
-    <div className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border">
+    <div 
+      className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border"
+      role="img"
+      aria-label="Workout volume chart showing number of workouts, duration in minutes, and calories burned over time"
+      aria-describedby="workout-volume-description"
+    >
+      <div id="workout-volume-description" className="sr-only">
+        Interactive bar chart displaying workout frequency, total exercise time in minutes, and calories burned over the selected time period.
+      </div>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Workout Volume</h3>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
@@ -121,7 +137,15 @@ export function WorkoutVolumeChart({ data }: { data: WorkoutTrendData[] }) {
 
 export function HealthMetricsChart({ data }: { data: HealthMetricData[] }) {
   return (
-    <div className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border">
+    <div 
+      className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border"
+      role="img"
+      aria-label="Health metrics chart showing weight, body fat percentage, resting heart rate, and sleep quality over time"
+      aria-describedby="health-metrics-description"
+    >
+      <div id="health-metrics-description" className="sr-only">
+        Interactive line chart displaying health measurements including weight in pounds, body fat percentage, resting heart rate in beats per minute, and sleep quality score over the selected time period.
+      </div>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Health Metrics</h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
@@ -181,7 +205,15 @@ export function HealthMetricsChart({ data }: { data: HealthMetricData[] }) {
 
 export function HydrationCaffeineChart({ data }: { data: Array<{ date: string, hydration: number, caffeine: number }> }) {
   return (
-    <div className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border">
+    <div 
+      className="w-full h-80 bg-white rounded-lg p-4 shadow-sm border"
+      role="img"
+      aria-label="Hydration and caffeine intake chart showing daily water consumption and caffeine levels over time"
+      aria-describedby="hydration-caffeine-description"
+    >
+      <div id="hydration-caffeine-description" className="sr-only">
+        Interactive area chart displaying daily hydration in ounces and caffeine intake in milligrams over the selected time period.
+      </div>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Hydration & Caffeine</h3>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data}>

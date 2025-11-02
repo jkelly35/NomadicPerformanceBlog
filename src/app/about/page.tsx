@@ -2,6 +2,7 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import Link from "next/link";
 import BackgroundImage from "../../components/BackgroundImage";
+import StructuredData, { generatePersonStructuredData } from "../../components/StructuredData";
 
 export const metadata = {
   title: "About Me - Nomadic Performance",
@@ -9,8 +10,32 @@ export const metadata = {
 };
 
 export default function AboutPage() {
+  const joePersonData = generatePersonStructuredData({
+    name: "Joe",
+    jobTitle: "Doctor of Physical Therapy & Certified Strength and Conditioning Specialist",
+    description: "Doctor of Physical Therapy and CSCS who founded Nomadic Performance to help outdoor adventurers optimize their health and performance through evidence-based training and rehabilitation.",
+    imageUrl: "https://nomadicperformance.com/images/MTNme.jpeg",
+    sameAs: [
+      "https://www.instagram.com/nomadicperformance",
+      "https://www.linkedin.com/in/joe-nomadicperformance"
+    ],
+    knowsAbout: [
+      "Physical Therapy",
+      "Sports Medicine",
+      "Injury Prevention",
+      "Performance Training",
+      "Outdoor Athletics",
+      "Rehabilitation",
+      "Strength & Conditioning",
+      "Mountain Biking",
+      "Snowboarding",
+      "Climbing"
+    ]
+  });
+
   return (
-    <main>
+    <main id="main-content">
+      <StructuredData data={joePersonData} />
       <NavBar />
 
       {/* Hero Section with Background Image */}

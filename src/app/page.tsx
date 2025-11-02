@@ -3,6 +3,7 @@ import NavBar from "../components/NavBar";
 import dynamic from 'next/dynamic'
 import Footer from "../components/Footer";
 import { getAllPostsMeta } from "@/lib/posts";
+import StructuredData, { generateLocalBusinessStructuredData } from "../components/StructuredData";
 
 // Dynamically import components for better performance
 const HeroSection = dynamic(() => import("../components/HeroSection"), {
@@ -60,8 +61,24 @@ const RecentPosts = dynamic(() => import("../components/RecentPosts"), {
 export default async function HomePage() {
   const posts = await getAllPostsMeta();
 
+  const businessData = generateLocalBusinessStructuredData({
+    name: "Nomadic Performance",
+    description: "Professional physical therapy and performance optimization services for outdoor athletes and adventurers in Utah. Specializing in injury prevention, rehabilitation, and performance training.",
+    url: "https://nomadicperformance.com",
+    email: "contact@nomadicperformance.com",
+    address: {
+      addressLocality: "Utah",
+      addressRegion: "UT",
+      addressCountry: "US"
+    },
+    openingHours: "Mo-Fr 09:00-17:00",
+    priceRange: "$$",
+    image: "https://nomadicperformance.com/NPLogo.png"
+  });
+
   return (
-    <main>
+    <main id="main-content">
+      <StructuredData data={businessData} />
       <NavBar />
       <HeroSection />
       <RecentPosts posts={posts} />

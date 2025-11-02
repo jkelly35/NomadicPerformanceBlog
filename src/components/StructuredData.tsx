@@ -161,3 +161,127 @@ export function generateServiceStructuredData(services: Array<{
     }
   };
 }
+
+// Person structured data generator for Joe
+export function generatePersonStructuredData(person: {
+  name: string;
+  jobTitle: string;
+  description: string;
+  imageUrl?: string;
+  sameAs?: string[];
+  knowsAbout?: string[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": person.name,
+    "jobTitle": person.jobTitle,
+    "description": person.description,
+    "image": person.imageUrl || "https://nomadicperformance.com/images/MTNme.jpeg",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "Nomadic Performance",
+      "url": "https://nomadicperformance.com"
+    },
+    "sameAs": person.sameAs || [
+      "https://www.instagram.com/nomadicperformance",
+      "https://www.linkedin.com/in/joe-nomadicperformance"
+    ],
+    "knowsAbout": person.knowsAbout || [
+      "Physical Therapy",
+      "Sports Medicine",
+      "Injury Prevention",
+      "Performance Training",
+      "Outdoor Athletics",
+      "Rehabilitation",
+      "Strength & Conditioning"
+    ],
+    "alumniOf": {
+      "@type": "EducationalOrganization",
+      "name": "Boston University",
+      "department": "Physical Therapy Program"
+    },
+    "hasCredential": {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Doctor of Physical Therapy",
+      "educationalLevel": "Doctorate"
+    }
+  };
+}
+
+// ContactPoint structured data generator
+export function generateContactPointStructuredData(contactPoints: Array<{
+  telephone?: string;
+  email?: string;
+  contactType: string;
+  areaServed?: string;
+  availableLanguage?: string;
+  hoursAvailable?: string;
+}>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ContactPoint",
+    "contactPoint": contactPoints.map(point => ({
+      "@type": "ContactPoint",
+      "telephone": point.telephone,
+      "email": point.email,
+      "contactType": point.contactType,
+      "areaServed": point.areaServed || "Utah",
+      "availableLanguage": point.availableLanguage || "English",
+      "hoursAvailable": point.hoursAvailable || "Monday-Friday 9:00-17:00"
+    }))
+  };
+}
+
+// LocalBusiness structured data generator
+export function generateLocalBusinessStructuredData(business: {
+  name: string;
+  description: string;
+  url: string;
+  telephone?: string;
+  email?: string;
+  address: {
+    streetAddress?: string;
+    addressLocality: string;
+    addressRegion: string;
+    postalCode?: string;
+    addressCountry: string;
+  };
+  geo?: {
+    latitude: number;
+    longitude: number;
+  };
+  openingHours?: string;
+  priceRange?: string;
+  image?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": business.name,
+    "description": business.description,
+    "url": business.url,
+    "telephone": business.telephone,
+    "email": business.email,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": business.address.addressLocality,
+      "addressRegion": business.address.addressRegion,
+      "addressCountry": business.address.addressCountry,
+      "streetAddress": business.address.streetAddress,
+      "postalCode": business.address.postalCode
+    },
+    "geo": business.geo ? {
+      "@type": "GeoCoordinates",
+      "latitude": business.geo.latitude,
+      "longitude": business.geo.longitude
+    } : undefined,
+    "openingHours": business.openingHours,
+    "priceRange": business.priceRange || "$$",
+    "image": business.image || "https://nomadicperformance.com/NPLogo.png",
+    "sameAs": [
+      "https://www.instagram.com/nomadicperformance",
+      "https://www.linkedin.com/company/nomadicperformance"
+    ]
+  };
+}
