@@ -357,10 +357,39 @@ function DashboardContent({
     setLocalNutritionStats(data.dailyNutritionStats)
   }, [data.dailyNutritionStats])
 
-  // Sync local hydration with server data when it changes
-  useEffect(() => {
-    // Note: localHydrationTotal is passed as prop, not set here
-  }, [data.dailyHydrationTotal])
+  // Calculate enabled dashboard sections for dynamic layout
+  const enabledSections = {
+    nutrition: preferences?.dashboards?.nutrition === true,
+    training: preferences?.dashboards?.training === true,
+    activities: preferences?.dashboards?.activities === true,
+    equipment: preferences?.dashboards?.equipment === true
+  }
+
+  const enabledSectionsCount = Object.values(enabledSections).filter(Boolean).length
+
+  // Dynamic grid classes based on number of enabled sections
+  const getQuickAccessGridClasses = () => {
+    switch (enabledSectionsCount) {
+      case 1: return 'grid-cols-1 max-w-md mx-auto'
+      case 2: return 'grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto'
+      case 3: return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto'
+      case 4:
+      default: return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto'
+    }
+  }
+
+  // Dynamic grid classes for main content based on enabled sections
+  const getMainGridClasses = () => {
+    const activitiesEnabled = preferences?.dashboards?.activities === true
+    const goalsAlwaysShown = true // Goals & Events is always shown
+
+    // If activities is disabled, goals takes full width
+    // If activities is enabled, use responsive grid
+    if (!activitiesEnabled) {
+      return 'grid-cols-1'
+    }
+    return 'grid-cols-1 lg:grid-cols-2'
+  }
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -511,7 +540,7 @@ function DashboardContent({
                 <p className="text-gray-600">Loading preferences...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className={`grid ${getQuickAccessGridClasses()} gap-6`}>
             {!preferencesLoading && preferences?.dashboards?.nutrition === true && (
                 <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
                   <div className="text-center">
@@ -768,7 +797,7 @@ function DashboardContent({
           )}
 
           {/* Main Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className={`grid ${getMainGridClasses()} gap-8 mb-8`}>
 
             {/* Activity Logs */}
             {!preferencesLoading && preferences?.dashboards?.activities === true && (
