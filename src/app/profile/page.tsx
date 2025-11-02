@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
+import { usePreferences } from '@/context/PreferencesContext'
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import { createClient } from '@/lib/supabase'
 
 export default function ProfilePage() {
   const { user, loading } = useAuth()
+  const { preferences, updatePreferences, loading: preferencesLoading } = usePreferences()
   const router = useRouter()
   const [updating, setUpdating] = useState(false)
   const [message, setMessage] = useState('')
@@ -21,6 +23,19 @@ export default function ProfilePage() {
     activities: [] as string[]
   })
   const supabase = createClient()
+
+  const handleDashboardToggle = async (dashboard: 'main' | 'nutrition' | 'training' | 'activities', enabled: boolean) => {
+    if (!preferences) return
+
+    const newPreferences = {
+      ...preferences,
+      dashboards: {
+        ...preferences.dashboards,
+        [dashboard]: enabled
+      }
+    }
+    await updatePreferences(newPreferences)
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -445,6 +460,132 @@ export default function ProfilePage() {
               >
                 Sign Out
               </button>
+            </div>
+          </div>
+
+          {/* Dashboard Preferences */}
+          <div style={{
+            marginTop: '3rem',
+            padding: '2rem',
+            background: '#f8f9fa',
+            borderRadius: '12px',
+            border: '1px solid #e9ecef'
+          }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#1a3a2a',
+              marginBottom: '1rem'
+            }}>
+              Dashboard Preferences
+            </h3>
+            <p style={{
+              fontSize: '0.9rem',
+              color: '#666',
+              marginBottom: '2rem'
+            }}>
+              Customize your dashboard experience by enabling or disabling specific sections
+            </p>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '2rem'
+            }}>
+              {[
+                {
+                  id: 'nutrition' as const,
+                  title: 'Nutrition Dashboard',
+                  description: 'Meal logging, macro tracking, and nutrition goals',
+                  icon: '🥗'
+                },
+                {
+                  id: 'training' as const,
+                  title: 'Training Dashboard',
+                  description: 'Strength training plans, workout logging, and performance tracking',
+                  icon: '💪'
+                },
+                {
+                  id: 'activities' as const,
+                  title: 'Activities Dashboard',
+                  description: 'Climbing sends, MTB rides, and outdoor activity tracking',
+                  icon: '🏔️'
+                }
+              ].map((dashboard) => (
+                <div key={dashboard.id} style={{
+                  background: '#fff',
+                  borderRadius: '12px',
+                  padding: '1.5rem',
+                  border: '2px solid #e9ecef',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+                onClick={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{dashboard.icon}</span>
+                      <h4 style={{
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        margin: 0
+                      }}>
+                        {dashboard.title}
+                      </h4>
+                    </div>
+                    <label style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      width: '50px',
+                      height: '25px'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={preferences?.dashboards?.[dashboard.id] ?? true}
+                        onChange={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
+                        style={{
+                          opacity: 0,
+                          width: 0,
+                          height: 0
+                        }}
+                      />
+                      <span style={{
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: (preferences?.dashboards?.[dashboard.id] ?? true) ? '#1a3a2a' : '#ccc',
+                        transition: '0.4s',
+                        borderRadius: '25px'
+                      }}>
+                        <span style={{
+                          position: 'absolute',
+                          content: '""',
+                          height: '17px',
+                          width: '17px',
+                          left: '4px',
+                          bottom: '4px',
+                          backgroundColor: 'white',
+                          transition: '0.4s',
+                          borderRadius: '50%',
+                          transform: (preferences?.dashboards?.[dashboard.id] ?? true) ? 'translateX(25px)' : 'translateX(0px)'
+                        }}></span>
+                      </span>
+                    </label>
+                  </div>
+                  <p style={{
+                    fontSize: '0.9rem',
+                    color: '#666',
+                    margin: 0,
+                    lineHeight: '1.5'
+                  }}>
+                    {dashboard.description}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 

@@ -5,11 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
 import { createClient } from '@/lib/supabase';
 
 export default function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const pathname = usePathname();
   const supabase = createClient();
 
@@ -113,14 +115,16 @@ export default function NavBar() {
         ) : null}
         {user ? (
           <>
-            <Link href="/dashboard" style={{
-              margin: '0 1rem',
-              fontSize: '1.1rem',
-              color: '#fff',
-              textDecoration: 'none',
-              fontWeight: 600,
-              transition: 'color 0.2s'
-            }} className="nav-link">Dashboard</Link>
+            {preferences.dashboards.main && (
+              <Link href="/dashboard" style={{
+                margin: '0 1rem',
+                fontSize: '1.1rem',
+                color: '#fff',
+                textDecoration: 'none',
+                fontWeight: 600,
+                transition: 'color 0.2s'
+              }} className="nav-link">Dashboard</Link>
+            )}
             <Link href="/analytics" style={{
               margin: '0 1rem',
               fontSize: '1.1rem',
@@ -258,21 +262,23 @@ export default function NavBar() {
           ) : null}
           {user ? (
             <>
-              <Link
-                href="/dashboard"
-                style={{
-                  color: 'var(--nav-text, #fff)',
-                  textDecoration: 'none',
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  padding: '0.5rem 1rem',
-                  width: '100%',
-                  textAlign: 'center'
-                }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
+              {preferences.dashboards.main && (
+                <Link
+                  href="/dashboard"
+                  style={{
+                    color: 'var(--nav-text, #fff)',
+                    textDecoration: 'none',
+                    fontSize: '1.2rem',
+                    fontWeight: 600,
+                    padding: '0.5rem 1rem',
+                    width: '100%',
+                    textAlign: 'center'
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              )}
               <Link
                 href="/profile"
                 style={{

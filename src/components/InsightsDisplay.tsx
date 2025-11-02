@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Insight, getAllInsights } from '@/lib/fitness-data'
+import { UserPreferences } from '@/types/global'
 
 interface InsightsDisplayProps {
   limit?: number
   showHeader?: boolean
   compact?: boolean
+  preferences?: UserPreferences
 }
 
-export default function InsightsDisplay({ limit, showHeader = true, compact = false }: InsightsDisplayProps) {
+export default function InsightsDisplay({ limit, showHeader = true, compact = false, preferences }: InsightsDisplayProps) {
   const [insights, setInsights] = useState<Insight[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -17,12 +19,30 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
 
   const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+  const filterInsights = (insights: Insight[]): Insight[] => {
+    if (!preferences?.dashboards) return insights
+
+    return insights.filter(insight => {
+      // Filter out nutrition insights if nutrition dashboard is disabled
+      if (insight.type === 'nutrition' && preferences.dashboards.nutrition === false) {
+        return false
+      }
+      // Filter out workout insights if activities or training dashboards are disabled
+      if (insight.type === 'workout' && 
+          (preferences.dashboards.activities === false || preferences.dashboards.training === false)) {
+        return false
+      }
+      return true
+    })
+  }
+
   const refreshInsights = async () => {
     try {
       setLoading(true)
       setError(null)
       const data = await getAllInsights()
-      setInsights(limit ? data.slice(0, limit) : data)
+      const filteredData = filterInsights(data)
+      setInsights(limit ? filteredData.slice(0, limit) : filteredData)
       setLastFetchTime(Date.now())
     } catch (err) {
       setError('Failed to refresh insights')
@@ -45,7 +65,8 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
       try {
         setLoading(true)
         const data = await getAllInsights()
-        setInsights(limit ? data.slice(0, limit) : data)
+        const filteredData = filterInsights(data)
+        setInsights(limit ? filteredData.slice(0, limit) : filteredData)
         setLastFetchTime(now)
       } catch (err) {
         setError('Failed to load insights')
@@ -56,7 +77,7 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
     }
 
     fetchInsights()
-  }, [limit])
+  }, [limit, preferences])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata, Viewport } from "next";
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { PreferencesProvider } from '@/context/PreferencesContext';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import StructuredData, { organizationStructuredData } from '@/components/StructuredData';
@@ -89,9 +90,11 @@ export default function RootLayout({
         <SkipLink />
         <ErrorBoundary>
           <AuthProvider>
-            {children}
-            <PWAInstallPrompt />
-            <OfflineIndicator />
+            <PreferencesProvider>
+              {children}
+              <PWAInstallPrompt />
+              <OfflineIndicator />
+            </PreferencesProvider>
           </AuthProvider>
         </ErrorBoundary>
       </body>
