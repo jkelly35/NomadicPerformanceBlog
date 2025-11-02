@@ -387,6 +387,28 @@ function DashboardContent({
         </div>
       </section>
 
+      {/* Quick Access Buttons */}
+      <section className="py-8 px-6 bg-gradient-to-r from-stone-100 to-stone-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center gap-6 flex-wrap">
+            <Link
+              href="/analytics"
+              className="bg-white/80 backdrop-blur-sm border border-stone-200 rounded-xl px-8 py-4 text-stone-800 font-semibold hover:bg-white hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3 group"
+            >
+              <span className="text-2xl group-hover:animate-bounce">📊</span>
+              <span>Analytics</span>
+            </Link>
+            <Link
+              href="/profile"
+              className="bg-white/80 backdrop-blur-sm border border-stone-200 rounded-xl px-8 py-4 text-stone-800 font-semibold hover:bg-white hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3 group"
+            >
+              <span className="text-2xl group-hover:animate-bounce">👤</span>
+              <span>Profile</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Dashboard Content */}
       <section className="py-12 px-6 bg-white">
         <div className="max-w-7xl mx-auto">

@@ -125,22 +125,6 @@ export default function NavBar() {
                 transition: 'color 0.2s'
               }} className="nav-link">Dashboard</Link>
             )}
-            <Link href="/analytics" style={{
-              margin: '0 1rem',
-              fontSize: '1.1rem',
-              color: '#fff',
-              textDecoration: 'none',
-              fontWeight: 600,
-              transition: 'color 0.2s'
-            }} className="nav-link">Analytics</Link>
-            <Link href="/profile" style={{
-              margin: '0 1rem',
-              fontSize: '1.1rem',
-              color: '#fff',
-              textDecoration: 'none',
-              fontWeight: 600,
-              transition: 'color 0.2s'
-            }} className="nav-link">Profile</Link>
             <button
               onClick={handleSignOut}
               style={{
@@ -279,21 +263,6 @@ export default function NavBar() {
                   Dashboard
                 </Link>
               )}
-              <Link
-                href="/profile"
-                style={{
-                  color: '#fff',
-                  textDecoration: 'none',
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  padding: '0.5rem 1rem',
-                  width: '100%',
-                  textAlign: 'center'
-                }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Profile
-              </Link>
               <button
                 onClick={handleSignOut}
                 style={{
