@@ -91,7 +91,7 @@ export async function searchByBarcode(barcode: string): Promise<BarcodeFood | nu
       return DEMO_BARCODE_FOODS[barcode]
     }
 
-    const response = await fetch(`${OPEN_FOOD_FACTS_BASE_URL}/product/${barcode}.json`)
+    const response = await fetch(`/api/barcode?barcode=${encodeURIComponent(barcode)}`)
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -101,6 +101,10 @@ export async function searchByBarcode(barcode: string): Promise<BarcodeFood | nu
     }
 
     const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
 
     if (!data.product) {
       return null
@@ -144,12 +148,11 @@ export async function searchByBarcode(barcode: string): Promise<BarcodeFood | nu
 export async function searchProductsByName(query: string, page = 1, pageSize = 20): Promise<BarcodeSearchResult> {
   try {
     const response = await fetch(
-      `${OPEN_FOOD_FACTS_BASE_URL}/search?` +
+      `/api/barcode/search?` +
       new URLSearchParams({
         q: query,
         page: page.toString(),
-        page_size: pageSize.toString(),
-        fields: 'code,product_name,brands,categories,image_url,nutriments,serving_size,quantity'
+        page_size: pageSize.toString()
       })
     )
 
@@ -158,6 +161,10 @@ export async function searchProductsByName(query: string, page = 1, pageSize = 2
     }
 
     const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
 
     const products: BarcodeFood[] = data.products?.map((product: any) => {
       const nutriments = product.nutriments || {}

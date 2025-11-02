@@ -114,6 +114,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [selectedUSDAFood, setSelectedUSDAFood] = useState<USDAFoodItem | null>(null)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   const [selectedBarcodeFood, setSelectedBarcodeFood] = useState<BarcodeFood | null>(null)
+  const [editingBarcodeFood, setEditingBarcodeFood] = useState(false)
 
   // Refresh data function
   const refreshNutritionData = async () => {
@@ -3233,6 +3234,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                   <button
+                    onClick={() => setEditingBarcodeFood(true)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: '#007bff',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '20px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    ✏️ Edit & Save
+                  </button>
+                  <button
                     onClick={async () => {
                       if (!selectedBarcodeFood) return;
 
@@ -3273,10 +3289,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       fontWeight: '500'
                     }}
                   >
-                    💾 Save to Database
+                    💾 Quick Save
                   </button>
                   <button
-                    onClick={() => setSelectedBarcodeFood(null)}
+                    onClick={() => {
+                      setSelectedBarcodeFood(null)
+                      setEditingBarcodeFood(false)
+                    }}
                     style={{
                       padding: '0.5rem 1rem',
                       background: '#6c757d',
@@ -3291,15 +3310,316 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     Clear
                   </button>
                 </div>
-                <NutritionFacts
-                  food={{
-                    fdcId: parseInt(selectedBarcodeFood.code) || 0,
-                    description: selectedBarcodeFood.product_name,
-                    brandName: selectedBarcodeFood.brands,
-                    nutrition: selectedBarcodeFood.nutrition
-                  }}
-                  className="max-w-md mx-auto"
-                />
+
+                {editingBarcodeFood ? (
+                  <form onSubmit={async (e) => {
+                    e.preventDefault()
+                    const formData = new FormData(e.target as HTMLFormElement)
+
+                    try {
+                      await createFoodItem(formData)
+                      alert('Food saved to your personal database!')
+                      await loadFoodItems()
+                      setSelectedBarcodeFood(null)
+                      setEditingBarcodeFood(false)
+                    } catch (error) {
+                      console.error('Error saving barcode food:', error)
+                      alert('Failed to save food. It may already exist in your database.')
+                    }
+                  }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Product Name *
+                        </label>
+                        <input
+                          name="name"
+                          type="text"
+                          required
+                          defaultValue={selectedBarcodeFood.product_name}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Brand
+                        </label>
+                        <input
+                          name="brand"
+                          type="text"
+                          defaultValue={selectedBarcodeFood.brands || ''}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Serving Size (g) *
+                        </label>
+                        <input
+                          name="serving_size"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedBarcodeFood.nutrition.servingSizeGrams}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Serving Unit *
+                        </label>
+                        <select
+                          name="serving_unit"
+                          required
+                          defaultValue="g"
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        >
+                          <option value="g">grams (g)</option>
+                          <option value="oz">ounces (oz)</option>
+                          <option value="ml">milliliters (ml)</option>
+                          <option value="cup">cups</option>
+                          <option value="tbsp">tablespoons</option>
+                          <option value="tsp">teaspoons</option>
+                          <option value="piece">pieces</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                        Calories per Serving *
+                      </label>
+                      <input
+                        name="calories_per_serving"
+                        type="number"
+                        min="0"
+                        required
+                        defaultValue={selectedBarcodeFood.nutrition.calories}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Protein (g) *
+                        </label>
+                        <input
+                          name="protein_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedBarcodeFood.nutrition.protein}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Carbs (g) *
+                        </label>
+                        <input
+                          name="carbs_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedBarcodeFood.nutrition.carbs}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Fat (g) *
+                        </label>
+                        <input
+                          name="fat_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedBarcodeFood.nutrition.fat}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Fiber (g) *
+                        </label>
+                        <input
+                          name="fiber_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                          defaultValue={selectedBarcodeFood.nutrition.fiber}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Sugar (g)
+                        </label>
+                        <input
+                          name="sugar_grams"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          defaultValue={selectedBarcodeFood.nutrition.sugar}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                          Sodium (mg)
+                        </label>
+                        <input
+                          name="sodium_mg"
+                          type="number"
+                          min="0"
+                          defaultValue={selectedBarcodeFood.nutrition.sodium}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button
+                        type="submit"
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#28a745',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        💾 Save to Database
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingBarcodeFood(false)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#6c757d',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Cancel Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBarcodeFood(null)
+                          setEditingBarcodeFood(false)
+                        }}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#dc3545',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '20px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <NutritionFacts
+                    food={{
+                      fdcId: parseInt(selectedBarcodeFood.code) || 0,
+                      description: selectedBarcodeFood.product_name,
+                      brandName: selectedBarcodeFood.brands,
+                      nutrition: selectedBarcodeFood.nutrition
+                    }}
+                    className="max-w-md mx-auto"
+                  />
+                )}
               </div>
             )}
 
@@ -5480,6 +5800,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <input
                   name="calories_per_serving"
                   type="number"
+                  min="0"
                   required
                   defaultValue={editingFood?.calories_per_serving || ''}
                   style={{
@@ -5501,6 +5822,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="protein_grams"
                     type="number"
                     step="0.1"
+                    min="0"
                     required
                     defaultValue={editingFood?.protein_grams || ''}
                     style={{
@@ -5520,6 +5842,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="carbs_grams"
                     type="number"
                     step="0.1"
+                    min="0"
                     required
                     defaultValue={editingFood?.carbs_grams || ''}
                     style={{
@@ -5539,6 +5862,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="fat_grams"
                     type="number"
                     step="0.1"
+                    min="0"
                     required
                     defaultValue={editingFood?.fat_grams || ''}
                     style={{
@@ -5558,6 +5882,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="fiber_grams"
                     type="number"
                     step="0.1"
+                    min="0"
                     required
                     defaultValue={editingFood?.fiber_grams || ''}
                     style={{
@@ -5580,6 +5905,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="sugar_grams"
                     type="number"
                     step="0.1"
+                    min="0"
                     defaultValue={editingFood?.sugar_grams || ''}
                     style={{
                       width: '100%',
@@ -5597,6 +5923,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   <input
                     name="sodium_mg"
                     type="number"
+                    min="0"
                     defaultValue={editingFood?.sodium_mg || ''}
                     style={{
                       width: '100%',
@@ -5615,6 +5942,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="caffeine_mg"
                     type="number"
                     step="0.1"
+                    min="0"
                     defaultValue={editingFood?.caffeine_mg || ''}
                     style={{
                       width: '100%',
@@ -6465,6 +6793,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           <BarcodeScanner
             onFoodFound={(food: BarcodeFood) => {
               setSelectedBarcodeFood(food)
+              setEditingBarcodeFood(false)
               setShowBarcodeScanner(false)
             }}
             onClose={() => setShowBarcodeScanner(false)}
