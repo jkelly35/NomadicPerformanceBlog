@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import { usePreferences } from '@/context/PreferencesContext'
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
+import BackgroundImage from "../../components/BackgroundImage";
 import { createClient } from '@/lib/supabase'
 
 export default function ProfilePage() {
@@ -117,53 +118,69 @@ export default function ProfilePage() {
       <NavBar />
 
       {/* Hero Section */}
-      <section style={{
-        padding: '6rem 5vw 4rem',
-        background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-        color: '#fff',
-        textAlign: 'center',
-        minHeight: '30vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ maxWidth: '600px' }}>
-          <h1 style={{
-            fontSize: '3rem',
-            fontWeight: 900,
-            marginBottom: '1rem',
-            letterSpacing: '0.05em'
-          }}>
+      <BackgroundImage
+        src="/images/landscapeBackground.png"
+        alt="Utah landscape background"
+        className="min-h-[50vh] w-full flex flex-col items-center justify-center relative overflow-hidden"
+        priority={true}
+        quality={85}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40 z-10" />
+
+        {/* Hero Content */}
+        <div className="relative z-20 text-center p-4 sm:p-6 md:p-8 bg-black/30 rounded-xl max-w-4xl mx-auto backdrop-blur-sm border border-white/10">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white mb-4 sm:mb-6 drop-shadow-2xl leading-tight">
             Your Profile
           </h1>
-          <p style={{
-            fontSize: '1.2rem',
-            opacity: 0.9,
-            lineHeight: '1.6'
-          }}>
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white mb-6 sm:mb-8 font-medium drop-shadow-lg leading-relaxed max-w-3xl mx-auto">
             Manage your account settings and preferences
           </p>
         </div>
-      </section>
+
+        {/* SVG Mountain Accent */}
+        <svg
+          viewBox="0 0 1440 320"
+          className="absolute bottom-0 left-0 w-full h-24 sm:h-32 z-20"
+        >
+          <path
+            fill="#1a3a2a"
+            fillOpacity="0.8"
+            d="M0,224L60,192C120,160,240,96,360,101.3C480,107,600,181,720,218.7C840,256,960,256,1080,229.3C1200,203,1320,149,1380,122.7L1440,96L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
+          />
+        </svg>
+      </BackgroundImage>
 
       {/* Profile Content */}
-      <section style={{ padding: '4rem 5vw', background: '#fff' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <section style={{ padding: '4rem 5vw', background: '#fff', position: 'relative' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))' }}>
 
             {/* Account Information */}
             <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
               padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #1a3a2a 0%, #2d5a3d 100%)'
+              }}></div>
               <h2 style={{
                 fontSize: '1.8rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 color: '#1a3a2a',
-                marginBottom: '1.5rem'
+                marginBottom: '1.5rem',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}>
                 Account Information
               </h2>
@@ -251,17 +268,29 @@ export default function ProfilePage() {
 
             {/* Profile Settings */}
             <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
               padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #1a3a2a 0%, #2d5a3d 100%)'
+              }}></div>
               <h2 style={{
                 fontSize: '1.8rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 color: '#1a3a2a',
-                marginBottom: '1.5rem'
+                marginBottom: '1.5rem',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}>
                 Profile Settings
               </h2>
@@ -463,31 +492,54 @@ export default function ProfilePage() {
             </div>
           </div>
 
-                    {/* Dashboard Preferences */}
+          {/* Dashboard Preferences */}
           {preferencesLoading ? (
             <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
               padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef',
-              textAlign: 'center'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <p style={{ color: '#666', margin: 0 }}>Loading dashboard preferences...</p>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #1a3a2a 0%, #2d5a3d 100%)'
+              }}></div>
+              <p style={{ color: '#666', margin: 0, fontWeight: 600 }}>Loading dashboard preferences...</p>
             </div>
           ) : (
             <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
               padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #1a3a2a 0%, #2d5a3d 100%)'
+              }}></div>
               <h3 style={{
                 fontSize: '1.5rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 color: '#1a3a2a',
-                marginBottom: '1rem'
+                marginBottom: '1rem',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)'
               }}>
                 Dashboard Preferences
               </h3>
@@ -531,11 +583,12 @@ export default function ProfilePage() {
                   }
                 ].map((dashboard) => (
                   <div key={dashboard.id} style={{
-                    background: '#fff',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(8px)',
                     borderRadius: '12px',
                     padding: '1.5rem',
-                    border: '2px solid #e9ecef',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
                     position: 'relative',
@@ -544,13 +597,15 @@ export default function ProfilePage() {
                   onClick={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = '#1a3a2a';
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(26, 58, 42, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(26, 58, 42, 0.15)';
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#e9ecef';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
                     e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
                   }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -625,16 +680,29 @@ export default function ProfilePage() {
           <div style={{
             marginTop: '3rem',
             padding: '2rem',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-            borderRadius: '12px',
-            border: '1px solid #dee2e6',
-            textAlign: 'center'
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #1a3a2a 0%, #2d5a3d 100%)'
+            }}></div>
             <h3 style={{
               fontSize: '1.5rem',
-              fontWeight: 700,
+              fontWeight: 800,
               color: '#1a3a2a',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}>
               Quick Actions
             </h3>
@@ -649,16 +717,26 @@ export default function ProfilePage() {
                 style={{
                   display: 'block',
                   padding: '1rem',
-                  background: '#fff',
-                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
                   textDecoration: 'none',
                   color: '#1a3a2a',
                   fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.2s'
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  transition: 'all 0.3s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(26, 58, 42, 0.15)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                }}
               >
                 📊 View Dashboard
               </Link>
@@ -667,16 +745,26 @@ export default function ProfilePage() {
                 style={{
                   display: 'block',
                   padding: '1rem',
-                  background: '#fff',
-                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
                   textDecoration: 'none',
                   color: '#1a3a2a',
                   fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.2s'
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  transition: 'all 0.3s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(26, 58, 42, 0.15)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                }}
               >
                 📖 Browse Content
               </Link>
@@ -685,16 +773,26 @@ export default function ProfilePage() {
                 style={{
                   display: 'block',
                   padding: '1rem',
-                  background: '#fff',
-                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '12px',
                   textDecoration: 'none',
                   color: '#1a3a2a',
                   fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.2s'
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  transition: 'all 0.3s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(26, 58, 42, 0.15)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                }}
               >
                 💬 Contact Support
               </Link>
