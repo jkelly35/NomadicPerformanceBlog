@@ -3,6 +3,228 @@
 import { createClient } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
+// Wearable Device Integration APIs
+// =================================
+
+// Google Fit API - FREE & COMPREHENSIVE
+// - Sleep, HR, HRV, Steps, Calories, Weight, Body Fat
+// - Cross-platform (Android/iOS/Web)
+// - Setup: https://developers.google.com/fit
+// - Data Types: https://developers.google.com/fit/datatypes
+
+// Apple HealthKit - FREE (iOS Only)
+// - Comprehensive health data
+// - Requires iOS app for data access
+// - Setup: https://developer.apple.com/health-fitness/
+
+// Fitbit API - FREE TIER AVAILABLE
+// - Sleep, HR, HRV, Steps, Activities
+// - Web API with OAuth2
+// - Setup: https://dev.fitbit.com/
+
+// Garmin Connect API - FREE
+// - HR, Sleep, Activities, Training Status
+// - REST API with OAuth1/OAuth2
+// - Setup: https://developer.garmin.com/gc-developer-program/
+
+// Oura Ring API - FREE TIER
+// - Sleep, HRV, Body Temperature, Readiness
+// - REST API with OAuth2
+// - Setup: https://cloud.ouraring.com/docs/
+
+// Whoop API - FREE TIER
+// - Strain, Recovery, Sleep, HRV
+// - GraphQL API
+// - Setup: https://developer.whoop.com/
+
+// Polar AccessLink API - FREE
+// - HR, Sleep, Training Load, Nightly Recharge
+// - REST API with OAuth2
+// - Setup: https://www.polar.com/en/developers/api
+
+// Withings API - FREE TIER
+// - Weight, Body Comp, BP, Sleep, Activity
+// - REST API with OAuth2
+// - Setup: https://developer.withings.com/
+
+// Strava API - FREE TIER
+// - Activities, HR, GPS, Performance Metrics
+// - REST API with OAuth2
+// - Setup: https://developers.strava.com/
+
+// MyFitnessPal API - FREE TIER
+// - Nutrition, Weight, Macros
+// - REST API with OAuth2
+// - Setup: https://developer.myfitnesspal.com/
+
+// Recommended Implementation Order:
+// 1. Google Fit (most comprehensive, free)
+// 2. Apple HealthKit (iOS users)
+// 3. Fitbit (popular brand)
+// 4. Oura/Whoop (recovery-focused)
+// 5. Garmin (outdoor activities)
+
+// Data Mapping Structure
+export interface WearableDataPoint {
+  timestamp: string
+  value: number
+  unit?: string
+  source: string // 'google-fit', 'fitbit', 'oura', etc.
+  dataType: WearableDataType
+}
+
+export type WearableDataType =
+  | 'heart_rate'
+  | 'heart_rate_variability'
+  | 'resting_heart_rate'
+  | 'sleep_duration'
+  | 'sleep_quality'
+  | 'sleep_stages'
+  | 'steps'
+  | 'calories'
+  | 'weight'
+  | 'body_fat'
+  | 'muscle_mass'
+  | 'body_water'
+  | 'bone_mass'
+  | 'active_energy'
+  | 'exercise_time'
+  | 'stand_time'
+  | 'blood_pressure_systolic'
+  | 'blood_pressure_diastolic'
+  | 'blood_oxygen'
+  | 'respiratory_rate'
+  | 'body_temperature'
+  | 'training_load'
+  | 'recovery_score'
+  | 'readiness_score'
+  | 'strain_score'
+
+export interface WearableIntegration {
+  provider: string
+  connected: boolean
+  lastSync: string | null
+  scopes: string[]
+  userId?: string
+}
+
+// Placeholder functions for wearable integration
+export async function connectWearableDevice(provider: string): Promise<{ success: boolean; authUrl?: string; error?: string }> {
+  // Implementation will depend on the provider
+  // This would typically redirect to OAuth flow
+  switch (provider) {
+    case 'google-fit':
+      const { connectGoogleFit } = await import('./wearables/google-fit')
+      return connectGoogleFit()
+    case 'fitbit':
+      const { connectFitbit } = await import('./wearables/fitbit')
+      return connectFitbit()
+    case 'oura':
+      const { connectOura } = await import('./wearables/oura')
+      return connectOura()
+    case 'whoop':
+      const { connectWhoop } = await import('./wearables/whoop')
+      return connectWhoop()
+    case 'garmin':
+      const { connectGarmin } = await import('./wearables/garmin')
+      return connectGarmin()
+    case 'polar':
+      const { connectPolar } = await import('./wearables/polar')
+      return connectPolar()
+    case 'withings':
+      const { connectWithings } = await import('./wearables/withings')
+      return connectWithings()
+    case 'strava':
+      const { connectStrava } = await import('./wearables/strava')
+      return connectStrava()
+    case 'myfitnesspal':
+      const { connectMyFitnessPal } = await import('./wearables/myfitnesspal')
+      return connectMyFitnessPal()
+    default:
+      return { success: false, error: 'Unsupported provider' }
+  }
+}
+
+export async function syncWearableData(provider: string, userId: string): Promise<{ success: boolean; dataPoints?: WearableDataPoint[]; error?: string }> {
+  // Get the user's access token for this provider from database
+  const supabase = await createClient()
+  const { data: integration, error: fetchError } = await supabase
+    .from('wearable_integrations')
+    .select('access_token')
+    .eq('user_id', userId)
+    .eq('provider', provider)
+    .single()
+
+  if (fetchError || !integration?.access_token) {
+    return { success: false, error: 'No access token found for this provider' }
+  }
+
+  // Implementation will fetch data from the wearable API
+  // and transform it into our WearableDataPoint format
+  switch (provider) {
+    case 'google-fit':
+      const { syncGoogleFitData } = await import('./wearables/google-fit')
+      return syncGoogleFitData(userId, integration.access_token)
+    case 'fitbit':
+      const { syncFitbitData } = await import('./wearables/fitbit')
+      return syncFitbitData(userId, integration.access_token)
+    case 'oura':
+      const { syncOuraData } = await import('./wearables/oura')
+      return syncOuraData(userId, integration.access_token)
+    case 'whoop':
+      const { syncWhoopData } = await import('./wearables/whoop')
+      return syncWhoopData(userId, integration.access_token)
+    case 'garmin':
+      const { syncGarminData } = await import('./wearables/garmin')
+      return syncGarminData(userId, integration.access_token)
+    case 'polar':
+      const { syncPolarData } = await import('./wearables/polar')
+      return syncPolarData(userId, integration.access_token)
+    case 'withings':
+      const { syncWithingsData } = await import('./wearables/withings')
+      return syncWithingsData(userId, integration.access_token)
+    case 'strava':
+      const { syncStravaData } = await import('./wearables/strava')
+      return syncStravaData(userId, integration.access_token)
+    case 'myfitnesspal':
+      const { syncMyFitnessPalData } = await import('./wearables/myfitnesspal')
+      return syncMyFitnessPalData(userId, integration.access_token)
+    default:
+      return { success: false, error: 'Unsupported provider' }
+  }
+}
+
+export async function getWearableIntegrations(userId: string): Promise<WearableIntegration[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('wearable_integrations')
+    .select('*')
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error fetching wearable integrations:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function disconnectWearableDevice(provider: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('wearable_integrations')
+    .delete()
+    .eq('user_id', userId)
+    .eq('provider', provider)
+
+  if (error) {
+    console.error('Error disconnecting wearable device:', error)
+    return { success: false, error: 'Failed to disconnect device' }
+  }
+
+  return { success: true }
+}
+
 export interface Workout {
   id: string
   activity_type: string

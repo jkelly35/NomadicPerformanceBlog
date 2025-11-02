@@ -9,6 +9,7 @@ import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import BackgroundImage from "../../components/BackgroundImage";
 import Toggle from "../../components/Toggle";
+import WearableIntegrations from "../../components/WearableIntegrations";
 import { createClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -506,6 +507,14 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* Wearable Device Integrations */}
+          <div style={{
+            gridColumn: '1 / -1',
+            marginTop: '2rem'
+          }}>
+            <WearableIntegrations />
           </div>
         </div>
       </section>
