@@ -415,138 +415,197 @@ function DashboardContent({
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 pb-20 md:pb-0">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-25 to-slate-100 pb-20 md:pb-0">
       <NavBar />
 
       {/* Hero Section */}
-      <section className="py-16 px-6 bg-gradient-to-br from-emerald-800 via-green-700 to-teal-600 text-white text-center min-h-[50vh] flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative z-10 max-w-4xl">
-          <h1 className="text-5xl md:text-6xl font-black mb-6 tracking-wide">
-            Welcome Back, {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Adventurer'}!
+      <section className="relative py-20 px-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white text-center min-h-[60vh] flex items-center justify-center overflow-hidden">
+        {/* Premium background elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-slate-800/50 to-slate-900/80"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.15),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(16,185,129,0.1),transparent_50%)]"></div>
+        
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent"></div>
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <div className="mb-6">
+            <span className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600/20 to-emerald-600/20 backdrop-blur-sm border border-white/10 rounded-full text-sm font-medium text-blue-200 mb-4">
+              🏔️ ATHLETIC OPTIMIZATION PLATFORM
+            </span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight bg-gradient-to-r from-white via-blue-100 to-emerald-200 bg-clip-text text-transparent leading-tight">
+            Welcome Back, {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Athlete'}!
           </h1>
-          <p className="text-xl md:text-2xl opacity-90 leading-relaxed mb-8">
-            Your nomadic fitness journey awaits. Track your trails, fuel your body, and conquer new peaks.
+          
+          <p className="text-xl md:text-2xl text-slate-300 leading-relaxed mb-8 max-w-3xl mx-auto font-light">
+            Elevate your nomadic performance. Track every ascent, optimize every meal, and unlock your peak potential across the world's most demanding terrains.
           </p>
-          <div className="flex justify-center gap-4 flex-wrap">
-            <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full text-sm font-semibold">
-              🔥 Streak: {Math.round(getStatValue('streak_days'))} days
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+              <span>Real-time performance tracking</span>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full text-sm font-semibold">
-              🏔️ Next Summit: Utah Trails
+            <div className="hidden sm:block w-px h-4 bg-slate-600"></div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+              <span>AI-powered optimization</span>
+            </div>
+            <div className="hidden sm:block w-px h-4 bg-slate-600"></div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+              <span>Professional analytics</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Quick Access Buttons */}
-      <section className="py-8 px-6 bg-gradient-to-r from-stone-100 to-stone-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-center gap-6 flex-wrap">
+      <section className="py-12 px-6 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-emerald-50/30"></div>
+        <div className="relative max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Quick Actions</h2>
+            <p className="text-slate-600">Access your key performance tools</p>
+          </div>
+          <div className="flex justify-center gap-4 flex-wrap">
             <Link
               href="/analytics"
-              className="bg-white/80 backdrop-blur-sm border border-stone-200 rounded-xl px-8 py-4 text-stone-800 font-semibold hover:bg-white hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3 group"
+              className="group relative bg-white/90 backdrop-blur-md border border-slate-200/60 rounded-2xl px-8 py-5 text-slate-800 font-semibold hover:bg-white hover:shadow-xl transition-all duration-500 hover:scale-105 flex items-center gap-4 overflow-hidden"
             >
-              <span className="text-2xl group-hover:animate-bounce">📊</span>
-              <span>Analytics</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                  📊
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-slate-800">Analytics</div>
+                  <div className="text-sm text-slate-600">Performance insights</div>
+                </div>
+              </div>
             </Link>
             <Link
               href="/profile"
-              className="bg-white/80 backdrop-blur-sm border border-stone-200 rounded-xl px-8 py-4 text-stone-800 font-semibold hover:bg-white hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center gap-3 group"
+              className="group relative bg-white/90 backdrop-blur-md border border-slate-200/60 rounded-2xl px-8 py-5 text-slate-800 font-semibold hover:bg-white hover:shadow-xl transition-all duration-500 hover:scale-105 flex items-center gap-4 overflow-hidden"
             >
-              <span className="text-2xl group-hover:animate-bounce">👤</span>
-              <span>Profile</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-pink-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                  👤
+                </div>
+                <div className="text-left">
+                  <div className="font-bold text-slate-800">Profile</div>
+                  <div className="text-sm text-slate-600">Personal settings</div>
+                </div>
+              </div>
             </Link>
           </div>
         </div>
       </section>
 
       {/* Dashboard Content */}
-      <section className="py-12 px-6 bg-white">
+      <section className="py-16 px-6 bg-gradient-to-br from-white via-slate-50/30 to-slate-100/50">
         <div className="max-w-7xl mx-auto">
 
           {/* Main Dashboard Title */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-stone-800">📊 Main Dashboard</h1>
+            <h1 className="text-4xl font-black text-slate-800 tracking-tight">📊 Performance Dashboard</h1>
+            <p className="text-slate-600 font-medium mt-2">Your complete athletic optimization hub</p>
           </div>
 
           {/* Today's Overview */}
-          <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl p-8 mb-12 border border-stone-200 shadow-lg">
-            <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
-              📊 Today's Overview
-            </h2>
+          <div className="bg-gradient-to-br from-slate-50 via-white to-slate-100 rounded-3xl p-10 mb-12 border border-slate-200/50 shadow-xl backdrop-blur-sm">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">
+                📊 Performance Overview
+              </h2>
+              <p className="text-slate-600 font-medium">Real-time metrics for optimal performance</p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Readiness Score */}
-              <Link href="/readiness" className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 cursor-pointer block group">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white group-hover:animate-pulse">
-                  {(() => {
-                    // Calculate readiness score based on recent activity (last 3 days)
-                    const today = new Date();
-                    const threeDaysAgo = new Date(today);
-                    threeDaysAgo.setDate(today.getDate() - 3);
+              <Link href="/readiness" className="group relative bg-white rounded-2xl p-8 text-center border border-slate-200/60 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] cursor-pointer block overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-green-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10">
+                  <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl font-black text-white shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    {(() => {
+                      // Calculate readiness score based on recent activity (last 3 days)
+                      const today = new Date();
+                      const threeDaysAgo = new Date(today);
+                      threeDaysAgo.setDate(today.getDate() - 3);
 
-                    const recentWorkouts = data.workouts.filter(w => {
-                      const workoutDate = new Date(w.workout_date);
-                      return workoutDate >= threeDaysAgo;
-                    });
+                      const recentWorkouts = data.workouts.filter(w => {
+                        const workoutDate = new Date(w.workout_date);
+                        return workoutDate >= threeDaysAgo;
+                      });
 
-                    // Base score from recent activity (0-50 points)
-                    const activityScore = Math.min(recentWorkouts.length * 10, 50);
+                      // Base score from recent activity (0-50 points)
+                      const activityScore = Math.min(recentWorkouts.length * 10, 50);
 
-                    // Add recovery bonus if available (0-30 points)
-                    const recoveryScore = getStatValue('recovery_score') || 0;
-                    const recoveryBonus = Math.min(recoveryScore * 0.3, 30);
+                      // Add recovery bonus if available (0-30 points)
+                      const recoveryScore = getStatValue('recovery_score') || 0;
+                      const recoveryBonus = Math.min(recoveryScore * 0.3, 30);
 
-                    // Add fitness level bonus (0-20 points)
-                    const fitnessScore = getStatValue('fitness_score') || 0;
-                    const fitnessBonus = Math.min(fitnessScore * 0.2, 20);
+                      // Add fitness level bonus (0-20 points)
+                      const fitnessScore = getStatValue('fitness_score') || 0;
+                      const fitnessBonus = Math.min(fitnessScore * 0.2, 20);
 
-                    return Math.round(activityScore + recoveryBonus + fitnessBonus);
-                  })()}
-                </div>
-                <h3 className="text-xl font-semibold text-stone-800 mb-2">
-                  Readiness Score
-                </h3>
-                <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-semibold">
-                  <span>⚡</span>
-                  <span>View Details →</span>
+                      return Math.round(activityScore + recoveryBonus + fitnessBonus);
+                    })()}
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">
+                    Readiness Score
+                  </h3>
+                  <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 font-semibold">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span>View Details →</span>
+                  </div>
                 </div>
               </Link>
 
               {/* Today's Active Minutes */}
-              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 group">
-                <div className="w-20 h-20 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white group-hover:animate-pulse">
-                  {data.workouts.filter(w => {
-                    const workoutDate = new Date(w.workout_date);
-                    const today = new Date();
-                    return workoutDate.toDateString() === today.toDateString();
-                  }).reduce((total, w) => total + w.duration_minutes, 0)}
-                </div>
-                <h3 className="text-xl font-semibold text-stone-800 mb-2">
-                  Today's Minutes
-                </h3>
-                <div className="flex items-center justify-center gap-2 text-sm text-sky-600 font-semibold">
-                  <span>⏱️</span>
-                  <span>Time active</span>
+              <div className="group relative bg-white rounded-2xl p-8 text-center border border-slate-200/60 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-sky-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl font-black text-white shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    {data.workouts.filter(w => {
+                      const workoutDate = new Date(w.workout_date);
+                      const today = new Date();
+                      return workoutDate.toDateString() === today.toDateString();
+                    }).reduce((total, w) => total + w.duration_minutes, 0)}
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">
+                    Active Minutes
+                  </h3>
+                  <div className="flex items-center justify-center gap-2 text-sm text-blue-600 font-semibold">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    <span>Time in motion</span>
+                  </div>
                 </div>
               </div>
 
               {/* Today's Calories */}
-              <div className="bg-white rounded-xl p-6 text-center border border-stone-200 shadow-md hover:shadow-lg transition-all hover:scale-105 group">
-                <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center text-xl font-bold text-white group-hover:animate-pulse">
-                  {data.workouts.filter(w => {
-                    const workoutDate = new Date(w.workout_date);
-                    const today = new Date();
-                    return workoutDate.toDateString() === today.toDateString();
-                  }).reduce((total, w) => total + (w.calories_burned || 0), 0)}
-                </div>
-                <h3 className="text-xl font-semibold text-stone-800 mb-2">
-                  Today's Calories
-                </h3>
-                <div className="flex items-center justify-center gap-2 text-sm text-amber-600 font-semibold">
-                  <span>🔥</span>
-                  <span>Energy burned</span>
+              <div className="group relative bg-white rounded-2xl p-8 text-center border border-slate-200/60 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-amber-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10">
+                  <div className="w-24 h-24 bg-gradient-to-br from-orange-500 via-amber-500 to-red-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-2xl font-black text-white shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    {data.workouts.filter(w => {
+                      const workoutDate = new Date(w.workout_date);
+                      const today = new Date();
+                      return workoutDate.toDateString() === today.toDateString();
+                    }).reduce((total, w) => total + (w.calories_burned || 0), 0)}
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-3">
+                    Energy Burned
+                  </h3>
+                  <div className="flex items-center justify-center gap-2 text-sm text-orange-600 font-semibold">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
+                    <span>Calories today</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -559,49 +618,82 @@ function DashboardContent({
 
           {/* Quick Navigation */}
           <div className="mb-12">
-            <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
-              🚀 Quick Access
-            </h2>
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">
+                🚀 Performance Modules
+              </h2>
+              <p className="text-slate-600 font-medium">Access specialized tools for peak athletic performance</p>
+            </div>
             {preferencesLoading ? (
-              <div className="text-center py-8">
-                <div className="text-2xl">⏳</div>
-                <p className="text-gray-600">Loading preferences...</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-slate-400 border-t-slate-600 rounded-full animate-spin"></div>
+                </div>
+                <p className="text-slate-600 font-medium">Loading your performance modules...</p>
               </div>
             ) : (
-              <div className={`grid ${getQuickAccessGridClasses()} gap-6`}>
+              <div className={`grid ${getQuickAccessGridClasses()} gap-8`}>
             {!preferencesLoading && preferences?.dashboards?.nutrition === true && (
-                <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
-                  <div className="text-center">
-                    <div className="text-5xl mb-3 group-hover:animate-bounce">🥗</div>
-                    <h3 className="text-xl font-bold mb-2">Nutrition Dashboard</h3>
-                    <p className="text-sm opacity-90 leading-tight">Log meals, track macros, fuel your adventures</p>
+                <Link href="/nutrition" className="group relative bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-green-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative z-10 text-center">
+                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                      🥗
+                    </div>
+                    <h3 className="text-2xl font-black mb-3">Nutrition</h3>
+                    <p className="text-sm opacity-90 leading-relaxed mb-4">Precision fueling for peak performance</p>
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                      <span className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></span>
+                      <span>Track & optimize</span>
+                    </div>
                   </div>
                 </Link>
               )}
             {!preferencesLoading && preferences?.dashboards?.activities === true && (
-                <Link href="/activities" className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
-                  <div className="text-center">
-                    <div className="text-5xl mb-3 group-hover:animate-bounce">🏔️</div>
-                    <h3 className="text-xl font-bold mb-2">Activities</h3>
-                    <p className="text-sm opacity-90 leading-tight">Track sends, monitor progress, conquer peaks</p>
+                <Link href="/activities" className="group relative bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-sky-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative z-10 text-center">
+                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                      🏔️
+                    </div>
+                    <h3 className="text-2xl font-black mb-3">Activities</h3>
+                    <p className="text-sm opacity-90 leading-relaxed mb-4">Track every ascent, monitor progress</p>
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                      <span className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></span>
+                      <span>Conquer peaks</span>
+                    </div>
                   </div>
                 </Link>
               )}
             {!preferencesLoading && preferences?.dashboards?.training === true && (
-                <Link href="/training" className="bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
-                  <div className="text-center">
-                    <div className="text-5xl mb-3 group-hover:animate-bounce">💪</div>
-                    <h3 className="text-xl font-bold mb-2">Training</h3>
-                    <p className="text-sm opacity-90 leading-tight">Plan strength training, build power</p>
+                <Link href="/training" className="group relative bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-red-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative z-10 text-center">
+                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                      💪
+                    </div>
+                    <h3 className="text-2xl font-black mb-3">Training</h3>
+                    <p className="text-sm opacity-90 leading-relaxed mb-4">Build strength, maximize power output</p>
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                      <span className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></span>
+                      <span>Strength & power</span>
+                    </div>
                   </div>
                 </Link>
               )}
               {!preferencesLoading && preferences?.dashboards?.equipment === true && (
-              <Link href="/equipment" className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
-                <div className="text-center">
-                  <div className="text-5xl mb-3 group-hover:animate-bounce">🎒</div>
-                  <h3 className="text-xl font-bold mb-2">Equipment</h3>
-                  <p className="text-sm opacity-90 leading-tight">Manage gear, track maintenance</p>
+              <Link href="/equipment" className="group relative bg-gradient-to-br from-purple-500 via-indigo-500 to-pink-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10 text-center">
+                  <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    🎒
+                  </div>
+                  <h3 className="text-2xl font-black mb-3">Equipment</h3>
+                  <p className="text-sm opacity-90 leading-relaxed mb-4">Gear management & maintenance tracking</p>
+                  <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                    <span className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></span>
+                    <span>Optimize gear</span>
+                  </div>
                 </div>
               </Link>
               )}
@@ -612,26 +704,29 @@ function DashboardContent({
 
           {/* Nutrition Section */}
           {!preferencesLoading && preferences?.dashboards?.nutrition === true && (
-            <div className="mb-12">
-              <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
-                🍎 Daily Fuel Intake
-              </h2>
+            <div className="mb-16">
+              <div className="text-center mb-10">
+                <h2 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">
+                  🍎 Fuel Optimization
+                </h2>
+                <p className="text-slate-600 font-medium">Track macronutrients and optimize your performance fuel</p>
+              </div>
 
               {/* Compact Nutrition Overview */}
-              <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-8 shadow-lg border border-stone-200">
+              <div className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 rounded-3xl p-10 shadow-xl border border-slate-200/50 backdrop-blur-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                   {/* Calories */}
                   <div className="text-center">
                     <div className="text-3xl font-bold text-orange-600 mb-2">
                       {localNutritionStats.total_calories}
                     </div>
-                    <div className="text-sm font-semibold text-stone-700 mb-3">
+                    <div className="text-sm font-semibold text-slate-700 mb-3">
                       Calories
                     </div>
-                    <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
                       <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-slate-500">
                       Goal: {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
                     </div>
                   </div>
@@ -641,13 +736,13 @@ function DashboardContent({
                     <div className="text-3xl font-bold text-blue-600 mb-2">
                       {Math.round(localNutritionStats.total_protein)}g
                     </div>
-                    <div className="text-sm font-semibold text-stone-700 mb-3">
+                    <div className="text-sm font-semibold text-slate-700 mb-3">
                       Protein
                     </div>
-                    <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
                       <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-slate-500">
                       Goal: {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
                     </div>
                   </div>
@@ -657,13 +752,13 @@ function DashboardContent({
                     <div className="text-3xl font-bold text-pink-600 mb-2">
                       {Math.round(localNutritionStats.total_carbs)}g
                     </div>
-                    <div className="text-sm font-semibold text-stone-700 mb-3">
+                    <div className="text-sm font-semibold text-slate-700 mb-3">
                       Carbs
                     </div>
-                    <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
                       <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-slate-500">
                       Goal: {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
                     </div>
                   </div>
@@ -673,13 +768,13 @@ function DashboardContent({
                     <div className="text-3xl font-bold text-cyan-600 mb-2">
                       {Math.round(localNutritionStats.total_fat)}g
                     </div>
-                    <div className="text-sm font-semibold text-stone-700 mb-3">
+                    <div className="text-sm font-semibold text-slate-700 mb-3">
                       Fat
                     </div>
-                    <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
                       <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-slate-500">
                       Goal: {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
                     </div>
                   </div>
@@ -689,20 +784,20 @@ function DashboardContent({
                     <div className="text-3xl font-bold text-blue-600 mb-2">
                       {Math.round(localHydrationTotal)}ml
                     </div>
-                    <div className="text-sm font-semibold text-stone-700 mb-3">
+                    <div className="text-sm font-semibold text-slate-700 mb-3">
                       💧 Hydration
                     </div>
-                    <div className="bg-stone-200 rounded-full h-4 overflow-hidden mb-2">
+                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
                       <div className="bg-gradient-to-r from-blue-400 to-cyan-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localHydrationTotal / 3000) * 100, 100)}%` }}></div>
                     </div>
-                    <div className="text-xs text-stone-500">
+                    <div className="text-xs text-slate-500">
                       Goal: 3000ml
                     </div>
                   </div>
                 </div>
 
                 {/* Meals Summary & Quick Actions */}
-                <div className="mt-8 pt-6 border-t border-stone-300">
+                <div className="mt-8 pt-6 border-t border-slate-300">
                   <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
                     <div className="text-sm text-stone-600">
                       Meals logged today: <strong className="text-stone-800">{localNutritionStats.meals_count}</strong>
