@@ -16,7 +16,8 @@ const defaultPreferences: UserPreferences = {
     main: true,
     nutrition: true,
     training: true,
-    activities: true
+    activities: true,
+    equipment: true
   }
 }
 
@@ -57,7 +58,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       // Load preferences from user metadata only once
       const userPreferences = user.user_metadata?.preferences as UserPreferences | undefined
       if (userPreferences) {
-        setPreferences(userPreferences)
+        // Merge existing preferences with defaults to ensure new properties are included
+        const mergedPreferences = {
+          ...defaultPreferences,
+          ...userPreferences,
+          dashboards: {
+            ...defaultPreferences.dashboards,
+            ...userPreferences.dashboards
+          }
+        }
+        setPreferences(mergedPreferences)
       } else {
         // If no preferences exist, set defaults
         setPreferences(defaultPreferences)

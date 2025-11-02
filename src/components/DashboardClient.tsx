@@ -517,6 +517,7 @@ function DashboardContent({
                   </div>
                 </Link>
               )}
+              {!preferencesLoading && preferences?.dashboards?.equipment === true && (
               <Link href="/equipment" className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
                 <div className="text-center">
                   <div className="text-5xl mb-3 group-hover:animate-bounce">🎒</div>
@@ -524,6 +525,7 @@ function DashboardContent({
                   <p className="text-sm opacity-90 leading-tight">Manage gear, track maintenance</p>
                 </div>
               </Link>
+              )}
             </div>
             )}
           </div>

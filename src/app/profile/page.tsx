@@ -24,7 +24,7 @@ export default function ProfilePage() {
   })
   const supabase = createClient()
 
-  const handleDashboardToggle = async (dashboard: 'main' | 'nutrition' | 'training' | 'activities', enabled: boolean) => {
+  const handleDashboardToggle = async (dashboard: 'main' | 'nutrition' | 'training' | 'activities' | 'equipment', enabled: boolean) => {
     if (!preferences) return
 
     const newPreferences = {
@@ -463,131 +463,163 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Dashboard Preferences */}
-          <div style={{
-            marginTop: '3rem',
-            padding: '2rem',
-            background: '#f8f9fa',
-            borderRadius: '12px',
-            border: '1px solid #e9ecef'
-          }}>
-            <h3 style={{
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '1rem'
-            }}>
-              Dashboard Preferences
-            </h3>
-            <p style={{
-              fontSize: '0.9rem',
-              color: '#666',
-              marginBottom: '2rem'
-            }}>
-              Customize your dashboard experience by enabling or disabling specific sections
-            </p>
-
+                    {/* Dashboard Preferences */}
+          {preferencesLoading ? (
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '2rem'
+              background: '#f8f9fa',
+              borderRadius: '12px',
+              padding: '2rem',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+              border: '1px solid #e9ecef',
+              textAlign: 'center'
             }}>
-              {[
-                {
-                  id: 'nutrition' as const,
-                  title: 'Nutrition Dashboard',
-                  description: 'Meal logging, macro tracking, and nutrition goals',
-                  icon: '🥗'
-                },
-                {
-                  id: 'training' as const,
-                  title: 'Training Dashboard',
-                  description: 'Strength training plans, workout logging, and performance tracking',
-                  icon: '💪'
-                },
-                {
-                  id: 'activities' as const,
-                  title: 'Activities Dashboard',
-                  description: 'Climbing sends, MTB rides, and outdoor activity tracking',
-                  icon: '🏔️'
-                }
-              ].map((dashboard) => (
-                <div key={dashboard.id} style={{
-                  background: '#fff',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  border: '2px solid #e9ecef',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer'
-                }}
-                onClick={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{dashboard.icon}</span>
-                      <h4 style={{
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                        color: '#1a3a2a',
-                        margin: 0
+              <p style={{ color: '#666', margin: 0 }}>Loading dashboard preferences...</p>
+            </div>
+          ) : (
+            <div style={{
+              background: '#f8f9fa',
+              borderRadius: '12px',
+              padding: '2rem',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+              border: '1px solid #e9ecef'
+            }}>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: '#1a3a2a',
+                marginBottom: '1rem'
+              }}>
+                Dashboard Preferences
+              </h3>
+              <p style={{
+                fontSize: '0.9rem',
+                color: '#666',
+                marginBottom: '2rem'
+              }}>
+                Customize your dashboard experience by enabling or disabling specific sections
+              </p>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {[
+                  {
+                    id: 'nutrition' as const,
+                    title: 'Nutrition Dashboard',
+                    description: 'Meal logging, macro tracking, and nutrition goals',
+                    icon: '🥗'
+                  },
+                  {
+                    id: 'training' as const,
+                    title: 'Training Dashboard',
+                    description: 'Strength training plans, workout logging, and performance tracking',
+                    icon: '💪'
+                  },
+                  {
+                    id: 'activities' as const,
+                    title: 'Activities Dashboard',
+                    description: 'Climbing sends, MTB rides, and outdoor activity tracking',
+                    icon: '🏔️'
+                  },
+                  {
+                    id: 'equipment' as const,
+                    title: 'Equipment Dashboard',
+                    description: 'Gear management, maintenance tracking, and equipment organization',
+                    icon: '🎒'
+                  }
+                ].map((dashboard) => (
+                  <div key={dashboard.id} style={{
+                    background: '#fff',
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    border: '2px solid #e9ecef',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onClick={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#1a3a2a';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(26, 58, 42, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e9ecef';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{dashboard.icon}</span>
+                        <h4 style={{
+                          fontSize: '1.1rem',
+                          fontWeight: 600,
+                          color: '#1a3a2a',
+                          margin: 0
+                        }}>
+                          {dashboard.title}
+                        </h4>
+                      </div>
+                      <label style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        width: '50px',
+                        height: '25px'
                       }}>
-                        {dashboard.title}
-                      </h4>
-                    </div>
-                    <label style={{
-                      position: 'relative',
-                      display: 'inline-block',
-                      width: '50px',
-                      height: '25px'
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={preferences?.dashboards?.[dashboard.id] ?? true}
-                        onChange={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
-                        style={{
-                          opacity: 0,
-                          width: 0,
-                          height: 0
-                        }}
-                      />
-                      <span style={{
-                        position: 'absolute',
-                        cursor: 'pointer',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: (preferences?.dashboards?.[dashboard.id] ?? true) ? '#1a3a2a' : '#ccc',
-                        transition: '0.4s',
-                        borderRadius: '25px'
-                      }}>
+                        <input
+                          type="checkbox"
+                          checked={preferences?.dashboards?.[dashboard.id] ?? true}
+                          onChange={() => handleDashboardToggle(dashboard.id, !preferences?.dashboards?.[dashboard.id])}
+                          style={{
+                            opacity: 0,
+                            width: 0,
+                            height: 0
+                          }}
+                        />
                         <span style={{
                           position: 'absolute',
-                          content: '""',
-                          height: '17px',
-                          width: '17px',
-                          left: '4px',
-                          bottom: '4px',
-                          backgroundColor: 'white',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: (preferences?.dashboards?.[dashboard.id] ?? true) ? '#1a3a2a' : '#ccc',
                           transition: '0.4s',
-                          borderRadius: '50%',
-                          transform: (preferences?.dashboards?.[dashboard.id] ?? true) ? 'translateX(25px)' : 'translateX(0px)'
-                        }}></span>
-                      </span>
-                    </label>
+                          borderRadius: '25px'
+                        }}>
+                          <span style={{
+                            position: 'absolute',
+                            content: '""',
+                            height: '17px',
+                            width: '17px',
+                            left: '4px',
+                            bottom: '4px',
+                            backgroundColor: 'white',
+                            transition: '0.4s',
+                            borderRadius: '50%',
+                            transform: (preferences?.dashboards?.[dashboard.id] ?? true) ? 'translateX(25px)' : 'translateX(0px)'
+                          }}></span>
+                        </span>
+                      </label>
+                    </div>
+                    <p style={{
+                      fontSize: '0.9rem',
+                      color: '#666',
+                      margin: 0,
+                      lineHeight: '1.5'
+                    }}>
+                      {dashboard.description}
+                    </p>
                   </div>
-                  <p style={{
-                    fontSize: '0.9rem',
-                    color: '#666',
-                    margin: 0,
-                    lineHeight: '1.5'
-                  }}>
-                    {dashboard.description}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Quick Actions */}
           <div style={{

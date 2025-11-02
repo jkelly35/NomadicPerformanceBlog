@@ -13,6 +13,7 @@ export interface UserPreferences {
     nutrition: boolean; // Nutrition tracking dashboard
     training: boolean;  // Training/strength dashboard
     activities: boolean; // Activities/sends dashboard
+    equipment: boolean; // Equipment management dashboard
   };
 }
 
