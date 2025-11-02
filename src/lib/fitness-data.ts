@@ -2211,18 +2211,193 @@ export async function getHabitPatterns(): Promise<HabitPattern[]> {
   try {
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('habit_patterns')
+    // Get meals from the past 6 weeks for pattern analysis
+    const sixWeeksAgo = new Date()
+    sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42)
+
+    const { data: meals, error } = await supabase
+      .from('meals')
       .select('*')
-      .eq('is_active', true)
-      .order('frequency_score', { ascending: false })
+      .gte('meal_date', sixWeeksAgo.toISOString().split('T')[0])
+      .order('meal_date', { ascending: false })
 
     if (error) {
-      console.error('Error fetching habit patterns:', error)
+      console.error('Error fetching meals for pattern analysis:', error)
       return []
     }
 
-    return data || []
+    if (!meals || meals.length < 7) {
+      // Not enough data for meaningful patterns
+      return []
+    }
+
+    const patterns: HabitPattern[] = []
+    const now = new Date().toISOString()
+
+    // Analyze weekday vs weekend eating patterns
+    const weekdayMeals = meals.filter(meal => {
+      const date = new Date(meal.meal_date)
+      const dayOfWeek = date.getDay()
+      return dayOfWeek >= 1 && dayOfWeek <= 5 // Monday to Friday
+    })
+
+    const weekendMeals = meals.filter(meal => {
+      const date = new Date(meal.meal_date)
+      const dayOfWeek = date.getDay()
+      return dayOfWeek === 0 || dayOfWeek === 6 // Sunday or Saturday
+    })
+
+    const totalDays = Math.max(1, Math.ceil((new Date().getTime() - sixWeeksAgo.getTime()) / (1000 * 60 * 60 * 24)))
+    const weekdayDays = Math.floor(totalDays * 5/7)
+    const weekendDays = Math.floor(totalDays * 2/7)
+
+    if (weekdayDays > 0 && weekendDays > 0) {
+      const weekdayMealFrequency = (weekdayMeals.length / weekdayDays) * 7 // meals per week
+      const weekendMealFrequency = (weekendMeals.length / weekendDays) * 7 // meals per week
+
+      if (weekdayMealFrequency > weekendMealFrequency * 1.5) {
+        patterns.push({
+          id: 'weekday-focused-eating',
+          user_id: '', // Will be set by caller if needed
+          pattern_type: 'weekday_vs_weekend',
+          pattern_description: `You tend to eat more frequently on weekdays (${weekdayMealFrequency.toFixed(1)} meals/week) compared to weekends (${weekendMealFrequency.toFixed(1)} meals/week). This suggests a structured weekday routine.`,
+          frequency_score: Math.min(100, Math.round((weekdayMealFrequency / weekendMealFrequency) * 50)),
+          last_detected: now,
+          is_active: true,
+          created_at: now,
+          updated_at: now
+        })
+      } else if (weekendMealFrequency > weekdayMealFrequency * 1.5) {
+        patterns.push({
+          id: 'weekend-focused-eating',
+          user_id: '',
+          pattern_type: 'weekday_vs_weekend',
+          pattern_description: `You tend to eat more frequently on weekends (${weekendMealFrequency.toFixed(1)} meals/week) compared to weekdays (${weekdayMealFrequency.toFixed(1)} meals/week). This suggests more relaxed weekend eating habits.`,
+          frequency_score: Math.min(100, Math.round((weekendMealFrequency / weekdayMealFrequency) * 50)),
+          last_detected: now,
+          is_active: true,
+          created_at: now,
+          updated_at: now
+        })
+      }
+    }
+
+    // Analyze meal timing consistency
+    const mealTimings: { [key: string]: string[] } = {}
+    meals.forEach(meal => {
+      if (meal.meal_time) {
+        const mealType = meal.meal_type
+        if (!mealTimings[mealType]) mealTimings[mealType] = []
+        mealTimings[mealType].push(meal.meal_time)
+      }
+    })
+
+    Object.entries(mealTimings).forEach(([mealType, times]) => {
+      if (times.length >= 5) {
+        // Calculate average time and standard deviation
+        const timeMinutes = times.map(time => {
+          const [hours, minutes] = time.split(':').map(Number)
+          return hours * 60 + minutes
+        })
+
+        const avgTime = timeMinutes.reduce((a, b) => a + b, 0) / timeMinutes.length
+        const variance = timeMinutes.reduce((sum, time) => sum + Math.pow(time - avgTime, 2), 0) / timeMinutes.length
+        const stdDev = Math.sqrt(variance)
+
+        // If standard deviation is less than 60 minutes, consider it consistent
+        if (stdDev < 60) {
+          const consistencyScore = Math.max(0, Math.round(100 - (stdDev * 2)))
+          const avgHour = Math.floor(avgTime / 60)
+          const avgMinute = Math.round(avgTime % 60)
+          const timeString = `${avgHour.toString().padStart(2, '0')}:${avgMinute.toString().padStart(2, '0')}`
+
+          patterns.push({
+            id: `consistent-${mealType}-timing`,
+            user_id: '',
+            pattern_type: 'meal_timing',
+            pattern_description: `You consistently eat ${mealType} around ${timeString} (±${Math.round(stdDev)} minutes). This regular timing supports better digestion and metabolism.`,
+            frequency_score: consistencyScore,
+            last_detected: now,
+            is_active: true,
+            created_at: now,
+            updated_at: now
+          })
+        }
+      }
+    })
+
+    // Analyze weekly meal type patterns
+    const weeklyPatterns: { [key: string]: number[] } = {}
+    const uniqueDates = [...new Set(meals.map(m => m.meal_date))].sort()
+
+    uniqueDates.forEach(date => {
+      const dateMeals = meals.filter(m => m.meal_date === date)
+      const dayOfWeek = new Date(date).getDay()
+
+      dateMeals.forEach(meal => {
+        const mealType = meal.meal_type
+        if (!weeklyPatterns[mealType]) weeklyPatterns[mealType] = new Array(7).fill(0)
+        weeklyPatterns[mealType][dayOfWeek]++
+      })
+    })
+
+    Object.entries(weeklyPatterns).forEach(([mealType, dayCounts]) => {
+      const totalMeals = dayCounts.reduce((a, b) => a + b, 0)
+      if (totalMeals >= 10) {
+        const avgPerDay = totalMeals / 7
+        const mostCommonDay = dayCounts.indexOf(Math.max(...dayCounts))
+        const leastCommonDay = dayCounts.indexOf(Math.min(...dayCounts))
+
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+        if (dayCounts[mostCommonDay] > avgPerDay * 1.5) {
+          patterns.push({
+            id: `${mealType}-peak-${dayNames[mostCommonDay].toLowerCase()}`,
+            user_id: '',
+            pattern_type: 'weekly_routine',
+            pattern_description: `You tend to eat ${mealType} most frequently on ${dayNames[mostCommonDay]}s (${dayCounts[mostCommonDay]} times in the analysis period).`,
+            frequency_score: Math.min(100, Math.round((dayCounts[mostCommonDay] / totalMeals) * 100)),
+            last_detected: now,
+            is_active: true,
+            created_at: now,
+            updated_at: now
+          })
+        }
+      }
+    })
+
+    // Analyze meal frequency consistency
+    const mealsByDate: { [key: string]: Meal[] } = {}
+    meals.forEach(meal => {
+      if (!mealsByDate[meal.meal_date]) mealsByDate[meal.meal_date] = []
+      mealsByDate[meal.meal_date].push(meal)
+    })
+
+    const mealsPerDay = Object.values(mealsByDate).map((dayMeals: Meal[]) => dayMeals.length)
+    if (mealsPerDay.length >= 14) {
+      const avgMealsPerDay = mealsPerDay.reduce((a, b) => a + b, 0) / mealsPerDay.length
+      const variance = mealsPerDay.reduce((sum, count) => sum + Math.pow(count - avgMealsPerDay, 2), 0) / mealsPerDay.length
+      const stdDev = Math.sqrt(variance)
+      const consistencyRatio = stdDev / avgMealsPerDay
+
+      if (consistencyRatio < 0.3) {
+        patterns.push({
+          id: 'consistent-daily-meals',
+          user_id: '',
+          pattern_type: 'meal_frequency',
+          pattern_description: `You maintain consistent meal frequency throughout the week (avg: ${avgMealsPerDay.toFixed(1)} meals/day). This regularity supports stable energy levels.`,
+          frequency_score: Math.max(0, Math.round(100 - (consistencyRatio * 200))),
+          last_detected: now,
+          is_active: true,
+          created_at: now,
+          updated_at: now
+        })
+      }
+    }
+
+    // Sort patterns by frequency score (highest first)
+    return patterns.sort((a, b) => b.frequency_score - a.frequency_score)
+
   } catch (error) {
     console.error('Error in getHabitPatterns:', error)
     return []
@@ -2234,18 +2409,280 @@ export async function getMetricCorrelations(): Promise<MetricCorrelation[]> {
   try {
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('metric_correlations')
-      .select('*')
-      .eq('is_significant', true)
-      .order('correlation_coefficient', { ascending: false })
+    // Get data from the past 6 weeks for correlation analysis
+    const sixWeeksAgo = new Date()
+    sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42)
+    const startDate = sixWeeksAgo.toISOString().split('T')[0]
 
-    if (error) {
-      console.error('Error fetching metric correlations:', error)
+    // Get meals data
+    const { data: meals, error: mealsError } = await supabase
+      .from('meals')
+      .select('*')
+      .gte('meal_date', startDate)
+      .order('meal_date', { ascending: true })
+
+    if (mealsError) {
+      console.error('Error fetching meals for correlation analysis:', mealsError)
       return []
     }
 
-    return data || []
+    // Get hydration logs
+    const { data: hydrationLogs, error: hydrationError } = await supabase
+      .from('hydration_logs')
+      .select('*')
+      .gte('logged_time', startDate)
+      .order('logged_time', { ascending: true })
+
+    if (hydrationError) {
+      console.error('Error fetching hydration logs:', hydrationError)
+    }
+
+    // Get health metrics (sleep, weight)
+    const { data: healthMetrics, error: healthError } = await supabase
+      .from('health_metrics')
+      .select('*')
+      .gte('recorded_date', startDate)
+      .in('metric_type', ['sleep_hours', 'sleep_quality', 'weight_kg', 'weight_lbs'])
+      .order('recorded_date', { ascending: true })
+
+    if (healthError) {
+      console.error('Error fetching health metrics:', healthError)
+    }
+
+    const correlations: MetricCorrelation[] = []
+    const now = new Date().toISOString()
+
+    // Helper function to calculate Pearson correlation coefficient
+    const calculateCorrelation = (x: number[], y: number[]): number => {
+      if (x.length !== y.length || x.length < 3) return 0
+
+      const n = x.length
+      const sumX = x.reduce((a, b) => a + b, 0)
+      const sumY = y.reduce((a, b) => a + b, 0)
+      const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0)
+      const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0)
+      const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0)
+
+      const numerator = n * sumXY - sumX * sumY
+      const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY))
+
+      return denominator === 0 ? 0 : numerator / denominator
+    }
+
+    // Helper function to determine significance and confidence
+    const getSignificanceAndConfidence = (correlation: number, sampleSize: number): { isSignificant: boolean, confidence: number } => {
+      const absCorr = Math.abs(correlation)
+      // Using rough statistical significance thresholds
+      const criticalValues = {
+        3: 0.997, 4: 0.95, 5: 0.878, 6: 0.811, 7: 0.754, 8: 0.707, 9: 0.666, 10: 0.632,
+        15: 0.514, 20: 0.444, 25: 0.396, 30: 0.361
+      }
+
+      const criticalValue = criticalValues[Math.min(sampleSize, 30) as keyof typeof criticalValues] || 0.3
+      const isSignificant = absCorr > criticalValue
+      const confidence = Math.min(100, Math.round(absCorr * 100))
+
+      return { isSignificant, confidence }
+    }
+
+    // 1. Sleep duration vs calorie intake correlation
+    if (healthMetrics && meals) {
+      const sleepData: { [key: string]: number } = {}
+      const calorieData: { [key: string]: number } = {}
+
+      // Collect sleep data
+      healthMetrics.filter(m => m.metric_type === 'sleep_hours').forEach(metric => {
+        sleepData[metric.recorded_date] = metric.value
+      })
+
+      // Collect daily calorie data
+      const mealsByDate: { [key: string]: number } = {}
+      meals.forEach(meal => {
+        if (!mealsByDate[meal.meal_date]) mealsByDate[meal.meal_date] = 0
+        mealsByDate[meal.meal_date] += meal.total_calories
+      })
+
+      Object.entries(mealsByDate).forEach(([date, calories]) => {
+        calorieData[date] = calories
+      })
+
+      // Find common dates
+      const commonDates = Object.keys(sleepData).filter(date => calorieData[date])
+      if (commonDates.length >= 5) {
+        const sleepValues = commonDates.map(date => sleepData[date])
+        const calorieValues = commonDates.map(date => calorieData[date])
+
+        const correlation = calculateCorrelation(sleepValues, calorieValues)
+        const { isSignificant, confidence } = getSignificanceAndConfidence(correlation, commonDates.length)
+
+        if (isSignificant) {
+          correlations.push({
+            id: 'sleep-calories-correlation',
+            user_id: '',
+            primary_metric: 'sleep_duration',
+            secondary_metric: 'daily_calories',
+            correlation_coefficient: correlation,
+            confidence_level: confidence,
+            sample_size: commonDates.length,
+            time_window_days: 42,
+            last_calculated: now,
+            is_significant: true,
+            created_at: now,
+            updated_at: now
+          })
+        }
+      }
+    }
+
+    // 2. Evening eating vs sugar consumption correlation
+    if (meals) {
+      const eveningMeals: { [key: string]: number } = {}
+      const sugarIntake: { [key: string]: number } = {}
+
+      // Analyze meals by date - evening meals are after 6 PM
+      meals.forEach(meal => {
+        if (meal.meal_time) {
+          const [hours] = meal.meal_time.split(':').map(Number)
+          const isEvening = hours >= 18
+
+          if (isEvening) {
+            if (!eveningMeals[meal.meal_date]) eveningMeals[meal.meal_date] = 0
+            eveningMeals[meal.meal_date] += meal.total_calories
+          }
+
+          // Estimate sugar content (rough approximation: 10% of carbs)
+          const sugarEstimate = meal.total_carbs * 0.1
+          if (!sugarIntake[meal.meal_date]) sugarIntake[meal.meal_date] = 0
+          sugarIntake[meal.meal_date] += sugarEstimate
+        }
+      })
+
+      // Find dates with both evening meals and sugar intake
+      const validDates = Object.keys(eveningMeals).filter(date => sugarIntake[date] && eveningMeals[date] > 0)
+      if (validDates.length >= 5) {
+        const eveningValues = validDates.map(date => eveningMeals[date])
+        const sugarValues = validDates.map(date => sugarIntake[date])
+
+        const correlation = calculateCorrelation(eveningValues, sugarValues)
+        const { isSignificant, confidence } = getSignificanceAndConfidence(correlation, validDates.length)
+
+        if (isSignificant) {
+          correlations.push({
+            id: 'evening-eating-sugar-correlation',
+            user_id: '',
+            primary_metric: 'evening_calories',
+            secondary_metric: 'sugar_consumption',
+            correlation_coefficient: correlation,
+            confidence_level: confidence,
+            sample_size: validDates.length,
+            time_window_days: 42,
+            last_calculated: now,
+            is_significant: true,
+            created_at: now,
+            updated_at: now
+          })
+        }
+      }
+    }
+
+    // 3. Hydration vs caloric intake correlation
+    if (hydrationLogs && meals) {
+      const hydrationData: { [key: string]: number } = {}
+      const calorieData: { [key: string]: number } = {}
+
+      // Aggregate hydration by date
+      hydrationLogs.forEach(log => {
+        const date = log.logged_time.split('T')[0]
+        if (!hydrationData[date]) hydrationData[date] = 0
+        hydrationData[date] += log.amount_ml
+      })
+
+      // Aggregate calories by date
+      const mealsByDate: { [key: string]: number } = {}
+      meals.forEach(meal => {
+        if (!mealsByDate[meal.meal_date]) mealsByDate[meal.meal_date] = 0
+        mealsByDate[meal.meal_date] += meal.total_calories
+      })
+
+      Object.entries(mealsByDate).forEach(([date, calories]) => {
+        calorieData[date] = calories
+      })
+
+      // Find common dates
+      const commonDates = Object.keys(hydrationData).filter(date => calorieData[date])
+      if (commonDates.length >= 5) {
+        const hydrationValues = commonDates.map(date => hydrationData[date])
+        const calorieValues = commonDates.map(date => calorieData[date])
+
+        const correlation = calculateCorrelation(hydrationValues, calorieValues)
+        const { isSignificant, confidence } = getSignificanceAndConfidence(correlation, commonDates.length)
+
+        if (isSignificant) {
+          correlations.push({
+            id: 'hydration-calories-correlation',
+            user_id: '',
+            primary_metric: 'daily_hydration',
+            secondary_metric: 'daily_calories',
+            correlation_coefficient: correlation,
+            confidence_level: confidence,
+            sample_size: commonDates.length,
+            time_window_days: 42,
+            last_calculated: now,
+            is_significant: true,
+            created_at: now,
+            updated_at: now
+          })
+        }
+      }
+    }
+
+    // 4. Sleep vs weight changes correlation
+    if (healthMetrics) {
+      const sleepData: { [key: string]: number } = {}
+      const weightData: { [key: string]: number } = {}
+
+      // Collect sleep data
+      healthMetrics.filter(m => m.metric_type === 'sleep_hours').forEach(metric => {
+        sleepData[metric.recorded_date] = metric.value
+      })
+
+      // Collect weight data (prefer kg, fallback to lbs converted to kg)
+      healthMetrics.filter(m => m.metric_type === 'weight_kg' || m.metric_type === 'weight_lbs').forEach(metric => {
+        const weight = metric.metric_type === 'weight_lbs' ? metric.value * 0.453592 : metric.value
+        weightData[metric.recorded_date] = weight
+      })
+
+      // Find common dates
+      const commonDates = Object.keys(sleepData).filter(date => weightData[date])
+      if (commonDates.length >= 5) {
+        const sleepValues = commonDates.map(date => sleepData[date])
+        const weightValues = commonDates.map(date => weightData[date])
+
+        const correlation = calculateCorrelation(sleepValues, weightValues)
+        const { isSignificant, confidence } = getSignificanceAndConfidence(correlation, commonDates.length)
+
+        if (isSignificant) {
+          correlations.push({
+            id: 'sleep-weight-correlation',
+            user_id: '',
+            primary_metric: 'sleep_duration',
+            secondary_metric: 'body_weight',
+            correlation_coefficient: correlation,
+            confidence_level: confidence,
+            sample_size: commonDates.length,
+            time_window_days: 42,
+            last_calculated: now,
+            is_significant: true,
+            created_at: now,
+            updated_at: now
+          })
+        }
+      }
+    }
+
+    // Sort by absolute correlation coefficient (strongest first)
+    return correlations.sort((a, b) => Math.abs(b.correlation_coefficient) - Math.abs(a.correlation_coefficient))
+
   } catch (error) {
     console.error('Error in getMetricCorrelations:', error)
     return []
@@ -4828,4 +5265,295 @@ export async function calculateStrengthGains(exerciseId: string): Promise<{
     console.error('Error calculating strength gains:', error)
     return null
   }
+}
+
+// TheMealDB API Integration
+export interface MealDBRecipe {
+  idMeal: string
+  strMeal: string
+  strDrinkAlternate?: string
+  strCategory: string
+  strArea: string
+  strInstructions: string
+  strMealThumb: string
+  strTags?: string
+  strYoutube?: string
+  strIngredient1?: string
+  strIngredient2?: string
+  strIngredient3?: string
+  strIngredient4?: string
+  strIngredient5?: string
+  strIngredient6?: string
+  strIngredient7?: string
+  strIngredient8?: string
+  strIngredient9?: string
+  strIngredient10?: string
+  strIngredient11?: string
+  strIngredient12?: string
+  strIngredient13?: string
+  strIngredient14?: string
+  strIngredient15?: string
+  strIngredient16?: string
+  strIngredient17?: string
+  strIngredient18?: string
+  strIngredient19?: string
+  strIngredient20?: string
+  strMeasure1?: string
+  strMeasure2?: string
+  strMeasure3?: string
+  strMeasure4?: string
+  strMeasure5?: string
+  strMeasure6?: string
+  strMeasure7?: string
+  strMeasure8?: string
+  strMeasure9?: string
+  strMeasure10?: string
+  strMeasure11?: string
+  strMeasure12?: string
+  strMeasure13?: string
+  strMeasure14?: string
+  strMeasure15?: string
+  strMeasure16?: string
+  strMeasure17?: string
+  strMeasure18?: string
+  strMeasure19?: string
+  strMeasure20?: string
+  strSource?: string
+  strImageSource?: string
+  strCreativeCommonsConfirmed?: string
+  dateModified?: string
+}
+
+export interface MealDBResponse {
+  meals: MealDBRecipe[] | null
+}
+
+// Get random meal from TheMealDB
+export async function getRandomMeal(): Promise<MealDBRecipe | null> {
+  try {
+    const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php')
+    const data: MealDBResponse = await response.json()
+    return data.meals ? data.meals[0] : null
+  } catch (error) {
+    console.error('Error fetching random meal:', error)
+    return null
+  }
+}
+
+// Search meals by name
+export async function searchMealsByName(query: string): Promise<MealDBRecipe[]> {
+  try {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`)
+    const data: MealDBResponse = await response.json()
+    return data.meals || []
+  } catch (error) {
+    console.error('Error searching meals by name:', error)
+    return []
+  }
+}
+
+// Get meals by category
+export async function getMealsByCategory(category: string): Promise<MealDBRecipe[]> {
+  try {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(category)}`)
+    const data: MealDBResponse = await response.json()
+    return data.meals || []
+  } catch (error) {
+    console.error('Error fetching meals by category:', error)
+    return []
+  }
+}
+
+// Get meals by area/cuisine
+export async function getMealsByArea(area: string): Promise<MealDBRecipe[]> {
+  try {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?a=${encodeURIComponent(area)}`)
+    const data: MealDBResponse = await response.json()
+    return data.meals || []
+  } catch (error) {
+    console.error('Error fetching meals by area:', error)
+    return []
+  }
+}
+
+// Get meal details by ID
+export async function getMealById(id: string): Promise<MealDBRecipe | null> {
+  try {
+    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`)
+    const data: MealDBResponse = await response.json()
+    return data.meals ? data.meals[0] : null
+  } catch (error) {
+    console.error('Error fetching meal by ID:', error)
+    return null
+  }
+}
+
+// Get all categories
+export async function getMealCategories(): Promise<{ strCategory: string }[]> {
+  try {
+    const response = await fetch('https://www.themealdb.com/api/json/v1/1/categories.php')
+    const data = await response.json()
+    return data.categories || []
+  } catch (error) {
+    console.error('Error fetching meal categories:', error)
+    return []
+  }
+}
+
+// Get all areas/cuisines
+export async function getMealAreas(): Promise<{ strArea: string }[]> {
+  try {
+    const response = await fetch('https://www.themealdb.com/api/json/v1/1/list.php?a=list')
+    const data = await response.json()
+    return data.meals || []
+  } catch (error) {
+    console.error('Error fetching meal areas:', error)
+    return []
+  }
+}
+
+// Get smart recipe suggestions based on time, goals, and dietary preferences
+export async function getSmartRecipeSuggestions(
+  timeOfDay: 'breakfast' | 'lunch' | 'dinner' | 'snack',
+  dietaryPreferences: string[] = [],
+  calorieGoal?: number,
+  currentCalories?: number
+): Promise<MealDBRecipe[]> {
+  try {
+    const suggestions: MealDBRecipe[] = []
+
+    // Time-based suggestions
+    let categories: string[] = []
+    let searchTerms: string[] = []
+
+    switch (timeOfDay) {
+      case 'breakfast':
+        categories = ['Breakfast']
+        searchTerms = ['pancake', 'eggs', 'oatmeal', 'toast', 'cereal']
+        break
+      case 'lunch':
+        categories = ['Chicken', 'Beef', 'Pasta', 'Seafood']
+        searchTerms = ['salad', 'sandwich', 'soup', 'wrap']
+        break
+      case 'dinner':
+        categories = ['Chicken', 'Beef', 'Pasta', 'Seafood', 'Pork', 'Lamb']
+        searchTerms = ['stew', 'curry', 'roast', 'grill']
+        break
+      case 'snack':
+        categories = ['Dessert', 'Miscellaneous']
+        searchTerms = ['fruit', 'yogurt', 'smoothie', 'bar']
+        break
+    }
+
+    // Try category-based suggestions first
+    for (const category of categories) {
+      const meals = await getMealsByCategory(category)
+      if (meals.length > 0) {
+        // Filter by dietary preferences
+        const filteredMeals = meals.filter(meal => {
+          return isMealSuitableForDietaryPreferences(meal, dietaryPreferences)
+        })
+        suggestions.push(...filteredMeals.slice(0, 3))
+      }
+    }
+
+    // If we don't have enough suggestions, try search terms
+    if (suggestions.length < 6) {
+      for (const term of searchTerms) {
+        const meals = await searchMealsByName(term)
+        if (meals.length > 0) {
+          const filteredMeals = meals.filter(meal => {
+            return isMealSuitableForDietaryPreferences(meal, dietaryPreferences)
+          })
+          suggestions.push(...filteredMeals.slice(0, 2))
+        }
+      }
+    }
+
+    // Remove duplicates and limit to 6 suggestions
+    const uniqueSuggestions = suggestions.filter((meal, index, self) =>
+      index === self.findIndex(m => m.idMeal === meal.idMeal)
+    ).slice(0, 6)
+
+    return uniqueSuggestions
+  } catch (error) {
+    console.error('Error getting smart recipe suggestions:', error)
+    return []
+  }
+}
+
+// Helper function to check if a meal is suitable for dietary preferences
+function isMealSuitableForDietaryPreferences(meal: MealDBRecipe, preferences: string[]): boolean {
+  if (preferences.length === 0) return true
+
+  const mealName = meal.strMeal.toLowerCase()
+  const instructions = meal.strInstructions.toLowerCase()
+  const ingredients = getMealIngredients(meal).join(' ').toLowerCase()
+
+  // Check for dietary restrictions
+  for (const preference of preferences) {
+    switch (preference.toLowerCase()) {
+      case 'vegetarian':
+        // Check for meat ingredients
+        if (ingredients.includes('chicken') || ingredients.includes('beef') ||
+            ingredients.includes('pork') || ingredients.includes('fish') ||
+            ingredients.includes('lamb') || ingredients.includes('turkey')) {
+          return false
+        }
+        break
+      case 'vegan':
+        // Check for animal products
+        if (ingredients.includes('chicken') || ingredients.includes('beef') ||
+            ingredients.includes('pork') || ingredients.includes('fish') ||
+            ingredients.includes('lamb') || ingredients.includes('turkey') ||
+            ingredients.includes('milk') || ingredients.includes('cheese') ||
+            ingredients.includes('egg') || ingredients.includes('butter') ||
+            ingredients.includes('honey')) {
+          return false
+        }
+        break
+      case 'gluten-free':
+        if (ingredients.includes('wheat') || ingredients.includes('flour') ||
+            ingredients.includes('bread') || ingredients.includes('pasta') ||
+            ingredients.includes('soy sauce')) {
+          return false
+        }
+        break
+      case 'dairy-free':
+        if (ingredients.includes('milk') || ingredients.includes('cheese') ||
+            ingredients.includes('butter') || ingredients.includes('cream') ||
+            ingredients.includes('yogurt')) {
+          return false
+        }
+        break
+      case 'nut-free':
+        if (ingredients.includes('almond') || ingredients.includes('peanut') ||
+            ingredients.includes('walnut') || ingredients.includes('cashew') ||
+            ingredients.includes('pecan') || ingredients.includes('pistachio')) {
+          return false
+        }
+        break
+      case 'low-carb':
+        // This is harder to determine from ingredients alone, but we can check for high-carb foods
+        if (ingredients.includes('rice') || ingredients.includes('pasta') ||
+            ingredients.includes('bread') || ingredients.includes('potato')) {
+          return false
+        }
+        break
+    }
+  }
+
+  return true
+}
+
+// Helper function to extract ingredients from a meal
+function getMealIngredients(meal: MealDBRecipe): string[] {
+  const ingredients: string[] = []
+  for (let i = 1; i <= 20; i++) {
+    const ingredient = meal[`strIngredient${i}` as keyof MealDBRecipe] as string
+    if (ingredient && ingredient.trim()) {
+      ingredients.push(ingredient.trim())
+    }
+  }
+  return ingredients
 }

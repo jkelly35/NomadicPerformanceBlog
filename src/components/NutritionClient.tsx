@@ -11,7 +11,7 @@ import NutritionFacts from "@/components/NutritionFacts";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import { BarcodeFood } from '@/lib/barcode-api';
 import { useToast } from '@/components/Toast'
-import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake } from '@/lib/fitness-data'
+import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake, getRandomMeal, searchMealsByName, getMealsByCategory, getMealById, getMealCategories, getMealAreas, getSmartRecipeSuggestions, MealDBRecipe } from '@/lib/fitness-data'
 
 interface NutritionData {
   foodItems: FoodItem[]
@@ -49,6 +49,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [data, setData] = useState<NutritionData>(initialData)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
+  const [recipeSuggestions, setRecipeSuggestions] = useState<MealDBRecipe[]>([])
+  const [loadingRecipes, setLoadingRecipes] = useState(false)
 
   // Dynamic imports for code splitting
   const BarcodeScanner = dynamic(() => import('./BarcodeScanner'), {
@@ -500,6 +502,46 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       loadCorrelationsData()
     }
   }, [activeTab])
+
+  // Load recipe suggestions based on time of day and user preferences
+  useEffect(() => {
+    const loadRecipeSuggestions = async () => {
+      if (!user) return
+
+      setLoadingRecipes(true)
+      try {
+        const hour = new Date().getHours()
+        let timeOfDay: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
+        if (hour >= 6 && hour < 10) timeOfDay = 'breakfast'
+        else if (hour >= 10 && hour < 14) timeOfDay = 'lunch'
+        else if (hour >= 14 && hour < 18) timeOfDay = 'snack'
+        else timeOfDay = 'dinner'
+
+        // Get user's dietary preferences from metadata
+        const dietaryPreferences = user.user_metadata?.dietaryPreferences || []
+
+        // Get nutrition goals for calorie context
+        const calorieGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value
+        const currentCalories = data.dailyNutritionStats.total_calories
+
+        const suggestions = await getSmartRecipeSuggestions(
+          timeOfDay,
+          dietaryPreferences,
+          calorieGoal,
+          currentCalories
+        )
+
+        setRecipeSuggestions(suggestions)
+      } catch (error) {
+        console.error('Error loading recipe suggestions:', error)
+      } finally {
+        setLoadingRecipes(false)
+      }
+    }
+
+    loadRecipeSuggestions()
+  }, [user, data.nutritionGoals, data.dailyNutritionStats])
 
   // Meal logging functions
   const addFoodToMeal = (food: FoodItem) => {
@@ -1711,52 +1753,65 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 🧠 Smart Suggestions
               </h3>
 
-              {/* Time-based suggestions */}
+              {/* Recipe suggestions */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(140px, 22vw, 180px), 1fr))',
                 gap: 'clamp(0.5rem, 1.5vw, 0.75rem)',
                 marginBottom: '1rem'
               }}>
-                {(() => {
-                  const hour = new Date().getHours()
-                  const suggestions = []
-
-                  if (hour >= 6 && hour < 10) {
-                    suggestions.push(
-                      { emoji: '🥞', name: 'Breakfast Bowl', desc: 'High protein start' },
-                      { emoji: '🥑', name: 'Avocado Toast', desc: 'Healthy fats' },
-                      { emoji: '🍳', name: 'Egg Scramble', desc: 'Quick & filling' }
-                    )
-                  } else if (hour >= 10 && hour < 14) {
-                    suggestions.push(
-                      { emoji: '🥗', name: 'Power Salad', desc: 'Light & nutritious' },
-                      { emoji: '🥪', name: 'Turkey Wrap', desc: 'Balanced lunch' },
-                      { emoji: '🍜', name: 'Stir Fry Bowl', desc: 'Veggie focused' }
-                    )
-                  } else if (hour >= 14 && hour < 18) {
-                    suggestions.push(
-                      { emoji: '🍎', name: 'Afternoon Snack', desc: 'Sustain energy' },
-                      { emoji: '🥜', name: 'Protein Bar', desc: 'Quick boost' },
-                      { emoji: '🍇', name: 'Fruit Plate', desc: 'Natural sugars' }
-                    )
-                  } else {
-                    suggestions.push(
-                      { emoji: '🍛', name: 'Lean Protein', desc: 'Recovery meal' },
-                      { emoji: '🥦', name: 'Veggie Stir Fry', desc: 'Light dinner' },
-                      { emoji: '🐟', name: 'Grilled Fish', desc: 'Omega-3 rich' }
-                    )
-                  }
-
-                  return suggestions.map((suggestion, index) => (
-                    <button
+                {loadingRecipes ? (
+                  // Loading state
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <div
                       key={index}
+                      style={{
+                        padding: 'clamp(0.75rem, 2.5vw, 1rem)',
+                        background: 'rgba(255,255,255,0.9)',
+                        border: '2px solid #e9ecef',
+                        borderRadius: '12px',
+                        minHeight: '60px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      <div style={{
+                        width: 'clamp(1.2rem, 4vw, 1.5rem)',
+                        height: 'clamp(1.2rem, 4vw, 1.5rem)',
+                        background: '#e9ecef',
+                        borderRadius: '50%',
+                        opacity: 0.7,
+                        animation: 'pulse 1.5s ease-in-out infinite'
+                      }}></div>
+                      <div style={{
+                        width: '60%',
+                        height: 'clamp(0.75rem, 2vw, 0.85rem)',
+                        background: '#e9ecef',
+                        borderRadius: '4px'
+                      }}></div>
+                      <div style={{
+                        width: '80%',
+                        height: 'clamp(0.65rem, 1.8vw, 0.75rem)',
+                        background: '#e9ecef',
+                        borderRadius: '4px'
+                      }}></div>
+                    </div>
+                  ))
+                ) : recipeSuggestions.length > 0 ? (
+                  // Recipe suggestions
+                  recipeSuggestions.slice(0, 3).map((recipe, index) => (
+                    <button
+                      key={recipe.idMeal}
                       onClick={() => {
+                        const hour = new Date().getHours()
                         setSelectedMealType(hour >= 6 && hour < 10 ? 'breakfast' :
                                           hour >= 10 && hour < 14 ? 'lunch' :
                                           hour >= 14 && hour < 18 ? 'snack' : 'dinner')
                         setActiveTab('log')
-                        alert(`Smart suggestion: ${suggestion.name}\n${suggestion.desc}\n\nNavigating to meal logging...`)
+                        alert(`Recipe suggestion: ${recipe.strMeal}\n\n${recipe.strCategory} • ${recipe.strArea}\n\nClick to add this recipe to your meal log!`)
                       }}
                       style={{
                         padding: 'clamp(0.75rem, 2.5vw, 1rem)',
@@ -1787,12 +1842,100 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         e.currentTarget.style.boxShadow = 'none'
                       }}
                     >
-                      <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}>{suggestion.emoji}</div>
-                      <div style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', fontWeight: '600' }}>{suggestion.name}</div>
-                      <div style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.75rem)', color: '#666', fontWeight: 'normal' }}>{suggestion.desc}</div>
+                      <img
+                        src={recipe.strMealThumb}
+                        alt={recipe.strMeal}
+                        style={{
+                          width: 'clamp(1.2rem, 4vw, 1.5rem)',
+                          height: 'clamp(1.2rem, 4vw, 1.5rem)',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <div style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', fontWeight: '600' }}>{recipe.strMeal}</div>
+                      <div style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.75rem)', color: '#666', fontWeight: 'normal' }}>
+                        {recipe.strCategory} • {recipe.strArea}
+                      </div>
                     </button>
                   ))
-                })()}
+                ) : (
+                  // Fallback suggestions if no recipes loaded
+                  (() => {
+                    const hour = new Date().getHours()
+                    const suggestions = []
+
+                    if (hour >= 6 && hour < 10) {
+                      suggestions.push(
+                        { emoji: '🥞', name: 'Breakfast Bowl', desc: 'High protein start' },
+                        { emoji: '🥑', name: 'Avocado Toast', desc: 'Healthy fats' },
+                        { emoji: '🍳', name: 'Egg Scramble', desc: 'Quick & filling' }
+                      )
+                    } else if (hour >= 10 && hour < 14) {
+                      suggestions.push(
+                        { emoji: '🥗', name: 'Power Salad', desc: 'Light & nutritious' },
+                        { emoji: '🥪', name: 'Turkey Wrap', desc: 'Balanced lunch' },
+                        { emoji: '🍜', name: 'Stir Fry Bowl', desc: 'Veggie focused' }
+                      )
+                    } else if (hour >= 14 && hour < 18) {
+                      suggestions.push(
+                        { emoji: '🍎', name: 'Afternoon Snack', desc: 'Sustain energy' },
+                        { emoji: '🥜', name: 'Protein Bar', desc: 'Quick boost' },
+                        { emoji: '🍇', name: 'Fruit Plate', desc: 'Natural sugars' }
+                      )
+                    } else {
+                      suggestions.push(
+                        { emoji: '🍛', name: 'Lean Protein', desc: 'Recovery meal' },
+                        { emoji: '🥦', name: 'Veggie Stir Fry', desc: 'Light dinner' },
+                        { emoji: '🐟', name: 'Grilled Fish', desc: 'Omega-3 rich' }
+                      )
+                    }
+
+                    return suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setSelectedMealType(hour >= 6 && hour < 10 ? 'breakfast' :
+                                            hour >= 10 && hour < 14 ? 'lunch' :
+                                            hour >= 14 && hour < 18 ? 'snack' : 'dinner')
+                          setActiveTab('log')
+                          alert(`Smart suggestion: ${suggestion.name}\n${suggestion.desc}\n\nNavigating to meal logging...`)
+                        }}
+                        style={{
+                          padding: 'clamp(0.75rem, 2.5vw, 1rem)',
+                          background: 'rgba(255,255,255,0.9)',
+                          border: '2px solid #e9ecef',
+                          borderRadius: '12px',
+                          color: '#1a3a2a',
+                          fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          textAlign: 'center',
+                          minHeight: '60px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.25rem'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#fff'
+                          e.currentTarget.style.transform = 'translateY(-2px)'
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#fff'
+                          e.currentTarget.style.transform = 'translateY(0)'
+                          e.currentTarget.style.boxShadow = 'none'
+                        }}
+                      >
+                        <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}>{suggestion.emoji}</div>
+                        <div style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)', fontWeight: '600' }}>{suggestion.name}</div>
+                        <div style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.75rem)', color: '#666', fontWeight: 'normal' }}>{suggestion.desc}</div>
+                      </button>
+                    ))
+                  })()
+                )}
               </div>
 
               {/* Goal-based suggestions */}
@@ -4625,219 +4768,6 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           <div className="space-y-8">
             {/* AI-Powered Nutrition Insights */}
             <NutritionInsightsDisplay showHeader={true} compact={false} />
-
-            {/* Existing Insights System */}
-            <div style={{
-              background: '#fff',
-              borderRadius: '12px',
-              padding: '2rem',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              border: '1px solid #e9ecef'
-            }}>
-              <h2 style={{
-                fontSize: '2rem',
-                fontWeight: 700,
-                color: '#1a3a2a',
-                marginBottom: '2rem',
-                textAlign: 'center'
-              }}>
-                💡 Weekly Nutrition Insights
-              </h2>
-
-            {/* Insights Overview */}
-            <div style={{
-              background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                AI-Powered Nutrition Insights
-              </h3>
-              <p style={{ color: '#666', fontSize: '1.1rem' }}>
-                Get personalized recommendations and insights based on your nutrition patterns
-              </p>
-              <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                💡 Insights are generated weekly from your nutrition data
-              </div>
-            </div>
-
-            {/* Generate Insights Button */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-                Generate Weekly Insights
-              </h3>
-              <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-                Analyze your nutrition data from the past week and get personalized recommendations
-              </p>
-              <button
-                onClick={async () => {
-                  setInsightsLoading(true)
-                  try {
-                    const result = await generateWeeklyInsights()
-                    if (result.success) {
-                      await loadInsightsData()
-                      alert('Weekly insights generated successfully!')
-                    } else {
-                      alert('Failed to generate insights')
-                    }
-                  } catch (error) {
-                    console.error('Error generating insights:', error)
-                    alert('Failed to generate insights')
-                  } finally {
-                    setInsightsLoading(false)
-                  }
-                }}
-                disabled={insightsLoading}
-                style={{
-                  padding: '1rem 2rem',
-                  background: insightsLoading
-                    ? '#6c757d'
-                    : 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  cursor: insightsLoading ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {insightsLoading ? 'Generating...' : '🔍 Generate Insights'}
-              </button>
-            </div>
-
-            {/* Insights List */}
-            <div style={{
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              padding: '2rem'
-            }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-                Your Insights
-              </h3>
-              {userInsights.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💭</div>
-                  <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
-                    No insights yet. Generate your first weekly insights to get started!
-                  </p>
-                  <p style={{ fontSize: '0.9rem' }}>
-                    Insights will help you understand your nutrition patterns and get personalized recommendations.
-                  </p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                  {userInsights.map((insight) => {
-                    const isExpired = insight.expires_at ? new Date(insight.expires_at) < new Date() : false
-                    const priorityColors = {
-                      1: '#4caf50', // Low priority - green
-                      2: '#ff9800', // Medium priority - orange
-                      3: '#f44336'  // High priority - red
-                    }
-
-                    return (
-                      <div key={insight.id} style={{
-                        background: '#fff',
-                        borderRadius: '8px',
-                        padding: '1.5rem',
-                        border: `2px solid ${insight.is_read ? '#e9ecef' : priorityColors[insight.priority as keyof typeof priorityColors] || '#2196f3'}`,
-                        opacity: isExpired ? 0.6 : 1,
-                        position: 'relative'
-                      }}>
-                        {!insight.is_read && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '1rem',
-                            right: '1rem',
-                            width: '12px',
-                            height: '12px',
-                            background: priorityColors[insight.priority as keyof typeof priorityColors] || '#2196f3',
-                            borderRadius: '50%'
-                          }}></div>
-                        )}
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{
-                              fontSize: '1.2rem',
-                              fontWeight: 'bold',
-                              color: '#1a3a2a',
-                              marginBottom: '0.5rem'
-                            }}>
-                              {insight.title}
-                            </div>
-                            <div style={{
-                              fontSize: '1rem',
-                              color: '#666',
-                              lineHeight: '1.5'
-                            }}>
-                              {insight.description}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span style={{
-                              fontSize: '0.8rem',
-                              color: '#666',
-                              background: insight.insight_type === 'weekly_summary' ? '#e3f2fd' :
-                                         insight.insight_type === 'recommendation' ? '#f3e5f5' :
-                                         insight.insight_type === 'habit_nudge' ? '#fff3e0' : '#f5f5f5',
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '12px'
-                            }}>
-                              {insight.insight_type.replace('_', ' ').toUpperCase()}
-                            </span>
-                            <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                              {new Date(insight.created_at).toLocaleDateString()}
-                            </span>
-                            {isExpired && (
-                              <span style={{ fontSize: '0.8rem', color: '#f44336', fontWeight: 'bold' }}>
-                                EXPIRED
-                              </span>
-                            )}
-                          </div>
-
-                          {!insight.is_read && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await markInsightAsRead(insight.id)
-                                  await loadInsightsData()
-                                } catch (error) {
-                                  console.error('Error marking insight as read:', error)
-                                }
-                              }}
-                              style={{
-                                padding: '0.5rem 1rem',
-                                background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontSize: '0.9rem',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Mark as Read ✓
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
           </div>
         )}
 
@@ -4911,6 +4841,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         case 'carb_heavy': return '🍞🍝'
                         case 'vegetarian_meals': return '🥕🥬'
                         case 'irregular_timing': return '⏰🔀'
+                        case 'weekday_vs_weekend': return '🏢🏠'
+                        case 'meal_timing': return '⏰🍽️'
+                        case 'weekly_routine': return '📅🔄'
+                        case 'meal_frequency': return '📊🍽️'
                         default: return '🔄'
                       }
                     }
@@ -4931,7 +4865,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         'protein_focused': `Protein-focused meals ${frequency}% of the time. Great for muscle maintenance!`,
                         'carb_heavy': `Carbohydrate-heavy meals ${frequency}% of the time. Balance with proteins and fats.`,
                         'vegetarian_meals': `Vegetarian meals ${frequency}% of the time. Ensure adequate protein sources.`,
-                        'irregular_timing': `Irregular meal timing ${frequency}% of the time. Consider establishing routines.`
+                        'irregular_timing': `Irregular meal timing ${frequency}% of the time. Consider establishing routines.`,
+                        'weekday_vs_weekend': `Different eating patterns between weekdays and weekends detected. This suggests lifestyle variations.`,
+                        'meal_timing': `Consistent meal timing pattern with ${frequency}% regularity. This supports better digestion.`,
+                        'weekly_routine': `Weekly meal routine established with ${frequency}% consistency. Great for maintaining habits!`,
+                        'meal_frequency': `Consistent daily meal frequency with ${frequency}% regularity. This supports stable energy levels.`
                       }
                       return descriptions[patternType] || `Pattern detected with ${frequency}% frequency.`
                     }
@@ -5136,6 +5074,26 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       return { label: 'Very Weak', color: '#9e9e9e' }
                     }
 
+                    const getCorrelationExplanation = (primary: string, secondary: string, coefficient: number, isPositive: boolean) => {
+                      const explanations: Record<string, string> = {
+                        'sleep_duration-daily_calories': isPositive
+                          ? 'More sleep is associated with higher calorie intake. This may indicate better appetite regulation with adequate rest.'
+                          : 'Less sleep correlates with higher calorie intake. Consider if fatigue affects your eating choices.',
+                        'evening_calories-sugar_consumption': isPositive
+                          ? 'Evening eating tends to include more sugar. This pattern may affect sleep quality and morning energy.'
+                          : 'Evening meals with less sugar detected. This could support better sleep patterns.',
+                        'daily_hydration-daily_calories': isPositive
+                          ? 'Higher hydration correlates with higher calorie intake. Well-hydrated individuals may have better appetite cues.'
+                          : 'Higher hydration with lower calories suggests mindful eating patterns.',
+                        'sleep_duration-body_weight': isPositive
+                          ? 'More sleep is associated with higher weight. This may reflect natural body rhythms or recovery needs.'
+                          : 'Less sleep correlates with higher weight. Consider if sleep deprivation affects metabolism or eating habits.'
+                      }
+
+                      const key = `${primary}-${secondary}`
+                      return explanations[key] || `${isPositive ? 'Positive' : 'Negative'} relationship detected between ${primary.replace('_', ' ')} and ${secondary.replace('_', ' ')}.`
+                    }
+
                     const strength = getCorrelationStrength(correlation.correlation_coefficient)
                     const isPositive = correlation.correlation_coefficient > 0
 
@@ -5171,7 +5129,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                               color: '#666',
                               lineHeight: '1.5'
                             }}>
-                              {isPositive ? 'Positive' : 'Negative'} correlation: When {correlation.primary_metric.replace('_', ' ')} {isPositive ? 'increases' : 'decreases'}, {correlation.secondary_metric.replace('_', ' ')} tends to {isPositive ? 'increase' : 'decrease'}.
+                              {getCorrelationExplanation(correlation.primary_metric, correlation.secondary_metric, correlation.correlation_coefficient, isPositive)}
                             </div>
                           </div>
                         </div>

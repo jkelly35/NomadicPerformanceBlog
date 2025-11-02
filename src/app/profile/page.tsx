@@ -21,7 +21,8 @@ export default function ProfilePage() {
     firstName: '',
     lastName: '',
     bio: '',
-    activities: [] as string[]
+    activities: [] as string[],
+    dietaryPreferences: [] as string[]
   })
   const supabase = createClient()
 
@@ -47,7 +48,8 @@ export default function ProfilePage() {
         firstName: user.user_metadata?.first_name || '',
         lastName: user.user_metadata?.last_name || '',
         bio: user.user_metadata?.bio || '',
-        activities: user.user_metadata?.activities || []
+        activities: user.user_metadata?.activities || [],
+        dietaryPreferences: user.user_metadata?.dietary_preferences || []
       })
     }
   }, [user, loading, router])
@@ -63,7 +65,8 @@ export default function ProfilePage() {
           first_name: formData.firstName,
           last_name: formData.lastName,
           bio: formData.bio,
-          activities: formData.activities
+          activities: formData.activities,
+          dietary_preferences: formData.dietaryPreferences
         }
       })
 
@@ -444,6 +447,61 @@ export default function ProfilePage() {
                           style={{ marginRight: '0.5rem' }}
                         />
                         {activity}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '2rem' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: '#1a3a2a',
+                    marginBottom: '0.5rem'
+                  }}>
+                    Dietary Preferences & Restrictions
+                  </label>
+                  <p style={{
+                    fontSize: '0.8rem',
+                    color: '#666',
+                    marginBottom: '1rem'
+                  }}>
+                    Select your dietary preferences and restrictions to personalize recipe suggestions.
+                  </p>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gap: '0.75rem'
+                  }}>
+                    {[
+                      'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 
+                      'Nut-Free', 'Low-Carb', 'Keto', 'Paleo', 'Mediterranean',
+                      'Halal', 'Kosher', 'Low-Sodium', 'High-Protein'
+                    ].map((preference) => (
+                      <label key={preference} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0.5rem',
+                        background: '#fff',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontSize: '0.9rem'
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.dietaryPreferences.includes(preference)}
+                          onChange={(e) => {
+                            const newPreferences = e.target.checked
+                              ? [...formData.dietaryPreferences, preference]
+                              : formData.dietaryPreferences.filter(p => p !== preference);
+                            setFormData({ ...formData, dietaryPreferences: newPreferences });
+                          }}
+                          style={{ marginRight: '0.5rem' }}
+                        />
+                        {preference}
                       </label>
                     ))}
                   </div>
