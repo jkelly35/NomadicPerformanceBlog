@@ -44,17 +44,21 @@ export default function AboutPage() {
         alt="Joe in the mountains"
         className="min-h-[60vh] flex items-center justify-center text-white text-center px-20 py-16"
         style={{
-          background: 'linear-gradient(135deg, rgba(26,58,42,0.85) 0%, rgba(45,90,61,0.85) 100%)'
+          background: 'linear-gradient(135deg, rgba(26,58,42,0.9) 0%, rgba(45,90,61,0.9) 100%)'
         }}
       >
         <div className="max-w-4xl">
-          <h1 className="text-5xl font-black mb-6 tracking-wide drop-shadow-2xl">
-            Meet Joe
-          </h1>
-          <p className="text-xl opacity-95 leading-relaxed mb-8 drop-shadow-lg">
-            Doctor of Physical Therapy • Certified Strength & Conditioning Specialist • Outdoor Enthusiast
-          </p>
-          <div className="w-24 h-1 bg-white mx-auto rounded"></div>
+          <div className="bg-black/40 backdrop-blur-md rounded-xl px-8 py-6 inline-block mb-6">
+            <h1 className="text-5xl font-black tracking-wide text-white mb-0 drop-shadow-lg">
+              Meet Joe
+            </h1>
+          </div>
+          <div className="bg-black/30 backdrop-blur-sm rounded-lg px-6 py-4 inline-block">
+            <p className="text-xl font-semibold leading-relaxed mb-0 drop-shadow-lg text-white">
+              Doctor of Physical Therapy • Certified Strength & Conditioning Specialist • Outdoor Enthusiast
+            </p>
+          </div>
+          <div className="w-24 h-1 bg-white mx-auto rounded mt-6"></div>
         </div>
       </BackgroundImage>
 
