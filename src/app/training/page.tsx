@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import NavBar from '@/components/NavBar'
 import Footer from '@/components/Footer'
+import BottomNavigation from '@/components/BottomNavigation'
 import TrainingDashboard from '@/components/TrainingDashboard'
 
 export default async function TrainingPage() {
@@ -46,6 +47,11 @@ export default async function TrainingPage() {
         initialWeeklyStats={weeklyWorkoutStats}
       />
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
     </div>
   )
 }

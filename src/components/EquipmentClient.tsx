@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import BottomNavigation from "@/components/BottomNavigation";
 
 interface EquipmentItem {
   id: string
@@ -58,7 +59,7 @@ export default function EquipmentClient({ initialData }: EquipmentClientProps) {
     <div className="min-h-screen bg-gradient-to-br from-stone-50 to-slate-100">
       <NavBar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-20 md:pb-0">
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="text-8xl mb-6">🎒</div>
@@ -156,6 +157,11 @@ export default function EquipmentClient({ initialData }: EquipmentClientProps) {
       </main>
 
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
     </div>
   )
 }

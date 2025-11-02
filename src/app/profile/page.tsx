@@ -10,6 +10,7 @@ import Footer from "../../components/Footer";
 import BackgroundImage from "../../components/BackgroundImage";
 import Toggle from "../../components/Toggle";
 import WearableIntegrations from "../../components/WearableIntegrations";
+import BottomNavigation from "../../components/BottomNavigation";
 import { createClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -1339,6 +1340,15 @@ export default function ProfilePage() {
       </section>
 
       <Footer />
+      <BottomNavigation />
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          main {
+            padding-bottom: 80px; /* Space for bottom navigation */
+          }
+        }
+      `}</style>
     </main>
   )
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar"
 import Footer from "@/components/Footer"
+import BottomNavigation from "@/components/BottomNavigation"
 import InsightsDisplay from "@/components/InsightsDisplay"
 import PerformancePredictionDisplay from "@/components/PerformancePredictionDisplay"
 import TrainingOptimizationDisplay from "@/components/TrainingOptimizationDisplay"
@@ -67,7 +68,7 @@ export default function AnalyticsClient() {
   ]
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <NavBar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -295,6 +296,11 @@ export default function AnalyticsClient() {
       </div>
 
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
     </main>
   )
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import dynamic from 'next/dynamic'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import BottomNavigation from "@/components/BottomNavigation";
 import FoodSearch from "@/components/FoodSearch";
 import NutritionFacts from "@/components/NutritionFacts";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
@@ -1288,7 +1289,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#f9f9f9' }}>
+    <main style={{ minHeight: '100vh', background: '#f9f9f9', paddingBottom: '5rem' }} className="md:pb-0">
       <NavBar />
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
@@ -6728,6 +6729,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         )}
 
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
     </main>
   )
 }

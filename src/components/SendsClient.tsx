@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import BottomNavigation from "@/components/BottomNavigation";
 import {
   Send,
   Equipment,
@@ -559,7 +560,7 @@ export default function SendsClient({ initialData }: SendsClientProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <NavBar />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 pb-20 md:pb-0">
         {/* Hero Section */}
         <div className="mb-8">
           <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl">
@@ -919,6 +920,11 @@ export default function SendsClient({ initialData }: SendsClientProps) {
         )}
       </main>
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
     </div>
   )
 }

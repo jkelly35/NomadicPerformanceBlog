@@ -111,7 +111,7 @@ export default function TrainingDashboard({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20 md:pb-0">
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {/* Hero Section Skeleton */}
           <div className="mb-8">
@@ -140,7 +140,7 @@ export default function TrainingDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pb-20 md:pb-0">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="mb-8">

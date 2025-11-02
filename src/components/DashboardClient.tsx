@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import { usePreferences } from '@/context/PreferencesContext'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import BottomNavigation from "@/components/BottomNavigation";
 import ActivityItem from "@/components/ActivityItem";
 import WeatherWidget from "@/components/WeatherWidget";
 import InsightsDisplay from "@/components/InsightsDisplay";
@@ -392,7 +393,7 @@ function DashboardContent({
   }
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-stone-50 pb-20 md:pb-0">
       <NavBar />
 
       {/* Hero Section */}
@@ -1020,6 +1021,11 @@ function DashboardContent({
       </section>
 
       <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden">
+        <BottomNavigation />
+      </div>
 
       {/* Activity Logging Modal */}
       {showWorkoutModal && (
