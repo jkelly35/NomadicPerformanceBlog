@@ -2434,7 +2434,15 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {(() => {
                 const today = new Date()
                 const monday = new Date(today)
-                monday.setDate(today.getDate() - today.getDay() + 1)
+                // Calculate Monday of current week (or previous week if today is Sunday)
+                const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+                if (dayOfWeek === 0) {
+                  // If today is Sunday, get Monday of previous week
+                  monday.setDate(today.getDate() - 6)
+                } else {
+                  // Otherwise, get Monday of current week
+                  monday.setDate(today.getDate() - dayOfWeek + 1)
+                }
                 const sunday = new Date(monday)
                 sunday.setDate(monday.getDate() + 6)
                 return (
@@ -2454,7 +2462,15 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 // Calculate current week (Monday to Sunday)
                 const today = new Date()
                 const monday = new Date(today)
-                monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+                // Calculate Monday of current week (or previous week if today is Sunday)
+                const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+                if (dayOfWeek === 0) {
+                  // If today is Sunday, get Monday of previous week
+                  monday.setDate(today.getDate() - 6)
+                } else {
+                  // Otherwise, get Monday of current week
+                  monday.setDate(today.getDate() - dayOfWeek + 1)
+                }
 
                 // Get goals
                 const calorieGoal = data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200

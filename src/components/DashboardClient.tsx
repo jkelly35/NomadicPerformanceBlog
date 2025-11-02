@@ -465,6 +465,11 @@ function DashboardContent({
       <section className="py-12 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
 
+          {/* Main Dashboard Title */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-stone-800">📊 Main Dashboard</h1>
+          </div>
+
           {/* Today's Overview */}
           <div className="bg-gradient-to-br from-white to-stone-50 rounded-2xl p-8 mb-12 border border-stone-200 shadow-lg">
             <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">
@@ -568,7 +573,7 @@ function DashboardContent({
                 <Link href="/nutrition" className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl p-6 text-white no-underline block transition-all hover:scale-105 shadow-lg hover:shadow-xl group">
                   <div className="text-center">
                     <div className="text-5xl mb-3 group-hover:animate-bounce">🥗</div>
-                    <h3 className="text-xl font-bold mb-2">Nutrition</h3>
+                    <h3 className="text-xl font-bold mb-2">Nutrition Dashboard</h3>
                     <p className="text-sm opacity-90 leading-tight">Log meals, track macros, fuel your adventures</p>
                   </div>
                 </Link>

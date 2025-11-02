@@ -42,7 +42,15 @@ export default async function NutritionPage() {
     (() => {
       const today = new Date()
       const monday = new Date(today)
-      monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+      // Calculate Monday of current week (or previous week if today is Sunday)
+      const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+      if (dayOfWeek === 0) {
+        // If today is Sunday, get Monday of previous week
+        monday.setDate(today.getDate() - 6)
+      } else {
+        // Otherwise, get Monday of current week
+        monday.setDate(today.getDate() - dayOfWeek + 1)
+      }
       
       const sunday = new Date(monday)
       sunday.setDate(monday.getDate() + 6) // Sunday of current week
@@ -87,7 +95,15 @@ export default async function NutritionPage() {
     (() => {
       const today = new Date()
       const monday = new Date(today)
-      monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+      // Calculate Monday of current week (or previous week if today is Sunday)
+      const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+      if (dayOfWeek === 0) {
+        // If today is Sunday, get Monday of previous week
+        monday.setDate(today.getDate() - 6)
+      } else {
+        // Otherwise, get Monday of current week
+        monday.setDate(today.getDate() - dayOfWeek + 1)
+      }
       monday.setHours(0, 0, 0, 0)
       
       return supabase.from('hydration_logs').select('*')
@@ -98,7 +114,15 @@ export default async function NutritionPage() {
     (() => {
       const today = new Date()
       const monday = new Date(today)
-      monday.setDate(today.getDate() - today.getDay() + 1) // Monday of current week
+      // Calculate Monday of current week (or previous week if today is Sunday)
+      const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+      if (dayOfWeek === 0) {
+        // If today is Sunday, get Monday of previous week
+        monday.setDate(today.getDate() - 6)
+      } else {
+        // Otherwise, get Monday of current week
+        monday.setDate(today.getDate() - dayOfWeek + 1)
+      }
       monday.setHours(0, 0, 0, 0)
       
       return supabase.from('caffeine_logs').select('*')
