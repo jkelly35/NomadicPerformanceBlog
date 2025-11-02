@@ -2212,7 +2212,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         notes: sendData.notes || undefined,
         rating: sendData.rating ? parseInt(sendData.rating) : undefined,
         weather_conditions: sendData.weather_conditions || undefined,
-        partners: sendData.partners || undefined
+        partners: sendData.partners || undefined,
+
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
 
       const result = await createSend(sendPayload)

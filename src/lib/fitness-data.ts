@@ -4376,6 +4376,9 @@ export async function generateHydrationInsights(): Promise<Insight[]> {
         type: 'hydration',
         priority: 'medium',
         title: 'Stay Hydrated',
+        message: 'Start tracking your daily water intake to maintain optimal performance and health.',
+        recommendation: 'Aim for at least 2-3 liters of water per day, more if you\'re active.',
+        created_at: new Date().toISOString()
       })
       return insights
     }
