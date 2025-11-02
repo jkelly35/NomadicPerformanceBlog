@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type PostMeta = {
   title: string;
@@ -16,18 +17,42 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post }: PostCardProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <article
+      ref={cardRef}
       className="post-card"
       style={{
         background: '#fff',
         borderRadius: 'clamp(12px, 3vw, 16px)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
         overflow: 'hidden',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         cursor: 'pointer',
         border: '1px solid rgba(255,255,255,0.8)',
-        position: 'relative'
+        position: 'relative',
+        opacity: isVisible ? 1 : 0.7,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        transition: 'opacity 0.6s ease, transform 0.6s ease, all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
@@ -43,6 +68,36 @@ export default function PostCard({ post }: PostCardProps) {
         height: 'clamp(4px, 1vw, 6px)',
         background: 'linear-gradient(90deg, #ff6b35 0%, #f7931e 50%, #4ecdc4 100%)'
       }}></div>
+
+      {/* Featured Image Area */}
+      <div style={{
+        height: 'clamp(120px, 20vw, 180px)',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {/* Placeholder content - can be replaced with actual images later */}
+        <div style={{
+          fontSize: 'clamp(2rem, 8vw, 3rem)',
+          opacity: 0.3,
+          color: '#6c757d'
+        }}>
+          📝
+        </div>
+        {/* Subtle pattern overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Cpath d="M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z"/%3E%3C/g%3E%3C/svg%3E")',
+          opacity: 0.5
+        }}></div>
+      </div>
 
       <Link href={`/blog/${post.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
         <div style={{

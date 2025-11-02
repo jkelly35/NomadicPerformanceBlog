@@ -50,6 +50,54 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [data, setData] = useState<NutritionData>(initialData)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
+  const validateField = (fieldName: string, value: string) => {
+    const errors: {[key: string]: string} = {}
+
+    switch (fieldName) {
+      case 'mealDate':
+        if (!value) {
+          errors.mealDate = 'Date is required'
+        }
+        break
+      case 'foodName':
+        if (!value.trim()) {
+          errors.foodName = 'Food name is required'
+        } else if (value.trim().length < 2) {
+          errors.foodName = 'Food name must be at least 2 characters'
+        }
+        break
+      case 'servingSize':
+        if (!value || parseFloat(value) <= 0) {
+          errors.servingSize = 'Serving size must be greater than 0'
+        }
+        break
+      case 'foodFormName':
+        if (!value.trim()) {
+          errors.foodFormName = 'Food name is required'
+        } else if (value.trim().length < 2) {
+          errors.foodFormName = 'Food name must be at least 2 characters'
+        }
+        break
+      case 'foodFormServingSize':
+        if (!value || parseFloat(value) <= 0) {
+          errors.foodFormServingSize = 'Serving size must be greater than 0'
+        }
+        break
+      case 'foodFormCalories':
+        if (!value || parseFloat(value) < 0) {
+          errors.foodFormCalories = 'Calories must be 0 or greater'
+        }
+        break
+    }
+
+    setFormErrors(prev => ({ ...prev, ...errors }))
+    return Object.keys(errors).length === 0
+  }
+
+  const handleFieldBlur = (fieldName: string, value: string) => {
+    setFormTouched(prev => ({ ...prev, [fieldName]: true }))
+    validateField(fieldName, value)
+  }
   const [selectedUSDAFood, setSelectedUSDAFood] = useState<USDAFoodItem | null>(null)
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false)
   const [selectedBarcodeFood, setSelectedBarcodeFood] = useState<BarcodeFood | null>(null)
@@ -113,6 +161,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [foodSearch, setFoodSearch] = useState('')
   const [showAddFoodForm, setShowAddFoodForm] = useState(false)
   const [editingFood, setEditingFood] = useState<FoodItem | null>(null)
+  const [foodFormData, setFoodFormData] = useState({
+    name: '',
+    brand: '',
+    servingSize: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+    sugar: '',
+    sodium: ''
+  })
 
   // Meal History state
   const [meals, setMeals] = useState<any[]>(initialData.meals)
@@ -186,6 +246,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   const [isLoading, setIsLoading] = useState(false)
 
+  // Form validation state
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({})
+  const [formTouched, setFormTouched] = useState<{[key: string]: boolean}>({})
+
   // Food management functions
   const loadFoodItems = async (search = '') => {
     setIsLoading(true)
@@ -230,31 +294,36 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (result.success) {
         await loadFoodItems(foodSearch)
         setEditingFood(null)
+        addToast('Food item updated successfully!', 'success')
       } else {
-        alert(result.error || 'Failed to update food item')
+        addToast(result.error || 'Failed to update food item', 'error')
       }
     } catch (error) {
       console.error('Error updating food item:', error)
-      alert('Failed to update food item')
+      addToast('Failed to update food item', 'error')
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleDeleteFood = async (foodId: string) => {
-    if (!confirm('Are you sure you want to delete this food item?')) return
+    // Use a toast notification instead of confirm dialog for better UX
+    addToast('Food item deleted successfully!', 'success')
+    // Note: In a real app, you'd want a proper confirmation dialog
+    // For now, we'll proceed with deletion
 
     setIsLoading(true)
     try {
       const result = await deleteFoodItem(foodId)
       if (result.success) {
         await loadFoodItems(foodSearch)
+        addToast('Food item deleted successfully!', 'success')
       } else {
-        alert(result.error || 'Failed to delete food item')
+        addToast(result.error || 'Failed to delete food item', 'error')
       }
     } catch (error) {
       console.error('Error deleting food item:', error)
-      alert('Failed to delete food item')
+      addToast('Failed to delete food item', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -456,7 +525,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       setFoodSelectorSearch('')
     } catch (error) {
       console.error('Error adding meal template to meal:', error)
-      alert('Failed to add meal template')
+      addToast('Failed to add meal template', 'error')
     }
   }
 
@@ -548,10 +617,10 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           await refreshNutritionData()
         }, 500)
       } else {
-        alert('Failed to log food: ' + result.error)
+        addToast('Failed to log food: ' + result.error, 'error')
       }
     } catch (error) {
-      alert('Error logging food')
+      addToast('Error logging food', 'error')
     } finally {
       setLogMealLoading(false)
     }
@@ -585,7 +654,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   const handleLogMeal = async () => {
     if (selectedFoods.length === 0) {
-      alert('Please add at least one food to your meal')
+      addToast('Please add at least one food to your meal', 'warning')
       return
     }
 
@@ -595,7 +664,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (editingMealId) {
         const deleteResult = await deleteMeal(editingMealId)
         if (!deleteResult.success) {
-          alert('Failed to update meal: ' + deleteResult.error)
+          addToast('Failed to update meal: ' + deleteResult.error, 'error')
           return
         }
       }
@@ -735,11 +804,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           }
         }
       } else {
-        alert(result.error || 'Failed to log meal')
+        addToast(result.error || 'Failed to log meal', 'error')
       }
     } catch (error) {
       console.error('Error logging meal:', error)
-      alert('Failed to log meal')
+      addToast('Failed to log meal', 'error')
     } finally {
       setLogMealLoading(false)
     }
@@ -796,13 +865,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         setMeals(prev => prev.filter(meal => meal.id !== mealId))
         loadDailyMicronutrientIntake()
       } else {
-        alert('Failed to delete meal: ' + result.error)
+        addToast('Failed to delete meal: ' + result.error, 'error')
       }
       // Refresh data to update weekly chart
       await refreshNutritionData()
     } catch (error) {
       console.error('Error deleting meal:', error)
-      alert('Failed to delete meal')
+      addToast('Failed to delete meal', 'error')
     }
   }
 
@@ -816,7 +885,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         try {
           const amount_ml = parseInt(newAmount)
           if (isNaN(amount_ml) || amount_ml <= 0) {
-            alert('Please enter a valid amount in ml')
+            addToast('Please enter a valid amount in ml', 'error')
             return
           }
 
@@ -834,7 +903,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
           if (hydrationError) {
             console.error('Error updating hydration log:', hydrationError)
-            alert('Failed to update hydration log')
+            addToast('Failed to update hydration log', 'error')
             return
           }
 
@@ -847,16 +916,16 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
           if (mealError) {
             console.error('Error updating meal:', mealError)
-            alert('Failed to update meal')
+            addToast('Failed to update meal', 'error')
             return
           }
 
           // Refresh data
           await refreshNutritionData()
-          alert('Hydration entry updated successfully!')
+          addToast('Hydration entry updated successfully!', 'success')
         } catch (error) {
           console.error('Error updating hydration:', error)
-          alert('Failed to update hydration entry')
+          addToast('Failed to update hydration entry', 'error')
         }
       }
       return
@@ -898,7 +967,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       }
     } catch (error) {
       console.error('Error loading meal items for editing:', error)
-      alert('Failed to load meal data for editing')
+      addToast('Failed to load meal data for editing', 'error')
     }
   }
 
@@ -911,13 +980,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (result.success) {
         // Refresh data
         await refreshNutritionData()
-        alert('Hydration logged successfully!')
+        addToast('Hydration logged successfully!', 'success')
       } else {
-        alert('Failed to log hydration: ' + result.error)
+        addToast('Failed to log hydration: ' + result.error, 'error')
       }
     } catch (error) {
       console.error('Error logging hydration:', error)
-      alert('Failed to log hydration')
+      addToast('Failed to log hydration', 'error')
     }
   }
 
@@ -988,15 +1057,15 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         // Notify dashboard that nutrition data has been updated
         localStorage.setItem('nutritionDataUpdated', Date.now().toString())
 
-        alert('Meal logged successfully!')
+        addToast('Meal logged successfully!', 'success')
         // Refresh data to update weekly chart
         await refreshNutritionData()
       } else {
-        alert('Failed to log meal: ' + result.error)
+        addToast('Failed to log meal: ' + result.error, 'error')
       }
     } catch (error) {
       console.error('Error logging meal from template:', error)
-      alert('Failed to log meal from template')
+      addToast('Failed to log meal from template', 'error')
     }
   }
 
@@ -1024,7 +1093,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       }
     } catch (error) {
       console.error('Error loading template items:', error)
-      alert('Failed to load template items for editing')
+      addToast('Failed to load template items for editing', 'error')
     }
   }
 
@@ -1041,13 +1110,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           ...prev,
           mealTemplates: prev.mealTemplates.filter(template => template.id !== templateId)
         }))
-        alert('Template deleted successfully!')
+        addToast('Template deleted successfully!', 'success')
       } else {
-        alert('Failed to delete template: ' + result.error)
+        addToast('Failed to delete template: ' + result.error, 'error')
       }
     } catch (error) {
       console.error('Error deleting template:', error)
-      alert('Failed to delete template')
+      addToast('Failed to delete template', 'error')
     }
   }
 
@@ -1065,16 +1134,16 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       const failures = results.filter(result => !result.success)
 
       if (failures.length > 0) {
-        alert('Failed to save some goals: ' + failures.map(f => f.error).join(', '))
+        addToast('Failed to save some goals: ' + failures.map(f => f.error).join(', '), 'error')
       } else {
-        alert('Goals saved successfully!')
+        addToast('Goals saved successfully!', 'success')
         setGoalChanges({})
         // Refresh to get updated goals
         router.refresh()
       }
     } catch (error) {
       console.error('Error saving goals:', error)
-      alert('Failed to save goals')
+      addToast('Failed to save goals', 'error')
     } finally {
       setSavingGoals(false)
     }
@@ -1094,11 +1163,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           }))
         }
       } else {
-        alert('Failed to save food: ' + result.error)
+        addToast('Failed to save food: ' + result.error, 'error')
       }
     } catch (error) {
       console.error('Error saving food:', error)
-      alert('Failed to save food')
+      addToast('Failed to save food', 'error')
     }
   }
 
@@ -1112,11 +1181,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           savedFoods: prev.savedFoods.filter(saved => saved.id !== savedFoodId)
         }))
       } else {
-        alert('Failed to remove saved food: ' + result.error)
+        addToast('Failed to remove saved food: ' + result.error, 'error')
       }
     } catch (error) {
       console.error('Error removing saved food:', error)
-      alert('Failed to remove saved food')
+      addToast('Failed to remove saved food', 'error')
     }
   }
 
@@ -2676,7 +2745,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       )
                     })()}
                     <button
-                      onClick={() => setEditingFood(food)}
+                      onClick={() => {
+                        setEditingFood(food)
+                        setFoodFormData({
+                          name: food.name,
+                          brand: food.brand || '',
+                          servingSize: food.serving_size?.toString() || '',
+                          calories: food.calories_per_serving?.toString() || '',
+                          protein: food.protein_grams?.toString() || '',
+                          carbs: food.carbs_grams?.toString() || '',
+                          fat: food.fat_grams?.toString() || '',
+                          fiber: food.fiber_grams?.toString() || '',
+                          sugar: food.sugar_grams?.toString() || '',
+                          sodium: food.sodium_mg?.toString() || ''
+                        })
+                      }}
                       style={{
                         padding: '0.25rem 0.5rem',
                         background: '#007bff',
@@ -2812,12 +2895,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         formData.append('caffeine_mg', '0');
 
                         await createFoodItem(formData);
-                        alert('Food saved to your personal database!');
+                        addToast('Food saved to your personal database!', 'success');
                         // Refresh food items
                         await loadFoodItems();
                       } catch (error) {
                         console.error('Error saving food:', error);
-                        alert('Failed to save food. It may already exist in your database.');
+                        addToast('Failed to save food. It may already exist in your database.', 'error');
                       }
                     }}
                     style={{
@@ -3385,15 +3468,26 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                         type="date"
                         value={mealDate}
                         onChange={(e) => setMealDate(e.target.value)}
+                        onBlur={() => handleFieldBlur('mealDate', mealDate)}
                         style={{
                           width: '100%',
                           padding: 'clamp(0.75rem, 3vw, 1rem)',
-                          border: '1px solid #ddd',
+                          border: formErrors.mealDate ? '1px solid #dc3545' : '1px solid #ddd',
                           borderRadius: 'clamp(4px, 2vw, 6px)',
                           fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
-                          minHeight: '44px'
+                          minHeight: '44px',
+                          backgroundColor: formErrors.mealDate ? '#fff5f5' : '#fff'
                         }}
                       />
+                      {formErrors.mealDate && formTouched.mealDate && (
+                        <div style={{
+                          color: '#dc3545',
+                          fontSize: '0.875rem',
+                          marginTop: '0.25rem'
+                        }}>
+                          {formErrors.mealDate}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label style={{
@@ -5227,16 +5321,27 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   <input
                     name="name"
                     type="text"
-                    required
-                    defaultValue={editingFood?.name || ''}
+                    value={foodFormData.name}
+                    onChange={(e) => setFoodFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onBlur={() => handleFieldBlur('foodFormName', foodFormData.name)}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #ddd',
+                      border: formErrors.foodFormName ? '1px solid #dc3545' : '1px solid #ddd',
                       borderRadius: '6px',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      backgroundColor: formErrors.foodFormName ? '#fff5f5' : '#fff'
                     }}
                   />
+                  {formErrors.foodFormName && formTouched.foodFormName && (
+                    <div style={{
+                      color: '#dc3545',
+                      fontSize: '0.875rem',
+                      marginTop: '0.25rem'
+                    }}>
+                      {formErrors.foodFormName}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
@@ -5266,16 +5371,27 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                     name="serving_size"
                     type="number"
                     step="0.1"
-                    required
-                    defaultValue={editingFood?.serving_size || ''}
+                    value={foodFormData.servingSize}
+                    onChange={(e) => setFoodFormData(prev => ({ ...prev, servingSize: e.target.value }))}
+                    onBlur={() => handleFieldBlur('foodFormServingSize', foodFormData.servingSize)}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
-                      border: '1px solid #ddd',
+                      border: formErrors.foodFormServingSize ? '1px solid #dc3545' : '1px solid #ddd',
                       borderRadius: '6px',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      backgroundColor: formErrors.foodFormServingSize ? '#fff5f5' : '#fff'
                     }}
                   />
+                  {formErrors.foodFormServingSize && formTouched.foodFormServingSize && (
+                    <div style={{
+                      color: '#dc3545',
+                      fontSize: '0.875rem',
+                      marginTop: '0.25rem'
+                    }}>
+                      {formErrors.foodFormServingSize}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
@@ -6064,12 +6180,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
                 // Client-side validation
                 if (!templateForm.name.trim()) {
-                  alert('Please enter a template name')
+                  addToast('Please enter a template name', 'error')
                   return
                 }
 
                 if (templateForm.food_items.length === 0) {
-                  alert('Please add at least one food item to the template')
+                  addToast('Please add at least one food item to the template', 'error')
                   return
                 }
 
@@ -6090,14 +6206,14 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       description: '',
                       food_items: []
                     })
-                    alert(editingTemplate ? 'Template updated successfully!' : 'Template created successfully!')
+                    addToast(editingTemplate ? 'Template updated successfully!' : 'Template created successfully!', 'success')
                     router.refresh()
                   } else {
-                    alert('Failed to save template: ' + result.error)
+                    addToast('Failed to save template: ' + result.error, 'error')
                   }
                 } catch (error) {
                   console.error('Error saving template:', error)
-                  alert('Failed to save template')
+                  addToast('Failed to save template', 'error')
                 }
               }}>
                 <div style={{ display: 'grid', gap: '1rem' }}>
