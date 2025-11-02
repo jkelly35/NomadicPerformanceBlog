@@ -10,6 +10,7 @@ interface WeatherData {
   windSpeed: number;
   uvIndex: number;
   isGoodForOutdoorActivity: boolean;
+  location: string;
 }
 
 interface WeatherWidgetProps {
@@ -265,6 +266,9 @@ export default function WeatherWidget({
                   {Math.round(weather.temperature)}°F
                 </div>
                 <div className="text-gray-600 capitalize">{weather.condition}</div>
+                <div className="text-sm text-blue-600 font-medium mt-1">
+                  📍 {weather.location || 'Location Unknown'}
+                </div>
                 {isDemoMode && (
                   <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded mt-1">
                     Demo Mode - Add API key for live data

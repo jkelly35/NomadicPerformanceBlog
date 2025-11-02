@@ -6,6 +6,7 @@ interface WeatherData {
   windSpeed: number;
   uvIndex: number;
   isGoodForOutdoorActivity: boolean;
+  location: string;
 }
 
 // Demo/mock weather data for when API is not configured
@@ -15,7 +16,8 @@ const DEMO_WEATHER_DATA: WeatherData = {
   humidity: 45,
   windSpeed: 8,
   uvIndex: 6,
-  isGoodForOutdoorActivity: true
+  isGoodForOutdoorActivity: true,
+  location: 'Demo Location'
 };
 
 export async function getWeatherForActivity(lat: number, lon: number): Promise<WeatherData> {
@@ -52,7 +54,8 @@ export async function getWeatherForActivity(lat: number, lon: number): Promise<W
     humidity: data.main.humidity || 50, // Default to 50% if not available
     windSpeed: Math.round(data.wind?.speed || 0),
     uvIndex: Math.round(data.uvi || 0),
-    isGoodForOutdoorActivity: isGoodWeatherForActivity(data)
+    isGoodForOutdoorActivity: isGoodWeatherForActivity(data),
+    location: data.name || 'Unknown Location'
   };
 }
 
