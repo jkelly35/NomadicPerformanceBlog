@@ -1288,6 +1288,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
     }
   }
 
+  // Update meals state when initialData changes (e.g., after logging meals from dashboard)
+  useEffect(() => {
+    setMeals(initialData.meals)
+  }, [initialData.meals])
+
   return (
     <main style={{ minHeight: '100vh', background: '#f9f9f9', paddingBottom: '5rem' }} className="md:pb-0">
       <NavBar />
