@@ -191,8 +191,12 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [meals, setMeals] = useState<any[]>(initialData.meals)
   const [mealFilter, setMealFilter] = useState<'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('all')
   const [dateFilter, setDateFilter] = useState(() => {
-    // Default to empty string to show all meals
-    return ''
+    // Default to today's date to show only today's meals
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   })
   const [mealsLoading, setMealsLoading] = useState(false)
 
@@ -1292,6 +1296,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
   // Update meals state when initialData changes (e.g., after logging meals from dashboard)
   useEffect(() => {
+    console.log('Updating meals state with initialData.meals:', initialData.meals?.length, initialData.meals?.map(m => ({ id: m.id, date: `"${m.meal_date}"`, type: m.meal_type })))
     setMeals(initialData.meals)
   }, [initialData.meals])
 
@@ -3371,7 +3376,9 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 <input
                   type="date"
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
+                  onChange={(e) => {
+                    setDateFilter(e.target.value)
+                  }}
                   style={{
                     padding: '0.75rem',
                     border: '1px solid #ddd',
@@ -3381,25 +3388,32 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                 />
               </div>
 
-              {(mealFilter !== 'all' || dateFilter) && (
-                <button
-                  onClick={() => {
-                    setMealFilter('all')
-                    setDateFilter('')
-                  }}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    background: '#6c757d',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    alignSelf: 'flex-end'
-                  }}
-                >
-                  Clear Filters
-                </button>
-              )}
+              {(() => {
+                const today = new Date()
+                const year = today.getFullYear()
+                const month = String(today.getMonth() + 1).padStart(2, '0')
+                const day = String(today.getDate()).padStart(2, '0')
+                const todayStr = `${year}-${month}-${day}`
+                return (mealFilter !== 'all' || dateFilter !== todayStr) && (
+                  <button
+                    onClick={() => {
+                      setMealFilter('all')
+                      setDateFilter(todayStr)
+                    }}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      background: '#6c757d',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      alignSelf: 'flex-end'
+                    }}
+                  >
+                    Reset to Today
+                  </button>
+                )
+              })()}
             </div>
 
             {/* Meals List */}
@@ -3407,7 +3421,13 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               {meals
                 .filter(meal => {
                   if (mealFilter !== 'all' && meal.meal_type !== mealFilter) return false
-                  if (dateFilter && meal.meal_date !== dateFilter) return false
+                  if (dateFilter && dateFilter.trim() !== '') {
+                    // Compare just the date part (YYYY-MM-DD)
+                    const mealDateStr = meal.meal_date.split('T')[0] || meal.meal_date
+                    if (mealDateStr !== dateFilter) {
+                      return false
+                    }
+                  }
                   return true
                 })
                 .sort((a, b) => {

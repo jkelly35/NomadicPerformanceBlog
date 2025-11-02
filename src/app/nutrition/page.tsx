@@ -64,9 +64,8 @@ export default async function NutritionPage() {
 
       return supabase.from('meals').select('*')
         .eq('user_id', user.id)
-        .gte('meal_date', mondayStr)
-        .lte('meal_date', sundayStr)
         .order('meal_date', { ascending: false })
+        .limit(50)
     })(),
     supabase.from('nutrition_goals').select('*').eq('is_active', true),
     supabase.from('meal_templates').select('*').order('created_at', { ascending: false }),
