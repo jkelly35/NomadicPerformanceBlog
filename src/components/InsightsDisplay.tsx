@@ -81,10 +81,10 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-red-200 bg-red-50'
-      case 'medium': return 'border-yellow-200 bg-yellow-50'
-      case 'low': return 'border-green-200 bg-green-50'
-      default: return 'border-gray-200 bg-gray-50'
+      case 'high': return 'border-red-300 bg-gradient-to-r from-red-50 to-red-25'
+      case 'medium': return 'border-amber-300 bg-gradient-to-r from-amber-50 to-amber-25'
+      case 'low': return 'border-emerald-300 bg-gradient-to-r from-emerald-50 to-emerald-25'
+      default: return 'border-slate-300 bg-gradient-to-r from-slate-50 to-slate-25'
     }
   }
 
@@ -94,6 +94,15 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
       case 'medium': return '⚠️'
       case 'low': return '💡'
       default: return '💡'
+    }
+  }
+
+  const getPriorityAccent = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'from-red-500 to-red-600'
+      case 'medium': return 'from-amber-500 to-amber-600'
+      case 'low': return 'from-emerald-500 to-emerald-600'
+      default: return 'from-slate-500 to-slate-600'
     }
   }
 
@@ -110,18 +119,22 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
 
   if (loading) {
     return (
-      <div className={`${compact ? 'p-4' : 'p-6'} bg-white rounded-xl shadow-lg border border-gray-200`}>
+      <div className={`${compact ? 'p-6' : 'p-8'} bg-gradient-to-br from-white via-slate-50/30 to-slate-100/50 rounded-3xl shadow-xl border border-slate-200/50 backdrop-blur-sm`}>
         {showHeader && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="text-2xl">🧠</div>
-            <h3 className="text-lg font-bold text-gray-800">AI Insights</h3>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
+              🧠
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">AI Insights</h3>
+              <p className="text-slate-600 font-medium text-sm">Smart recommendations for your performance</p>
+            </div>
           </div>
         )}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-20 bg-gradient-to-r from-slate-200 to-slate-100 rounded-2xl"></div>
             </div>
           ))}
         </div>
@@ -131,16 +144,24 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
 
   if (error) {
     return (
-      <div className={`${compact ? 'p-4' : 'p-6'} bg-white rounded-xl shadow-lg border border-gray-200`}>
+      <div className={`${compact ? 'p-6' : 'p-8'} bg-gradient-to-br from-white via-slate-50/30 to-slate-100/50 rounded-3xl shadow-xl border border-slate-200/50 backdrop-blur-sm`}>
         {showHeader && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="text-2xl">🧠</div>
-            <h3 className="text-lg font-bold text-gray-800">AI Insights</h3>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
+              🧠
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">AI Insights</h3>
+              <p className="text-slate-600 font-medium text-sm">Smart recommendations for your performance</p>
+            </div>
           </div>
         )}
         <div className="text-center py-8">
-          <div className="text-4xl mb-2">😵</div>
-          <p className="text-gray-600">{error}</p>
+          <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-2xl flex items-center justify-center text-3xl mb-4 mx-auto">
+            😵
+          </div>
+          <p className="text-slate-600 font-medium mb-2">Unable to load insights</p>
+          <p className="text-sm text-slate-500">{error}</p>
         </div>
       </div>
     )
@@ -148,41 +169,55 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
 
   if (insights.length === 0) {
     return (
-      <div className={`${compact ? 'p-4' : 'p-6'} bg-white rounded-xl shadow-lg border border-gray-200`}>
+      <div className={`${compact ? 'p-6' : 'p-8'} bg-gradient-to-br from-white via-slate-50/30 to-slate-100/50 rounded-3xl shadow-xl border border-slate-200/50 backdrop-blur-sm`}>
         {showHeader && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="text-2xl">🧠</div>
-            <h3 className="text-lg font-bold text-gray-800">AI Insights</h3>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
+              🧠
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">AI Insights</h3>
+              <p className="text-slate-600 font-medium text-sm">Smart recommendations for your performance</p>
+            </div>
           </div>
         )}
         <div className="text-center py-8">
-          <div className="text-4xl mb-2">🎯</div>
-          <p className="text-gray-600 mb-2">No insights available yet</p>
-          <p className="text-sm text-gray-500">Start logging your activities to get personalized insights!</p>
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center text-3xl mb-4 mx-auto">
+            🎯
+          </div>
+          <p className="text-slate-600 font-medium mb-2">No insights available yet</p>
+          <p className="text-sm text-slate-500">Start logging your activities to get personalized insights!</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className={`${compact ? 'p-4' : 'p-6'} bg-white rounded-xl shadow-lg border border-gray-200`}>
+    <div className={`${compact ? 'p-6' : 'p-8'} bg-gradient-to-br from-white via-slate-50/30 to-slate-100/50 rounded-3xl shadow-xl border border-slate-200/50 backdrop-blur-sm`}>
       {showHeader && (
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <div className="text-2xl">🧠</div>
-            <h3 className="text-xl font-bold text-gray-800">AI Insights</h3>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg">
+              🧠
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">AI Insights</h3>
+              <p className="text-slate-600 font-medium text-sm">Smart recommendations for your performance</p>
+            </div>
           </div>
-          <div className="text-sm text-gray-500">
-            {insights.length} insight{insights.length !== 1 ? 's' : ''}
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-slate-500 font-medium">
+              {insights.length} insight{insights.length !== 1 ? 's' : ''}
+            </div>
+            <button
+              onClick={refreshInsights}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl text-slate-700 font-semibold hover:bg-white hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              <span className={loading ? 'animate-spin' : ''}>🔄</span>
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </button>
           </div>
-          <button
-            onClick={refreshInsights}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg border border-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className={loading ? 'animate-spin' : ''}>🔄</span>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
         </div>
       )}
 
@@ -190,29 +225,39 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
         {insights.map((insight) => (
           <div
             key={insight.id}
-            className={`p-4 rounded-lg border-l-4 shadow-sm ${getPriorityColor(insight.priority)}`}
+            className={`group relative p-6 rounded-2xl border-l-4 shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-[1.02] overflow-hidden ${getPriorityColor(insight.priority)}`}
           >
-            <div className="flex items-start gap-3">
+            {/* Background gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-transparent to-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+            <div className="relative z-10 flex items-start gap-4">
               <div className="flex-shrink-0">
-                <div className="text-lg">{getPriorityIcon(insight.priority)}</div>
+                <div className={`w-12 h-12 bg-gradient-to-br ${getPriorityAccent(insight.priority)} rounded-2xl flex items-center justify-center text-white text-xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
+                  {getPriorityIcon(insight.priority)}
+                </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="text-sm">{getTypeIcon(insight.type)}</div>
-                  <h4 className="font-semibold text-gray-800 text-sm">{insight.title}</h4>
-                  <span className={`px-2 py-1 text-xs rounded-full capitalize ${
-                    insight.priority === 'high' ? 'bg-red-100 text-red-700' :
-                    insight.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-green-100 text-green-700'
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="text-lg">{getTypeIcon(insight.type)}</div>
+                  <h4 className="font-bold text-slate-800 text-lg leading-tight">{insight.title}</h4>
+                  <span className={`px-3 py-1 text-xs rounded-full font-semibold capitalize shadow-sm ${
+                    insight.priority === 'high' ? 'bg-red-100 text-red-700 border border-red-200' :
+                    insight.priority === 'medium' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                    'bg-emerald-100 text-emerald-700 border border-emerald-200'
                   }`}>
                     {insight.priority}
                   </span>
                 </div>
-                <p className="text-gray-700 text-sm mb-2">{insight.message}</p>
+                <p className="text-slate-700 text-base mb-4 leading-relaxed">{insight.message}</p>
                 {insight.recommendation && (
-                  <div className="bg-white bg-opacity-50 rounded p-3 border border-gray-200">
-                    <p className="text-gray-800 text-sm font-medium">💡 Recommendation:</p>
-                    <p className="text-gray-700 text-sm mt-1">{insight.recommendation}</p>
+                  <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-slate-200/50 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-emerald-600 rounded-lg flex items-center justify-center text-white text-xs">
+                        💡
+                      </div>
+                      <p className="text-slate-800 text-sm font-bold">Recommendation</p>
+                    </div>
+                    <p className="text-slate-700 text-sm leading-relaxed">{insight.recommendation}</p>
                   </div>
                 )}
               </div>
@@ -222,8 +267,8 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
       </div>
 
       {limit && insights.length >= limit && (
-        <div className="mt-4 text-center">
-          <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+        <div className="mt-6 text-center">
+          <button className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-emerald-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105">
             View all insights →
           </button>
         </div>
