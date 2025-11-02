@@ -83,6 +83,7 @@ html, body {
 }
 .blog-content p {
 	margin-bottom: 1.5rem;
+	line-height: 1.8;
 }
 .blog-content ul, .blog-content ol {
 	margin-bottom: 1.5rem;
@@ -90,6 +91,7 @@ html, body {
 }
 .blog-content li {
 	margin-bottom: 0.5rem;
+	line-height: 1.6;
 }
 .blog-content blockquote {
 	border-left: 4px solid #1a3a2a;
@@ -97,19 +99,185 @@ html, body {
 	margin: 1.5rem 0;
 	font-style: italic;
 	color: #555;
+	background: #f8f9fa;
+	padding: 1.5rem;
+	border-radius: 8px;
+	border-left: 4px solid #ff6b35;
 }
 .blog-content code {
 	background: #f4f4f4;
 	padding: 0.2rem 0.4rem;
 	border-radius: 3px;
 	font-family: 'Monaco', monospace;
+	font-size: 0.9em;
 }
 .blog-content pre {
-	background: #f4f4f4;
-	padding: 1rem;
-	border-radius: 5px;
+	background: #2d3748;
+	color: #e2e8f0;
+	padding: 1.5rem;
+	border-radius: 8px;
 	overflow-x: auto;
 	margin: 1.5rem 0;
+	border: 1px solid #4a5568;
+}
+.blog-content pre code {
+	background: transparent;
+	padding: 0;
+}
+
+/* Enhanced table styling */
+.blog-content table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 2rem 0;
+	background: #fff;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.blog-content thead {
+	background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%);
+	color: white;
+}
+.blog-content th {
+	padding: 1rem;
+	text-align: left;
+	font-weight: 600;
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+.blog-content td {
+	padding: 1rem;
+	border-bottom: 1px solid #e2e8f0;
+	font-size: 0.95rem;
+}
+.blog-content tbody tr:hover {
+	background: #f8f9fa;
+}
+
+/* Callout boxes and highlights */
+.blog-content .callout {
+	background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%);
+	border: 1px solid #0ea5e9;
+	border-radius: 8px;
+	padding: 1.5rem;
+	margin: 2rem 0;
+	position: relative;
+}
+.blog-content .callout::before {
+	content: "💡";
+	font-size: 1.5rem;
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+}
+.blog-content .callout > *:first-child {
+	margin-left: 2.5rem;
+}
+
+.blog-content .highlight {
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	border: 1px solid #f59e0b;
+	border-radius: 8px;
+	padding: 1.5rem;
+	margin: 2rem 0;
+	font-weight: 500;
+}
+
+.blog-content .success {
+	background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+	border: 1px solid #10b981;
+	border-radius: 8px;
+	padding: 1.5rem;
+	margin: 2rem 0;
+}
+
+.blog-content .warning {
+	background: linear-gradient(135deg, #fed7d7 0%, #fca5a5 100%);
+	border: 1px solid #ef4444;
+	border-radius: 8px;
+	padding: 1.5rem;
+	margin: 2rem 0;
+}
+
+/* Enhanced link styling */
+.blog-content a {
+	color: #ff6b35;
+	text-decoration: none;
+	transition: all 0.3s ease;
+	position: relative;
+}
+.blog-content a:hover {
+	color: #e55a2b;
+	text-decoration: underline;
+}
+
+/* List styling improvements */
+.blog-content ul {
+	list-style: none;
+	padding-left: 0;
+}
+.blog-content ul li {
+	position: relative;
+	padding-left: 1.5rem;
+	margin-bottom: 0.75rem;
+}
+.blog-content ul li::before {
+	content: "✓";
+	color: #ff6b35;
+	font-weight: bold;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.blog-content ol {
+	counter-reset: list-counter;
+}
+.blog-content ol li {
+	counter-increment: list-counter;
+	padding-left: 1.5rem;
+	margin-bottom: 0.75rem;
+}
+.blog-content ol li::before {
+	content: counter(list-counter) ".";
+	color: #1a3a2a;
+	font-weight: bold;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+/* Emoji and special character styling */
+.blog-content p:first-child::first-letter,
+.blog-content h2:first-letter,
+.blog-content h3:first-letter {
+	float: left;
+	font-size: 3.5rem;
+	line-height: 1;
+	margin-right: 0.5rem;
+	margin-top: 0.3rem;
+	color: #ff6b35;
+	font-weight: bold;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+	.blog-content table {
+		font-size: 0.85rem;
+	}
+	.blog-content th,
+	.blog-content td {
+		padding: 0.75rem 0.5rem;
+	}
+	.blog-content .callout,
+	.blog-content .highlight,
+	.blog-content .success,
+	.blog-content .warning {
+		padding: 1rem;
+		margin: 1.5rem 0;
+	}
 }
 
 /* No global Tailwind utility classes here. Use in JSX only. */
