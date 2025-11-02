@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import SkeletonLoader from '@/components/SkeletonLoader'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import {
   getRecentWorkouts,
   getHealthMetrics,
@@ -109,8 +110,10 @@ export default async function DashboardPage() {
   const data = await getDashboardData()
 
   return (
-    <Suspense fallback={<SkeletonLoader type="dashboard" />}>
-      <DashboardClient data={data} />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<SkeletonLoader type="dashboard" />}>
+        <DashboardClient data={data} />
+      </Suspense>
+    </ErrorBoundary>
   )
 }

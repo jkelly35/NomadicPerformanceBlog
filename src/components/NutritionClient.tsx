@@ -11,6 +11,7 @@ import NutritionInsightsDisplay from "@/components/NutritionInsightsDisplay";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import BarcodeScanner from './BarcodeScanner';
 import { BarcodeFood } from '@/lib/barcode-api';
+import { useToast } from '@/components/Toast'
 import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake } from '@/lib/fitness-data'
 
 interface NutritionData {
@@ -44,6 +45,7 @@ interface NutritionClientProps {
 export default function NutritionClient({ initialData }: NutritionClientProps) {
   const { user } = useAuth()
   const router = useRouter()
+  const { addToast } = useToast()
 
   const [data, setData] = useState<NutritionData>(initialData)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
@@ -204,17 +206,18 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       if (result.success) {
         await loadFoodItems(foodSearch)
         setShowAddFoodForm(false)
+        addToast('Food item created successfully!', 'success')
       } else {
         // Provide more user-friendly error messages
         let errorMessage = result.error || 'Failed to create food item'
         if (errorMessage.includes('duplicate key value') || errorMessage.includes('unique constraint')) {
           errorMessage = 'A food item with this name and brand already exists. Please choose a different name or brand.'
         }
-        alert(errorMessage)
+        addToast(errorMessage, 'error')
       }
     } catch (error) {
       console.error('Error creating food item:', error)
-      alert('Failed to create food item')
+      addToast('Failed to create food item', 'error')
     } finally {
       setIsLoading(false)
     }

@@ -4,6 +4,8 @@ import { getAllPostsMeta, getPostBySlug } from "@/lib/posts";
 import NavBar from "../../../components/NavBar";
 import Footer from "../../../components/Footer";
 import StructuredData, { generateArticleStructuredData, generateBreadcrumbStructuredData } from "@/components/StructuredData";
+import ReadingProgress from "@/components/ReadingProgress";
+import RelatedPosts from "@/components/RelatedPosts";
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
@@ -21,10 +23,14 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { meta } = await getPostBySlug(slug).catch(() => ({ meta: null }));
+  const { meta, content } = await getPostBySlug(slug).catch(() => ({ meta: null, content: "" }));
   if (!meta) return {};
 
   const postUrl = `https://nomadicperformance.com/blog/${slug}`;
+
+  // Calculate reading time (average 200 words per minute)
+  const wordCount = content.split(/\s+/).length;
+  const readingTime = Math.ceil(wordCount / 200);
 
   return {
     title: `${meta.title} — Nomadic Performance`,
@@ -59,6 +65,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: {
       canonical: postUrl,
     },
+    other: {
+      "article:reading_time": readingTime.toString(),
+    },
   };
 }
 
@@ -66,6 +75,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { meta, content } = await getPostBySlug(slug).catch(() => ({ meta: null, content: "" }));
   if (!meta) return notFound();
+
+  // Get all posts for related posts
+  const allPosts = await getAllPostsMeta();
 
   // Process markdown to HTML on the server
   const processedContent = await unified()
@@ -98,6 +110,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     <main>
       <StructuredData data={articleStructuredData} />
       <StructuredData data={breadcrumbStructuredData} />
+      <ReadingProgress />
       <NavBar />
       <section style={{ padding: '2rem 1rem', background: '#f9f9f9', minHeight: '20vh' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
@@ -132,6 +145,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
         </div>
       </section>
+      <RelatedPosts currentPost={meta} allPosts={allPosts} />
       <Footer />
     </main>
   );

@@ -785,9 +785,11 @@ function DashboardContent({
           </div>
 
           {/* AI Insights Section */}
-          <div className="mb-12">
-            <InsightsDisplay limit={3} compact={true} preferences={preferences} />
-          </div>
+          {!preferencesLoading && preferences?.dashboards && (preferences.dashboards.nutrition === true || (preferences.dashboards.activities === true && preferences.dashboards.training === true)) && (
+            <div className="mb-12">
+              <InsightsDisplay limit={3} compact={true} preferences={preferences} />
+            </div>
+          )}
 
           {/* Training Optimization Section */}
           {!preferencesLoading && preferences?.dashboards?.training === true && (
@@ -948,7 +950,7 @@ function DashboardContent({
               </div>
 
               {/* Goal Predictions */}
-              {data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
+              {!preferencesLoading && preferences?.dashboards?.nutrition === true && data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
                 <div className="mt-6 pt-6 border-t border-stone-300">
                   <h4 className="text-lg font-semibold text-stone-800 mb-4">AI Goal Predictions</h4>
                   <div className="grid gap-4">

@@ -68,6 +68,13 @@ export default function TagFilter({ posts }: TagFilterProps) {
     router.push(newUrl);
   };
 
+  const handleTagKeyDown = (tag: string, e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleTagClick(tag);
+    }
+  };
+
   if (allTags.length === 0) return null;
 
   return (
@@ -76,6 +83,9 @@ export default function TagFilter({ posts }: TagFilterProps) {
         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
           Filter by Topic
         </h3>
+        <p id="tag-filter-help" style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+          Use Tab to navigate, Enter or Space to select/deselect tags
+        </p>
         {selectedTags.length > 0 && (
           <button
             onClick={clearAllTags}
@@ -98,6 +108,7 @@ export default function TagFilter({ posts }: TagFilterProps) {
       <div
         role="group"
         aria-label="Article topic filters"
+        aria-describedby="tag-filter-help"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -113,8 +124,10 @@ export default function TagFilter({ posts }: TagFilterProps) {
             <button
               key={tag}
               onClick={() => handleTagClick(tag)}
+              onKeyDown={(e) => handleTagKeyDown(tag, e)}
               aria-pressed={isSelected}
               aria-label={`${isSelected ? 'Remove' : 'Add'} filter for ${tag}`}
+              tabIndex={0}
               style={{
                 background: isSelected ? '#1a3a2a' : '#fff',
                 color: isSelected ? '#fff' : '#1a3a2a',
@@ -125,7 +138,8 @@ export default function TagFilter({ posts }: TagFilterProps) {
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                textTransform: 'capitalize'
+                textTransform: 'capitalize',
+                outline: 'none'
               }}
               onMouseEnter={(e) => {
                 if (!isSelected) {
@@ -138,6 +152,12 @@ export default function TagFilter({ posts }: TagFilterProps) {
                   e.currentTarget.style.borderColor = '#e9ecef';
                   e.currentTarget.style.backgroundColor = '#fff';
                 }
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,58,42,0.2)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               {tag}

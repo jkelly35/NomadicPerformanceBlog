@@ -32,6 +32,13 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
     router.push('/blog');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      handleClear();
+      e.currentTarget.blur();
+    }
+  };
+
   return (
     <form
       onSubmit={handleSearch}
@@ -46,12 +53,19 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
         width: '100%'
       }}
     >
+      <label htmlFor="search-input" style={{ display: 'none' }}>
+        Search articles
+      </label>
       <input
+        id="search-input"
         type="text"
         value={searchTerm}
         onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         aria-label="Search articles"
+        aria-describedby="search-help"
+        autoComplete="off"
         style={{
           width: '100%',
           padding: '0.5rem 2.5rem 0.5rem 1rem',
@@ -65,6 +79,9 @@ export default function SearchBar({ placeholder = "Search articles...", classNam
         onFocus={(e) => e.target.style.borderColor = '#1a3a2a'}
         onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
       />
+      <div id="search-help" style={{ display: 'none' }}>
+        Press Enter to search or Escape to clear
+      </div>
       {searchTerm && (
         <button
           type="button"

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import SkeletonLoader from '@/components/SkeletonLoader'
+import { ToastProvider } from '@/components/Toast'
 import { getDailyCaffeineTotal } from '@/lib/fitness-data'
 
 // Dynamically import the heavy NutritionClient component
@@ -153,25 +154,27 @@ export default async function NutritionPage() {
   const dailyCaffeineTotal = await getDailyCaffeineTotal(today)
 
   return (
-    <Suspense fallback={<SkeletonLoader type="nutrition" />}>
-      <NutritionClient
-        initialData={{
-          foodItems: foodItems || [],
-          meals: meals || [],
-          nutritionGoals: nutritionGoals || [],
-          mealTemplates: mealTemplates || [],
-          savedFoods: savedFoods || [],
-          dailyNutritionStats: dailyStats,
-          hydrationLogs: hydrationLogs || [],
-          caffeineLogs: caffeineLogs || [],
-          micronutrients: micronutrients || [],
-          userInsights: userInsights || [],
-          habitPatterns: habitPatterns || [],
-          metricCorrelations: metricCorrelations || [],
-          dailyHydrationTotal,
-          dailyCaffeineTotal
-        }}
-      />
-    </Suspense>
+    <ToastProvider>
+      <Suspense fallback={<SkeletonLoader type="nutrition" />}>
+        <NutritionClient
+          initialData={{
+            foodItems: foodItems || [],
+            meals: meals || [],
+            nutritionGoals: nutritionGoals || [],
+            mealTemplates: mealTemplates || [],
+            savedFoods: savedFoods || [],
+            dailyNutritionStats: dailyStats,
+            hydrationLogs: hydrationLogs || [],
+            caffeineLogs: caffeineLogs || [],
+            micronutrients: micronutrients || [],
+            userInsights: userInsights || [],
+            habitPatterns: habitPatterns || [],
+            metricCorrelations: metricCorrelations || [],
+            dailyHydrationTotal,
+            dailyCaffeineTotal
+          }}
+        />
+      </Suspense>
+    </ToastProvider>
   )
 }
