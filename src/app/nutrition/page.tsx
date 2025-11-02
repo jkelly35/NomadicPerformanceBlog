@@ -1,13 +1,15 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 import { Suspense } from 'react'
 import SkeletonLoader from '@/components/SkeletonLoader'
 import { ToastProvider } from '@/components/Toast'
 import { getDailyCaffeineTotal } from '@/lib/fitness-data'
 
+export const dynamic = 'force-dynamic'
+
 // Dynamically import the heavy NutritionClient component
-const NutritionClient = dynamic(() => import('../../components/NutritionClient'), {
+const NutritionClient = dynamicImport(() => import('../../components/NutritionClient'), {
   loading: () => <SkeletonLoader type="nutrition" />
 })
 
@@ -59,8 +61,9 @@ export default async function NutritionPage() {
         const day = String(sunday.getDate()).padStart(2, '0')
         return `${year}-${month}-${day}`
       })()
-      
+
       return supabase.from('meals').select('*')
+        .eq('user_id', user.id)
         .gte('meal_date', mondayStr)
         .lte('meal_date', sundayStr)
         .order('meal_date', { ascending: false })

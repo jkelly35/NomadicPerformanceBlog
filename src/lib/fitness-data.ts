@@ -1425,6 +1425,8 @@ export async function logMeal(formData: FormData): Promise<{ success: boolean; e
     const mealTime = formData.get('meal_time') as string || null
     const notes = formData.get('notes') as string || null
 
+    console.log('logMeal: mealDate =', mealDate, 'mealType =', mealType)
+
     // Parse food items from FormData
     const foodItems: Array<{ foodId: string; quantity: number }> = []
     let index = 0

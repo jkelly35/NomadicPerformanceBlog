@@ -191,11 +191,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const [meals, setMeals] = useState<any[]>(initialData.meals)
   const [mealFilter, setMealFilter] = useState<'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'>('all')
   const [dateFilter, setDateFilter] = useState(() => {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
+    // Default to empty string to show all meals
+    return ''
   })
   const [mealsLoading, setMealsLoading] = useState(false)
 
@@ -873,6 +870,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
 
           // Also update the separate meals state used for meal history display
           setMeals(prev => [newMeal, ...prev])
+          
+          // Clear selected foods after successful logging
+          setSelectedFoods([])
+          setMealNotes('')
+          
           loadDailyMicronutrientIntake()
 
           // Notify dashboard that nutrition data has been updated
@@ -1292,6 +1294,19 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   useEffect(() => {
     setMeals(initialData.meals)
   }, [initialData.meals])
+
+  // Listen for nutrition data updates from other components (e.g., dashboard)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'nutritionDataUpdated') {
+        // Refresh the page to get updated data
+        router.refresh()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [router])
 
   return (
     <main style={{ minHeight: '100vh', background: '#f9f9f9', paddingBottom: '5rem' }} className="md:pb-0">
@@ -3396,8 +3411,11 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                   return true
                 })
                 .sort((a, b) => {
-                  // Sort by time descending (most recent first)
-                  // Handle null meal_time values by treating them as empty strings
+                  // Sort by date descending first, then by time descending
+                  const dateCompare = b.meal_date.localeCompare(a.meal_date)
+                  if (dateCompare !== 0) return dateCompare
+                  
+                  // If same date, sort by time descending
                   const aTime = a.meal_time || ''
                   const bTime = b.meal_time || ''
                   return bTime.localeCompare(aTime)
