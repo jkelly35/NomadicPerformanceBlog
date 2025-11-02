@@ -4193,6 +4193,54 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
                       </div>
                     )}
 
+                    {/* Food Items List */}
+                    {meal.food_items && meal.food_items.length > 0 && (
+                      <div style={{
+                        padding: '1rem',
+                        background: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef'
+                      }}>
+                        <div style={{
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          color: '#1a3a2a',
+                          marginBottom: '0.5rem'
+                        }}>
+                          Food Items:
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '0.5rem'
+                        }}>
+                          {meal.food_items.map((food: any, index: number) => (
+                            <div key={index} style={{
+                              background: '#fff',
+                              padding: '0.5rem 0.75rem',
+                              borderRadius: '16px',
+                              border: '1px solid #dee2e6',
+                              fontSize: '0.85rem',
+                              color: '#495057',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}>
+                              <span style={{ fontWeight: '500' }}>{food.name}</span>
+                              {food.brand && (
+                                <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>
+                                  ({food.brand})
+                                </span>
+                              )}
+                              <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>
+                                ×{food.quantity}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {meal.notes && (
                       <div style={{
                         padding: '1rem',

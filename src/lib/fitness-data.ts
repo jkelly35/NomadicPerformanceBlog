@@ -537,6 +537,14 @@ export interface Meal {
   total_fiber: number
   notes?: string
   created_at: string
+  food_items?: Array<{
+    id: string
+    name: string
+    brand?: string
+    quantity: number
+    serving_size: number
+    serving_unit: string
+  }>
 }
 
 export interface MealItem {

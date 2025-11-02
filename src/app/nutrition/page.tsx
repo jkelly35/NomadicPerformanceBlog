@@ -38,7 +38,7 @@ export default async function NutritionPage() {
     { data: metricCorrelations }
   ] = await Promise.all([
     supabase.from('food_items').select('*').order('name'),
-    // Get meals for the current week (Monday to Sunday)
+    // Get meals for the current week (Monday to Sunday) with food items
     (() => {
       const today = new Date()
       const monday = new Date(today)
@@ -70,7 +70,20 @@ export default async function NutritionPage() {
         return `${year}-${month}-${day}`
       })()
 
-      return supabase.from('meals').select('*')
+      return supabase.from('meals').select(`
+        *,
+        meal_items (
+          id,
+          quantity,
+          food_item:food_items (
+            id,
+            name,
+            brand,
+            serving_size,
+            serving_unit
+          )
+        )
+      `)
         .eq('user_id', user.id)
         .order('meal_date', { ascending: false })
         .limit(50)
@@ -139,6 +152,19 @@ export default async function NutritionPage() {
     supabase.from('metric_correlations').select('*').eq('is_significant', true).order('correlation_coefficient', { ascending: false })
   ])
 
+  // Process meals data to include food items in the expected format
+  const processedMeals = (meals || []).map((meal: any) => ({
+    ...meal,
+    food_items: (meal.meal_items || []).map((item: any) => ({
+      id: item.food_item?.id || '',
+      name: item.food_item?.name || 'Unknown Food',
+      brand: item.food_item?.brand || undefined,
+      quantity: item.quantity || 1,
+      serving_size: item.food_item?.serving_size || 0,
+      serving_unit: item.food_item?.serving_unit || 'g'
+    }))
+  }))
+
   // Calculate daily stats
   const dailyStats = (dailyNutritionStats || []).reduce(
     (acc: {
@@ -185,7 +211,7 @@ export default async function NutritionPage() {
         <NutritionClient
           initialData={{
             foodItems: foodItems || [],
-            meals: meals || [],
+            meals: processedMeals || [],
             nutritionGoals: nutritionGoals || [],
             mealTemplates: mealTemplates || [],
             savedFoods: savedFoods || [],
