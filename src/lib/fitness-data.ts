@@ -3502,6 +3502,9 @@ export async function createSend(sendData: {
   rating?: number
   weather_conditions?: string
   partners?: string
+
+  created_at: string
+  updated_at: string
 }): Promise<{ success: boolean; send?: Send; error?: string }> {
   'use server'
   
@@ -3784,7 +3787,7 @@ export async function getNutritionTrends(days: number = 30): Promise<Array<{
         protein: existing.protein + (meal.total_protein || 0),
         carbs: existing.carbs + (meal.total_carbs || 0),
         fat: existing.fat + (meal.total_fat || 0),
-        fiber: existing.fiber + (meal.total_fiber || 0)
+        fiber: existing.fiber + (meal.total_fiber || 0),
       })
     })
 
@@ -4373,9 +4376,6 @@ export async function generateHydrationInsights(): Promise<Insight[]> {
         type: 'hydration',
         priority: 'medium',
         title: 'Stay Hydrated',
-        message: 'Proper hydration is crucial for performance and recovery.',
-        recommendation: 'Aim for 2500-3000ml of water per day. Start tracking your intake!',
-        created_at: new Date().toISOString()
       })
       return insights
     }
