@@ -1,3 +1,56 @@
+-- User preferences table for storing dietary preferences and other user settings
+CREATE TABLE IF NOT EXISTS user_preferences (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  dietary_preferences TEXT[] DEFAULT '{}', -- Array of dietary preferences
+  activities TEXT[] DEFAULT '{}', -- Array of preferred activities
+  first_name TEXT,
+  last_name TEXT,
+  bio TEXT,
+  preferences JSONB, -- Dashboard preferences and other settings
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id)
+);
+
+-- Enable RLS on user_preferences table
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for user_preferences
+CREATE POLICY "Users can view their own preferences" ON user_preferences
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own preferences" ON user_preferences
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own preferences" ON user_preferences
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Function to get or create user preferences
+CREATE OR REPLACE FUNCTION get_or_create_user_preferences()
+RETURNS user_preferences
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  user_prefs user_preferences;
+BEGIN
+  -- Try to get existing preferences
+  SELECT * INTO user_prefs
+  FROM user_preferences
+  WHERE user_id = auth.uid();
+
+  -- If no preferences exist, create default ones
+  IF user_prefs IS NULL THEN
+    INSERT INTO user_preferences (user_id, dietary_preferences, activities)
+    VALUES (auth.uid(), '{}', '{}')
+    RETURNING * INTO user_prefs;
+  END IF;
+
+  RETURN user_prefs;
+END;
+$$;
+
 -- Fitness Dashboard Database Schema
 -- Run these commands in your Supabase SQL editor
 

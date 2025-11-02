@@ -5497,7 +5497,8 @@ function isMealSuitableForDietaryPreferences(meal: MealDBRecipe, preferences: st
         // Check for meat ingredients
         if (ingredients.includes('chicken') || ingredients.includes('beef') ||
             ingredients.includes('pork') || ingredients.includes('fish') ||
-            ingredients.includes('lamb') || ingredients.includes('turkey')) {
+            ingredients.includes('lamb') || ingredients.includes('turkey') ||
+            ingredients.includes('bacon') || ingredients.includes('sausage')) {
           return false
         }
         break
@@ -5506,37 +5507,126 @@ function isMealSuitableForDietaryPreferences(meal: MealDBRecipe, preferences: st
         if (ingredients.includes('chicken') || ingredients.includes('beef') ||
             ingredients.includes('pork') || ingredients.includes('fish') ||
             ingredients.includes('lamb') || ingredients.includes('turkey') ||
+            ingredients.includes('bacon') || ingredients.includes('sausage') ||
             ingredients.includes('milk') || ingredients.includes('cheese') ||
             ingredients.includes('egg') || ingredients.includes('butter') ||
-            ingredients.includes('honey')) {
+            ingredients.includes('cream') || ingredients.includes('yogurt') ||
+            ingredients.includes('honey') || ingredients.includes('gelatin')) {
           return false
         }
         break
       case 'gluten-free':
         if (ingredients.includes('wheat') || ingredients.includes('flour') ||
             ingredients.includes('bread') || ingredients.includes('pasta') ||
-            ingredients.includes('soy sauce')) {
+            ingredients.includes('soy sauce') || ingredients.includes('barley') ||
+            ingredients.includes('rye') || ingredients.includes('oats')) {
           return false
         }
         break
       case 'dairy-free':
         if (ingredients.includes('milk') || ingredients.includes('cheese') ||
             ingredients.includes('butter') || ingredients.includes('cream') ||
-            ingredients.includes('yogurt')) {
+            ingredients.includes('yogurt') || ingredients.includes('sour cream') ||
+            ingredients.includes('ice cream')) {
           return false
         }
         break
       case 'nut-free':
         if (ingredients.includes('almond') || ingredients.includes('peanut') ||
             ingredients.includes('walnut') || ingredients.includes('cashew') ||
-            ingredients.includes('pecan') || ingredients.includes('pistachio')) {
+            ingredients.includes('pecan') || ingredients.includes('pistachio') ||
+            ingredients.includes('hazelnut') || ingredients.includes('macadamia')) {
           return false
         }
         break
       case 'low-carb':
-        // This is harder to determine from ingredients alone, but we can check for high-carb foods
+        // Check for high-carb foods
         if (ingredients.includes('rice') || ingredients.includes('pasta') ||
-            ingredients.includes('bread') || ingredients.includes('potato')) {
+            ingredients.includes('bread') || ingredients.includes('potato') ||
+            ingredients.includes('corn') || ingredients.includes('sugar') ||
+            ingredients.includes('flour')) {
+          return false
+        }
+        break
+      case 'keto':
+        // Very low carb, no grains, sugars, or starchy vegetables
+        if (ingredients.includes('rice') || ingredients.includes('pasta') ||
+            ingredients.includes('bread') || ingredients.includes('potato') ||
+            ingredients.includes('corn') || ingredients.includes('sugar') ||
+            ingredients.includes('flour') || ingredients.includes('beans') ||
+            ingredients.includes('lentils') || ingredients.includes('peas')) {
+          return false
+        }
+        break
+      case 'paleo':
+        // No processed foods, grains, dairy, legumes
+        if (ingredients.includes('rice') || ingredients.includes('pasta') ||
+            ingredients.includes('bread') || ingredients.includes('wheat') ||
+            ingredients.includes('flour') || ingredients.includes('dairy') ||
+            ingredients.includes('milk') || ingredients.includes('cheese') ||
+            ingredients.includes('butter') || ingredients.includes('cream') ||
+            ingredients.includes('beans') || ingredients.includes('lentils') ||
+            ingredients.includes('peas') || ingredients.includes('soy')) {
+          return false
+        }
+        break
+      case 'halal':
+        // No pork, alcohol, blood, carnivorous animals
+        if (ingredients.includes('pork') || ingredients.includes('bacon') ||
+            ingredients.includes('ham') || ingredients.includes('wine') ||
+            ingredients.includes('beer') || ingredients.includes('alcohol')) {
+          return false
+        }
+        break
+      case 'kosher':
+        // No pork, shellfish, mixing meat and dairy
+        if (ingredients.includes('pork') || ingredients.includes('bacon') ||
+            ingredients.includes('ham') || ingredients.includes('shellfish') ||
+            ingredients.includes('shrimp') || ingredients.includes('lobster')) {
+          // Note: Mixing meat and dairy is harder to detect from ingredients alone
+          return false
+        }
+        break
+      case 'pescatarian':
+        // Vegetarian + fish/seafood allowed
+        if (ingredients.includes('chicken') || ingredients.includes('beef') ||
+            ingredients.includes('pork') || ingredients.includes('lamb') ||
+            ingredients.includes('turkey') || ingredients.includes('bacon') ||
+            ingredients.includes('sausage')) {
+          return false
+        }
+        break
+      case 'egg-free':
+        if (ingredients.includes('egg') || ingredients.includes('eggs')) {
+          return false
+        }
+        break
+      case 'soy-free':
+        if (ingredients.includes('soy') || ingredients.includes('tofu') ||
+            ingredients.includes('tempeh') || ingredients.includes('edamame')) {
+          return false
+        }
+        break
+      case 'low-fodmap':
+        // Low FODMAP avoids certain carbs that ferment in gut
+        if (ingredients.includes('onion') || ingredients.includes('garlic') ||
+            ingredients.includes('wheat') || ingredients.includes('rye') ||
+            ingredients.includes('barley') || ingredients.includes('beans') ||
+            ingredients.includes('lentils') || ingredients.includes('apples') ||
+            ingredients.includes('pears') || ingredients.includes('milk')) {
+          return false
+        }
+        break
+      case 'whole30':
+        // Similar to Paleo but stricter - no sweeteners, alcohol, etc.
+        if (ingredients.includes('rice') || ingredients.includes('pasta') ||
+            ingredients.includes('bread') || ingredients.includes('wheat') ||
+            ingredients.includes('flour') || ingredients.includes('dairy') ||
+            ingredients.includes('milk') || ingredients.includes('cheese') ||
+            ingredients.includes('butter') || ingredients.includes('cream') ||
+            ingredients.includes('beans') || ingredients.includes('lentils') ||
+            ingredients.includes('peas') || ingredients.includes('soy') ||
+            ingredients.includes('sugar') || ingredients.includes('alcohol')) {
           return false
         }
         break

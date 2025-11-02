@@ -38,12 +38,15 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       const freshPreferences = JSON.parse(JSON.stringify(newPreferences))
       setPreferences(freshPreferences)
 
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          ...user.user_metadata,
+      // Save to user_preferences table
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
           preferences: freshPreferences
-        }
-      })
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) {
         console.error('Error updating preferences:', error)
@@ -55,32 +58,52 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user && !loadedFromMetadata) {
-      // Load preferences from user metadata only once
-      const userPreferences = user.user_metadata?.preferences as UserPreferences | undefined
-      if (userPreferences) {
-        // Merge existing preferences with defaults to ensure new properties are included
-        const mergedPreferences = {
-          ...defaultPreferences,
-          ...userPreferences,
-          dashboards: {
-            ...defaultPreferences.dashboards,
-            ...userPreferences.dashboards
+      // Load preferences from database
+      const loadPreferences = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .select('preferences')
+            .eq('user_id', user.id)
+            .single();
+
+          if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+            console.error('Error loading preferences:', error);
           }
+
+          if (data?.preferences) {
+            // Merge existing preferences with defaults to ensure new properties are included
+            const userPreferences = data.preferences as UserPreferences;
+            const mergedPreferences = {
+              ...defaultPreferences,
+              ...userPreferences,
+              dashboards: {
+                ...defaultPreferences.dashboards,
+                ...userPreferences.dashboards
+              }
+            }
+            setPreferences(mergedPreferences)
+          } else {
+            // If no preferences exist, set defaults
+            setPreferences(defaultPreferences)
+            // Save them to database
+            updatePreferences(defaultPreferences)
+          }
+        } catch (error) {
+          console.error('Error loading preferences:', error);
+          setPreferences(defaultPreferences);
         }
-        setPreferences(mergedPreferences)
-      } else {
-        // If no preferences exist, set defaults
-        setPreferences(defaultPreferences)
-        // Save them to user metadata
-        updatePreferences(defaultPreferences)
-      }
-      setLoadedFromMetadata(true)
+        setLoadedFromMetadata(true);
+        setLoading(false);
+      };
+
+      loadPreferences();
     } else if (!user) {
       // If no user, use defaults
       setPreferences(defaultPreferences)
       setLoadedFromMetadata(false)
+      setLoading(false);
     }
-    setLoading(false)
   }, [user, loadedFromMetadata])
 
   return (
