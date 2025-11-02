@@ -8,6 +8,7 @@ import { usePreferences } from '@/context/PreferencesContext'
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import BackgroundImage from "../../components/BackgroundImage";
+import Toggle from "../../components/Toggle";
 import { createClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
@@ -386,7 +387,7 @@ export default function ProfilePage() {
                   </p>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                     gap: '0.75rem'
                   }}>
                     {[
@@ -395,30 +396,18 @@ export default function ProfilePage() {
                       'Paleo', 'Mediterranean', 'Halal', 'Kosher', 'Low-Sodium',
                       'High-Protein', 'Low-FODMAP', 'Whole30'
                     ].map((preference) => (
-                      <label key={preference} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '0.5rem',
-                        background: '#fff',
-                        border: '1px solid #ddd',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        fontSize: '0.9rem'
-                      }}>
-                        <input
-                          type="checkbox"
-                          checked={formData.dietaryPreferences.includes(preference)}
-                          onChange={(e) => {
-                            const newPreferences = e.target.checked
-                              ? [...formData.dietaryPreferences, preference]
-                              : formData.dietaryPreferences.filter(p => p !== preference);
-                            setFormData({ ...formData, dietaryPreferences: newPreferences });
-                          }}
-                          style={{ marginRight: '0.5rem' }}
-                        />
-                        {preference}
-                      </label>
+                      <Toggle
+                        key={preference}
+                        checked={formData.dietaryPreferences.includes(preference)}
+                        onChange={(checked) => {
+                          const newPreferences = checked
+                            ? [...formData.dietaryPreferences, preference]
+                            : formData.dietaryPreferences.filter(p => p !== preference);
+                          setFormData({ ...formData, dietaryPreferences: newPreferences });
+                        }}
+                        label={preference}
+                        size="sm"
+                      />
                     ))}
                   </div>
                 </div>
@@ -506,27 +495,14 @@ export default function ProfilePage() {
                   { key: 'activities', label: 'Activities Dashboard', icon: '🏔️' },
                   { key: 'equipment', label: 'Equipment Dashboard', icon: '🎒' }
                 ].map(({ key, label, icon }) => (
-                  <label key={key} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.75rem',
-                    background: '#fff',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                      {icon} {label}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={preferences?.dashboards?.[key as keyof typeof preferences.dashboards] || false}
-                      onChange={(e) => handleDashboardToggle(key as any, e.target.checked)}
-                      style={{ transform: 'scale(1.2)' }}
-                    />
-                  </label>
+                  <Toggle
+                    key={key}
+                    checked={preferences?.dashboards?.[key as keyof typeof preferences.dashboards] || false}
+                    onChange={(checked) => handleDashboardToggle(key as any, checked)}
+                    label={label}
+                    icon={icon}
+                    size="md"
+                  />
                 ))}
               </div>
             </div>
