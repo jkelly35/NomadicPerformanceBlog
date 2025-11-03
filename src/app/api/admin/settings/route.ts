@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-server'
+import { createClient, createAdminClient } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const adminSupabase = await createAdminClient()
 
     // Check if user is main admin
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -16,8 +17,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized - only main admin can access settings' }, { status: 403 })
     }
 
-    // Get admin settings
-    const { data: settings, error: settingsError } = await supabase
+    // Get admin settings (use admin client to bypass RLS)
+    const { data: settings, error: settingsError } = await adminSupabase
       .from('admin_settings')
       .select('*')
 
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const adminSupabase = await createAdminClient()
     const body = await request.json()
     const { dashboardSettings } = body
 
@@ -75,8 +77,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized - only main admin can modify settings' }, { status: 403 })
     }
 
-    // Update the dashboard access settings
-    const { data: updatedSetting, error: updateError } = await supabase
+    // Ensure the admin user exists in admin_users table (use admin client to bypass RLS)
+    const { data: adminUser, error: adminCheckError } = await adminSupabase
+      .from('admin_users')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (adminCheckError || !adminUser) {
+      // Create the admin user if it doesn't exist
+      const { error: createAdminError } = await adminSupabase
+        .from('admin_users')
+        .insert({
+          user_id: user.id,
+          role: 'super_admin',
+          permissions: {
+            read: true,
+            write: true,
+            delete: true,
+            manage_users: true
+          }
+        })
+
+      if (createAdminError) {
+        console.error('Error creating admin user:', createAdminError)
+        return NextResponse.json({ error: 'Failed to setup admin user' }, { status: 500 })
+      }
+    }
+
+    // Update the dashboard access settings (use admin client to bypass RLS)
+    const { data: updatedSetting, error: updateError } = await adminSupabase
       .from('admin_settings')
       .upsert({
         setting_key: 'dashboard_access',
@@ -94,7 +124,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update dashboard settings' }, { status: 500 })
     }
 
-    // Log the setting change
+    // Log the setting change (use regular client since admin_logs should work with RLS)
     try {
       await supabase.from('admin_logs').insert({
         admin_id: user.id,
