@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase-server'
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Check if user is admin
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Check if user is admin
     const { data: { user }, error: userError } = await supabase.auth.getUser()
