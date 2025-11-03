@@ -97,7 +97,8 @@ function DashboardContent({
   handleSportChange,
   handleEquipmentToggle,
   handleSendSubmit,
-  renderSportSpecificFields
+  renderSportSpecificFields,
+  insightsRefreshTrigger
 }: { 
   data: DashboardData
   preferences: any
@@ -189,6 +190,7 @@ function DashboardContent({
   handleEquipmentToggle: (equipmentId: string) => void
   handleSendSubmit: (e: React.FormEvent) => Promise<void>
   renderSportSpecificFields: () => JSX.Element | null
+  insightsRefreshTrigger: number
 }) {
   const router = useRouter()
 
@@ -735,7 +737,7 @@ function DashboardContent({
           {/* AI Insights Section */}
           {!preferencesLoading && preferences?.dashboards && (preferences.dashboards.nutrition === true || (preferences.dashboards.activities === true && preferences.dashboards.training === true)) && (
             <div className="mb-12">
-              <InsightsDisplay limit={3} compact={true} preferences={preferences} />
+              <InsightsDisplay limit={3} compact={true} preferences={preferences} refreshTrigger={insightsRefreshTrigger} />
             </div>
           )}
 
@@ -2013,6 +2015,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [showHealthModal, setShowHealthModal] = useState(false)
   const [showHydrationModal, setShowHydrationModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [insightsRefreshTrigger, setInsightsRefreshTrigger] = useState(0)
 
   // Send/Activity logging states
   const [selectedSport, setSelectedSport] = useState<string>('climbing')
@@ -2625,6 +2628,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
           meals_count: localNutritionStats.meals_count + 1
         }
         setLocalNutritionStats(newStats)
+        // Refresh insights to reflect new meal data
+        setInsightsRefreshTrigger(prev => prev + 1)
         // Refresh the page to sync with server data after a short delay
         setTimeout(() => {
           router.refresh()
@@ -2744,5 +2749,6 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     handleEquipmentToggle={handleEquipmentToggle}
     handleSendSubmit={handleSendSubmit}
     renderSportSpecificFields={renderSportSpecificFields}
+    insightsRefreshTrigger={insightsRefreshTrigger}
   />
 }

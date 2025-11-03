@@ -9,9 +9,10 @@ interface InsightsDisplayProps {
   showHeader?: boolean
   compact?: boolean
   preferences?: UserPreferences
+  refreshTrigger?: number
 }
 
-export default function InsightsDisplay({ limit, showHeader = true, compact = false, preferences }: InsightsDisplayProps) {
+export default function InsightsDisplay({ limit, showHeader = true, compact = false, preferences, refreshTrigger = 0 }: InsightsDisplayProps) {
   const [insights, setInsights] = useState<Insight[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +78,7 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
     }
 
     fetchInsights()
-  }, [limit, preferences])
+  }, [limit, preferences, refreshTrigger])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
