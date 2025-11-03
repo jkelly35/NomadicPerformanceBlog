@@ -107,6 +107,12 @@ export async function GET(request: NextRequest) {
             // Fetch all users from auth.users
             const { data: allUsers, error: usersError } = await adminSupabase.auth.admin.listUsers()
 
+            console.log('Admin API - Service role users fetch:', {
+              userCount: allUsers?.users?.length || 0,
+              error: usersError,
+              hasServiceRole: !!serviceRoleKey
+            })
+
             if (!usersError && allUsers) {
               // Get user preferences for additional data
               const userIds = allUsers.users.map(u => u.id)
@@ -129,11 +135,28 @@ export async function GET(request: NextRequest) {
                 }
               })
 
+              console.log('Admin API - Returning users:', { count: users.length, hasRealUsers: users.length > 0 })
+
+              // If no users found, include current user
+              if (users.length === 0) {
+                users.push({
+                  id: user.id,
+                  email: user.email || '',
+                  created_at: user.created_at,
+                  last_sign_in_at: user.last_sign_in_at,
+                  is_current_user: true,
+                  first_name: null,
+                  last_name: null
+                })
+              }
+
               return NextResponse.json({
                 users,
-                total: allUsers.users.length,
-                note: 'Real user data from Supabase Auth'
+                total: users.length,
+                note: users.length === 1 && users[0].is_current_user ? 'Only current admin user found' : 'Real user data from Supabase Auth'
               })
+            } else {
+              console.log('Admin API - Users fetch failed or returned no data:', { error: usersError, data: allUsers })
             }
           } catch (adminError) {
             console.error('Error with admin client:', adminError)
@@ -176,7 +199,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
           users: mockUsers,
-          note: serviceRoleKey ? 'Service role key configured but failed to fetch users' : 'Configure SERVICE_ROLE_KEY for real user data.'
+          note: serviceRoleKey ? 'Service role configured but no real users found - showing demo data' : 'Configure SERVICE_ROLE_KEY for real user data.'
         })
       } catch (error) {
         console.error('Error fetching users:', error)

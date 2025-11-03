@@ -601,6 +601,7 @@ function OverviewTab() {
 function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boolean, adminStatus: AdminStatus }) {
   const [fetchedUsers, setFetchedUsers] = useState<User[]>([])
   const [fetchLoading, setFetchLoading] = useState(false)
+  const [apiNote, setApiNote] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'email' | 'created_at' | 'last_sign_in_at'>('created_at')
@@ -618,6 +619,7 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
         if (response.ok) {
           const data = await response.json()
           setFetchedUsers(data.users || [])
+          setApiNote(data.note || '')
         }
       } catch (error) {
         console.error('Error fetching users:', error)
@@ -895,6 +897,19 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
           border: '1px solid #ffeaa7'
         }}>
           Note: Only the main admin can view and manage all users.
+        </div>
+      )}
+      {apiNote && (
+        <div style={{
+          background: '#d1ecf1',
+          color: '#0c5460',
+          padding: '1rem',
+          borderRadius: '6px',
+          marginBottom: '1rem',
+          border: '1px solid #bee5eb',
+          fontSize: '0.9rem'
+        }}>
+          <strong>API Status:</strong> {apiNote}
         </div>
       )}
 
