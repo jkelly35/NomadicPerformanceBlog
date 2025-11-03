@@ -1,18 +1,21 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import NavBar from "../../components/NavBar";
 import Footer from "../../components/Footer";
 import { createClient } from '@/lib/supabase'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  const successMessage = searchParams.get('message')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,6 +121,20 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleLogin}>
+            {successMessage && (
+              <div style={{
+                background: '#d4edda',
+                color: '#155724',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                fontSize: '0.9rem',
+                border: '1px solid #c3e6cb'
+              }}>
+                {successMessage}
+              </div>
+            )}
+
             {error && (
               <div style={{
                 background: '#fee',
@@ -176,7 +193,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 required
                 style={{
                   width: '100%',
@@ -205,99 +222,45 @@ export default function LoginPage() {
                 fontSize: '1rem',
                 fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                marginBottom: '1.5rem'
               }}
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
-          </form>
 
-          {/* Additional Info */}
-          <div style={{
-            textAlign: 'center',
-            marginTop: '2rem',
-            paddingTop: '2rem',
-            borderTop: '1px solid #e9ecef'
-          }}>
-            <p style={{
-              fontSize: '0.9rem',
-              color: '#666',
-              marginBottom: '1rem'
-            }}>
-              Don&apos;t have an account yet?
-            </p>
-            <a
-              href="/signup"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                background: 'linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%)',
-                color: '#fff',
-                padding: '0.5rem 1rem',
-                borderRadius: '20px',
-                fontSize: '0.85rem',
-                textDecoration: 'none',
-                transition: 'transform 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H19V9Z" fill="currentColor"/>
-              </svg>
-              Create Account
-            </a>
-          </div>
-
-          {/* Features Preview */}
-          <div style={{
-            marginTop: '2rem',
-            padding: '1.5rem',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-            borderRadius: '8px',
-            border: '1px solid #dee2e6'
-          }}>
-            <h3 style={{
-              fontSize: '1.1rem',
-              fontWeight: 700,
-              color: '#1a3a2a',
-              marginBottom: '1rem',
-              textAlign: 'center'
-            }}>
-              Member Benefits
-            </h3>
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              {[
-                'Personalized training plans',
-                'Progress tracking dashboard',
-                'Exclusive video content',
-                'Direct messaging with coaches',
-                'Custom workout calendars'
-              ].map((feature, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  fontSize: '0.9rem',
-                  color: '#495057'
-                }}>
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    background: '#1a3a2a',
-                    borderRadius: '50%',
-                    flexShrink: 0
-                  }}></div>
-                  {feature}
-                </div>
-              ))}
+            <div style={{ textAlign: 'center' }}>
+              <p style={{
+                fontSize: '0.9rem',
+                color: '#666',
+                marginBottom: '1rem'
+              }}>
+                Don't have an account?{' '}
+                <a
+                  href="/signup"
+                  style={{
+                    color: '#1a3a2a',
+                    fontWeight: 600,
+                    textDecoration: 'none'
+                  }}
+                >
+                  Sign up here
+                </a>
+              </p>
             </div>
-          </div>
+          </form>
         </div>
       </section>
 
       <Footer />
     </main>
-  );
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  )
 }

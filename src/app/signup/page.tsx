@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -33,7 +34,8 @@ export default function SignupPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log('Attempting signup with:', { email, password: '***' })
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -41,13 +43,22 @@ export default function SignupPage() {
         }
       })
 
+      console.log('Signup response:', { data, error })
+
       if (error) {
+        console.error('Signup error:', error)
         setError(error.message)
       } else {
-        // Redirect to login with success message
-        router.push('/login?message=Check your email to confirm your account')
+        console.log('Signup successful, showing success message')
+        setSuccessMessage('Account created successfully! Check your email to confirm your account.')
+        
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          router.push('/login?message=Check your email to confirm your account')
+        }, 3000)
       }
-    } catch {
+    } catch (err) {
+      console.error('Signup exception:', err)
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -135,6 +146,20 @@ export default function SignupPage() {
 
           {/* Signup Form */}
           <form onSubmit={handleSignup}>
+            {successMessage && (
+              <div style={{
+                background: '#d4edda',
+                color: '#155724',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                marginBottom: '1rem',
+                fontSize: '0.9rem',
+                border: '1px solid #c3e6cb'
+              }}>
+                {successMessage}
+              </div>
+            )}
+
             {error && (
               <div style={{
                 background: '#fee',
