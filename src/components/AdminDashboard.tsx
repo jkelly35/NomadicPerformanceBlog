@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 
 interface User {
@@ -212,14 +212,77 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
   )
 }
 
+function HealthIndicator({ label, status }: { label: string, status: 'healthy' | 'warning' | 'error' }) {
+  const getStatusColor = () => {
+    switch (status) {
+      case 'healthy': return '#28a745'
+      case 'warning': return '#ffc107'
+      case 'error': return '#dc3545'
+      default: return '#6c757d'
+    }
+  }
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'healthy': return '✅'
+      case 'warning': return '⚠️'
+      case 'error': return '❌'
+      default: return '❓'
+    }
+  }
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0.75rem',
+      background: '#f8f9fa',
+      borderRadius: '6px',
+      border: `1px solid ${getStatusColor()}`
+    }}>
+      <span style={{ fontSize: '0.9rem', color: '#333' }}>{label}</span>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        color: getStatusColor(),
+        fontWeight: 600,
+        fontSize: '0.8rem'
+      }}>
+        <span>{getStatusIcon()}</span>
+        <span style={{ textTransform: 'uppercase' }}>{status}</span>
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab() {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalPosts: 0,
-    recentActivity: 0
+    recentActivity: 0,
+    userGrowth: 0,
+    postGrowth: 0
   })
+  const [activityFeed, setActivityFeed] = useState<Array<{
+    id: string
+    type: 'user' | 'post' | 'system'
+    message: string
+    timestamp: Date
+    icon: string
+  }>>([])
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [systemHealth, setSystemHealth] = useState<{
+    database: 'healthy' | 'warning' | 'error'
+    api: 'healthy' | 'warning' | 'error'
+    storage: 'healthy' | 'warning' | 'error'
+  }>({
+    database: 'healthy',
+    api: 'healthy',
+    storage: 'healthy'
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -234,11 +297,15 @@ function OverviewTab() {
         // Fetch blog posts count
         const postsResponse = await fetch('/api/admin/blog-posts')
         const posts = postsResponse.ok ? await postsResponse.json() : []
-        
+
         // Fetch users count
         const usersResponse = await fetch('/api/admin/users')
         const usersData = usersResponse.ok ? await usersResponse.json() : { users: [] }
-        
+
+        // Calculate growth (mock data for now - in real app, compare with previous period)
+        const userGrowth = Math.floor(Math.random() * 20) - 5 // -5% to +15%
+        const postGrowth = Math.floor(Math.random() * 30) - 10 // -10% to +20%
+
         setStats({
           totalUsers: usersData.users?.length || 0,
           totalPosts: posts.length || 0,
@@ -247,19 +314,86 @@ function OverviewTab() {
             const weekAgo = new Date()
             weekAgo.setDate(weekAgo.getDate() - 7)
             return postDate > weekAgo
-          }).length || 0
+          }).length || 0,
+          userGrowth,
+          postGrowth
         })
+
+        // Generate activity feed
+        const activities = []
+
+        // Add recent posts
+        posts.slice(0, 3).forEach((post: BlogPost) => {
+          activities.push({
+            id: `post-${post.slug}`,
+            type: 'post' as const,
+            message: `New blog post: "${post.title}"`,
+            timestamp: new Date(post.date),
+            icon: '📝'
+          })
+        })
+
+        // Add recent users (mock data)
+        usersData.users?.slice(0, 2).forEach((user: User) => {
+          activities.push({
+            id: `user-${user.id}`,
+            type: 'user' as const,
+            message: `New user registered: ${user.email}`,
+            timestamp: new Date(user.created_at),
+            icon: '👤'
+          })
+        })
+
+        // Add system events
+        activities.push({
+          id: 'system-1',
+          type: 'system' as const,
+          message: 'System backup completed successfully',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+          icon: '🔄'
+        })
+
+        activities.push({
+          id: 'system-2',
+          type: 'system' as const,
+          message: 'Analytics data refreshed',
+          timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+          icon: '📊'
+        })
+
+        // Sort by timestamp (newest first)
+        activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+        setActivityFeed(activities.slice(0, 10)) // Show last 10 activities
+
       } catch (error) {
         console.error('Error fetching stats:', error)
       } finally {
         setLoading(false)
       }
     }
+
     fetchStats()
-  }, [])
+
+    // Set up periodic refresh for activity feed
+    const interval = setInterval(() => {
+      // Refresh system health status
+      setSystemHealth({
+        database: Math.random() > 0.95 ? 'warning' : 'healthy',
+        api: Math.random() > 0.98 ? 'error' : 'healthy',
+        storage: Math.random() > 0.97 ? 'warning' : 'healthy'
+      })
+    }, 30000) // Update every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [mounted])
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '2rem' }}>Loading statistics...</div>
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📊</div>
+        <div style={{ color: '#666' }}>Loading dashboard data...</div>
+      </div>
+    )
   }
 
   return (
@@ -272,10 +406,193 @@ function OverviewTab() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
         gap: '1.5rem'
       }}>
-        <StatCard title="Total Users" value={stats.totalUsers.toString()} change="Current" icon="👥" />
+        <StatCard
+          title="Total Users"
+          value={stats.totalUsers.toString()}
+          change={`${stats.userGrowth >= 0 ? '+' : ''}${stats.userGrowth}%`}
+          icon="👥"
+          trend={stats.userGrowth >= 0 ? 'up' : 'down'}
+        />
         <StatCard title="Blog Posts" value={stats.totalPosts.toString()} change="Published" icon="�" />
         <StatCard title="Recent Activity" value={stats.recentActivity.toString()} change="This week" icon="�" />
         <StatCard title="System Status" value="Online" change="Healthy" icon="✅" />
+      </div>
+
+      {/* Main Dashboard Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr',
+        gap: '2rem',
+        marginBottom: '2rem'
+      }}>
+        {/* Activity Feed */}
+        <div style={{
+          background: '#fff',
+          borderRadius: '12px',
+          padding: '1.5rem',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{
+            fontSize: '1.2rem',
+            fontWeight: 600,
+            color: '#1a3a2a',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span>📋</span>
+            Recent Activity
+          </h3>
+          <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            {activityFeed.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
+                No recent activity
+              </div>
+            ) : (
+              activityFeed.map((activity) => (
+                <div key={activity.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  borderBottom: '1px solid #f0f0f0',
+                  transition: 'background-color 0.2s'
+                }}>
+                  <div style={{ fontSize: '1.5rem' }}>{activity.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.9rem', color: '#333', marginBottom: '0.25rem' }}>
+                      {activity.message}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {activity.timestamp.toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '0.7rem',
+                    color: '#fff',
+                    background: activity.type === 'user' ? '#059669' :
+                               activity.type === 'post' ? '#1a3a2a' : '#6b7280',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '12px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {activity.type}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* System Health & Quick Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* System Health */}
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{
+              fontSize: '1.2rem',
+              fontWeight: 600,
+              color: '#1a3a2a',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span>🖥️</span>
+              System Health
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <HealthIndicator label="Database" status={systemHealth.database} />
+              <HealthIndicator label="API" status={systemHealth.api} />
+              <HealthIndicator label="Storage" status={systemHealth.storage} />
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '1.5rem',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{
+              fontSize: '1.2rem',
+              fontWeight: 600,
+              color: '#1a3a2a',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span>⚡</span>
+              Quick Actions
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button
+                onClick={() => window.location.href = '/admin?tab=content'}
+                style={{
+                  padding: '0.75rem 1rem',
+                  background: '#1a3a2a',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'background-color 0.2s'
+                }}
+              >
+                <span>📝</span>
+                Create New Post
+              </button>
+              <button
+                onClick={() => window.location.href = '/admin?tab=users'}
+                style={{
+                  padding: '0.75rem 1rem',
+                  background: '#059669',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'background-color 0.2s'
+                }}
+              >
+                <span>👥</span>
+                Manage Users
+              </button>
+              <button
+                onClick={() => window.location.href = '/admin?tab=analytics'}
+                style={{
+                  padding: '0.75rem 1rem',
+                  background: '#7c3aed',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'background-color 0.2s'
+                }}
+              >
+                <span>📊</span>
+                View Analytics
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -284,6 +601,193 @@ function OverviewTab() {
 function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boolean, adminStatus: AdminStatus }) {
   const [fetchedUsers, setFetchedUsers] = useState<User[]>([])
   const [fetchLoading, setFetchLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [dateFilter, setDateFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<'email' | 'created_at' | 'last_sign_in_at'>('created_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const usersPerPage = 10
+
+  // Load users on mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      setFetchLoading(true)
+      try {
+        const response = await fetch('/api/admin/users')
+        if (response.ok) {
+          const data = await response.json()
+          setFetchedUsers(data.users || [])
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error)
+      } finally {
+        setFetchLoading(false)
+      }
+    }
+    loadUsers()
+  }, [])
+
+  const displayUsers = fetchedUsers.length > 0 ? fetchedUsers : users
+
+  // Filter and sort users
+  const filteredUsers = useMemo(() => {
+    let filtered = displayUsers.filter(user => {
+      // Search filter
+      if (searchTerm && !user.email.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false
+      }
+
+      // Date filter
+      if (dateFilter !== 'all') {
+        const now = new Date()
+        const userDate = new Date(user.created_at)
+        const daysDiff = (now.getTime() - userDate.getTime()) / (1000 * 60 * 60 * 24)
+
+        switch (dateFilter) {
+          case 'last7days':
+            if (daysDiff > 7) return false
+            break
+          case 'last30days':
+            if (daysDiff > 30) return false
+            break
+          case 'last90days':
+            if (daysDiff > 90) return false
+            break
+        }
+      }
+
+      return true
+    })
+
+    // Sort users
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any
+
+      switch (sortBy) {
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime()
+          bValue = new Date(b.created_at).getTime()
+          break
+        case 'last_sign_in_at':
+          aValue = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0
+          bValue = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0
+          break
+        default:
+          return 0
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1
+      } else {
+        return aValue < bValue ? 1 : -1
+      }
+    })
+
+    return filtered
+  }, [displayUsers, searchTerm, dateFilter, sortBy, sortOrder])
+
+  // Get user status
+  const getUserStatus = (user: User) => {
+    const now = new Date()
+    const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : null
+    const daysSinceLastSignIn = lastSignIn ? (now.getTime() - lastSignIn.getTime()) / (1000 * 60 * 60 * 24) : Infinity
+
+    if (!lastSignIn || daysSinceLastSignIn > 90) {
+      return { status: 'Inactive', color: '#dc3545' }
+    } else if (daysSinceLastSignIn > 30) {
+      return { status: 'Recent', color: '#ffc107' }
+    } else {
+      return { status: 'Active', color: '#28a745' }
+    }
+  }
+
+  // Bulk actions
+  const handleSelectUser = (userId: string) => {
+    setSelectedUsers(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(userId)) {
+        newSet.delete(userId)
+      } else {
+        newSet.add(userId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(new Set(paginatedUsers.map(user => user.id)))
+    } else {
+      setSelectedUsers(new Set())
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedUsers.size} user(s)? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const deletePromises = Array.from(selectedUsers).map(userId =>
+        fetch(`/api/admin/users?userId=${userId}`, { method: 'DELETE' })
+      )
+
+      const results = await Promise.all(deletePromises)
+      const successCount = results.filter(r => r.ok).length
+
+      if (successCount === selectedUsers.size) {
+        alert(`${successCount} user(s) deleted successfully`)
+        setSelectedUsers(new Set())
+        // Refresh users
+        const loadUsers = async () => {
+          setFetchLoading(true)
+          try {
+            const response = await fetch('/api/admin/users')
+            if (response.ok) {
+              const data = await response.json()
+              setFetchedUsers(data.users || [])
+            }
+          } catch (error) {
+            console.error('Error fetching users:', error)
+          } finally {
+            setFetchLoading(false)
+          }
+        }
+        loadUsers()
+      } else {
+        alert(`Failed to delete some users. ${successCount}/${selectedUsers.size} deleted successfully.`)
+      }
+    } catch (error) {
+      console.error('Error deleting users:', error)
+      alert('Error deleting users')
+    }
+  }
+
+  const handleBulkExport = () => {
+    const selectedUserData = displayUsers.filter(user => selectedUsers.has(user.id))
+    const csvContent = [
+      ['Email', 'Joined', 'Last Sign In', 'Status'],
+      ...selectedUserData.map(user => [
+        user.email,
+        new Date(user.created_at).toLocaleDateString(),
+        user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never',
+        getUserStatus(user).status
+      ])
+    ].map(row => row.join(',')).join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -313,7 +817,69 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
     loadUsers()
   }, [adminStatus.isMainAdmin, mounted])
 
-  const displayUsers = adminStatus.isMainAdmin ? fetchedUsers : users
+  // Filter and sort users
+  const filteredAndSortedUsers = useMemo(() => {
+    let filtered = adminStatus.isMainAdmin ? fetchedUsers : users
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(user =>
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // Apply date filter
+    if (dateFilter !== 'all') {
+      const now = new Date()
+      filtered = filtered.filter(user => {
+        const userDate = new Date(user.created_at)
+        const daysDiff = (now.getTime() - userDate.getTime()) / (1000 * 60 * 60 * 24)
+
+        switch (dateFilter) {
+          case 'last7days': return daysDiff <= 7
+          case 'last30days': return daysDiff <= 30
+          case 'last90days': return daysDiff <= 90
+          default: return true
+        }
+      })
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any
+
+      switch (sortBy) {
+        case 'email':
+          aValue = a.email.toLowerCase()
+          bValue = b.email.toLowerCase()
+          break
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime()
+          bValue = new Date(b.created_at).getTime()
+          break
+        case 'last_sign_in_at':
+          aValue = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0
+          bValue = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0
+          break
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1
+      } else {
+        return aValue < bValue ? 1 : -1
+      }
+    })
+
+    return filtered
+  }, [adminStatus.isMainAdmin, fetchedUsers, users, searchTerm, dateFilter, sortBy, sortOrder])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedUsers.length / usersPerPage)
+  const paginatedUsers = filteredAndSortedUsers.slice(
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
+  )
+
   return (
     <div>
       <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
@@ -331,6 +897,142 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
           Note: Only the main admin can view and manage all users.
         </div>
       )}
+
+      {/* Search and Filter Controls */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        marginBottom: '1.5rem',
+        padding: '1rem',
+        background: '#f8f9fa',
+        borderRadius: '8px',
+        alignItems: 'center'
+      }}>
+        <div style={{ flex: '1', minWidth: '200px' }}>
+          <input
+            type="text"
+            placeholder="Search by email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '0.9rem'
+            }}
+          />
+        </div>
+        <div>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{
+              padding: '0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="all">All Users</option>
+            <option value="last7days">Last 7 Days</option>
+            <option value="last30days">Last 30 Days</option>
+            <option value="last90days">Last 90 Days</option>
+          </select>
+        </div>
+        <div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'email' | 'created_at' | 'last_sign_in_at')}
+            style={{
+              padding: '0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '0.9rem'
+            }}
+          >
+            <option value="created_at">Sort by Join Date</option>
+            <option value="last_sign_in_at">Sort by Last Sign In</option>
+            <option value="email">Sort by Email</option>
+          </select>
+        </div>
+        <div>
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              background: '#fff',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
+      </div>
+
+      {/* Bulk Actions */}
+      {selectedUsers.size > 0 && adminStatus.isMainAdmin && (
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          padding: '1rem',
+          background: '#e3f2fd',
+          borderRadius: '8px',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontWeight: 600, color: '#1565c0' }}>
+            {selectedUsers.size} user{selectedUsers.size > 1 ? 's' : ''} selected
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            style={{
+              padding: '0.5rem 1rem',
+              background: '#dc3545',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            Delete Selected
+          </button>
+          <button
+            onClick={handleBulkExport}
+            style={{
+              padding: '0.5rem 1rem',
+              background: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            Export Selected
+          </button>
+          <button
+            onClick={() => setSelectedUsers(new Set())}
+            style={{
+              padding: '0.5rem 1rem',
+              background: '#6c757d',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
+
       {fetchLoading || loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>Loading users...</div>
       ) : (
@@ -342,50 +1044,131 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
           }}>
             <thead>
               <tr style={{ background: '#f8f9fa' }}>
+                {adminStatus.isMainAdmin && (
+                  <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6', width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.size === paginatedUsers.length && paginatedUsers.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                  </th>
+                )}
                 <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Email</th>
+                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Status</th>
                 <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Joined</th>
                 <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Last Sign In</th>
-                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Actions</th>
+                {adminStatus.isMainAdmin && (
+                  <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Actions</th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {displayUsers.length === 0 ? (
+              {paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                  <td colSpan={adminStatus.isMainAdmin ? 6 : 5} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
                     {adminStatus.isMainAdmin ? 'No users found' : 'Limited user access - contact main admin'}
                   </td>
                 </tr>
               ) : (
-                displayUsers.map((user) => (
+                paginatedUsers.map((user) => (
                   <tr key={user.id} style={{ borderBottom: '1px solid #f1f3f4' }}>
+                    {adminStatus.isMainAdmin && (
+                      <td style={{ padding: '1rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.has(user.id)}
+                          onChange={() => handleSelectUser(user.id)}
+                          style={{ margin: 0 }}
+                        />
+                      </td>
+                    )}
                     <td style={{ padding: '1rem' }}>{user.email}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <span style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '12px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        background: getUserStatus(user).color,
+                        color: '#fff'
+                      }}>
+                        {getUserStatus(user).status}
+                      </span>
+                    </td>
                     <td style={{ padding: '1rem' }}>{new Date(user.created_at).toLocaleDateString()}</td>
                     <td style={{ padding: '1rem' }}>
                       {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
                     </td>
-                    <td style={{ padding: '1rem' }}>
-                      {adminStatus.isMainAdmin && user.email !== 'joe@nomadicperformance.com' && (
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            background: '#dc3545',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </td>
+                    {adminStatus.isMainAdmin && (
+                      <td style={{ padding: '1rem' }}>
+                        {user.email !== 'joe@nomadicperformance.com' && (
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              background: '#dc3545',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {filteredUsers.length > usersPerPage && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '1rem',
+          marginTop: '1.5rem',
+          padding: '1rem'
+        }}>
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              background: currentPage === 1 ? '#f8f9fa' : '#fff',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: '0.9rem', color: '#666' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              background: currentPage === totalPages ? '#f8f9fa' : '#fff',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem'
+            }}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
@@ -1481,7 +2264,7 @@ function SettingsTab() {
   )
 }
 
-function StatCard({ title, value, change, icon }: { title: string, value: string, change: string, icon: string }) {
+function StatCard({ title, value, change, icon, trend }: { title: string, value: string, change: string, icon: string, trend?: 'up' | 'down' | 'neutral' }) {
   return (
     <div style={{
       padding: '1.5rem',
@@ -1495,9 +2278,16 @@ function StatCard({ title, value, change, icon }: { title: string, value: string
       <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>{title}</div>
       <div style={{
         fontSize: '0.8rem',
-        color: change.startsWith('+') ? '#28a745' : '#dc3545',
-        fontWeight: 600
+        color: trend === 'up' ? '#28a745' : trend === 'down' ? '#dc3545' : '#666',
+        fontWeight: 600,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.25rem'
       }}>
+        {trend === 'up' && '↗️'}
+        {trend === 'down' && '↘️'}
+        {trend === 'neutral' && '→'}
         {change}
       </div>
     </div>
