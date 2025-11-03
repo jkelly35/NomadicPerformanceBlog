@@ -8,6 +8,8 @@ import OfflineIndicator from '@/components/OfflineIndicator';
 import StructuredData, { organizationStructuredData } from '@/components/StructuredData';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SkipLink from '@/components/SkipLink';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Physical Therapy & Outdoor Performance Training",
@@ -107,6 +109,8 @@ export default function RootLayout({
             </PreferencesProvider>
           </AuthProvider>
         </ErrorBoundary>
+        <GoogleAnalytics />
+        <Analytics />
       </body>
     </html>
   );

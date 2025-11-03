@@ -699,85 +699,156 @@ function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[]
 }
 
 function AnalyticsTab() {
-  const [analyticsData, setAnalyticsData] = useState({
-    pageViews: 0,
-    uniqueVisitors: 0,
-    bounceRate: 0,
-    avgSessionDuration: 0,
-    topPages: [] as { page: string; views: number }[],
-    userGrowth: [] as { date: string; users: number }[],
-    deviceTypes: [] as { device: string; percentage: number }[]
-  })
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [autoRefresh, setAutoRefresh] = useState(false)
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      setLoading(true)
-      try {
-        // Fetch blog posts for content analytics
-        const postsResponse = await fetch('/api/admin/blog-posts')
-        const posts = postsResponse.ok ? await postsResponse.json() : []
-
-        // Fetch users for user analytics
-        const usersResponse = await fetch('/api/admin/users')
-        const usersData = usersResponse.ok ? await usersResponse.json() : { users: [] }
-
-        // Mock analytics data based on real data
-        const totalPosts = posts.length
-        const totalUsers = usersData.users?.length || 1
-
-        // Calculate some basic metrics
-        const recentPosts = posts.filter((post: BlogPost) => {
-          const postDate = new Date(post.date)
-          const monthAgo = new Date()
-          monthAgo.setMonth(monthAgo.getMonth() - 1)
-          return postDate > monthAgo
-        }).length
-
-        setAnalyticsData({
-          pageViews: totalPosts * 150 + totalUsers * 50, // Estimated page views
-          uniqueVisitors: totalUsers * 3, // Estimated unique visitors
-          bounceRate: 35 + Math.random() * 20, // Random bounce rate between 35-55%
-          avgSessionDuration: 120 + Math.random() * 180, // Random session duration
-          topPages: [
-            { page: '/', views: totalPosts * 45 },
-            { page: '/blog', views: totalPosts * 30 },
-            { page: '/dashboard', views: totalUsers * 15 },
-            { page: '/admin', views: totalUsers * 2 },
-            { page: '/contact', views: totalUsers * 8 }
-          ],
-          userGrowth: [
-            { date: '2024-01', users: Math.floor(totalUsers * 0.3) },
-            { date: '2024-02', users: Math.floor(totalUsers * 0.5) },
-            { date: '2024-03', users: Math.floor(totalUsers * 0.7) },
-            { date: '2024-04', users: Math.floor(totalUsers * 0.9) },
-            { date: '2024-05', users: totalUsers }
-          ],
-          deviceTypes: [
-            { device: 'Desktop', percentage: 45 + Math.random() * 20 },
-            { device: 'Mobile', percentage: 35 + Math.random() * 15 },
-            { device: 'Tablet', percentage: 20 + Math.random() * 10 }
-          ]
-        })
-      } catch (error) {
-        console.error('Error fetching analytics:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAnalytics()
+    setMounted(true)
   }, [])
 
-  if (loading) {
+  const fetchAnalytics = async (showRefreshing = false) => {
+    if (showRefreshing) setRefreshing(true)
+    else setLoading(true)
+
+    try {
+      const response = await fetch('/api/admin/analytics')
+      if (response.ok) {
+        const data = await response.json()
+        setAnalyticsData(data.data)
+        setLastUpdated(new Date())
+      } else {
+        console.error('Failed to fetch analytics:', response.status)
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!mounted) return // Prevent fetching during SSR
+    fetchAnalytics()
+  }, [mounted])
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (!autoRefresh || !mounted) return
+
+    const interval = setInterval(() => {
+      fetchAnalytics(true)
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [autoRefresh, mounted])
+
+  const handleRefresh = () => {
+    fetchAnalytics(true)
+  }
+
+  const toggleAutoRefresh = () => {
+    setAutoRefresh(!autoRefresh)
+  }
+
+  const exportToCSV = () => {
+    if (!analyticsData) return
+
+    const csvData = [
+      // Overview data
+      ['Metric', 'Value'],
+      ['Total Users', analyticsData.overview.totalUsers],
+      ['New Users', analyticsData.overview.newUsers],
+      ['Sessions', analyticsData.overview.sessions],
+      ['Page Views', analyticsData.overview.pageViews],
+      ['Avg Session Duration', analyticsData.overview.avgSessionDuration],
+      ['Bounce Rate', analyticsData.overview.bounceRate],
+      [],
+      // Traffic sources
+      ['Traffic Sources'],
+      ['Source', 'Users', 'Percentage'],
+      ...analyticsData.traffic.sources.map((source: any) => [source.source, source.users, `${source.percentage}%`]),
+      [],
+      // Device types
+      ['Device Types'],
+      ['Device', 'Users', 'Percentage'],
+      ...analyticsData.traffic.devices.map((device: any) => [device.device, device.users, `${device.percentage}%`]),
+      [],
+      // Top pages
+      ['Top Pages (Real-time)'],
+      ['Page', 'Views'],
+      ...analyticsData.realtime.topPages.map((page: any) => [page.page, page.views]),
+      [],
+      // Goals
+      ['Goals & Conversions'],
+      ['Goal', 'Completions', 'Conversion Rate'],
+      ...analyticsData.goals.conversions.map((goal: any) => [goal.goal, goal.completions, goal.conversionRate])
+    ]
+
+    const csvContent = csvData.map((row: any[]) =>
+      row.map((cell: any) => `"${cell}"`).join(',')
+    ).join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `analytics-export-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  if (!analyticsData) {
     return (
       <div>
-        <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-          Analytics Dashboard
-        </h2>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a' }}>
+            Analytics Dashboard
+          </h2>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              style={{
+                padding: '0.5rem 1rem',
+                background: refreshing ? '#ccc' : '#1a3a2a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: refreshing ? 'not-allowed' : 'pointer',
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              {refreshing ? '🔄' : '↻'} {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+              <input
+                type="checkbox"
+                checked={autoRefresh}
+                onChange={toggleAutoRefresh}
+                style={{ margin: 0 }}
+              />
+              Auto-refresh (30s)
+            </label>
+          </div>
+        </div>
         <div style={{ textAlign: 'center', padding: '3rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📊</div>
-          <p>Loading analytics data...</p>
+          <div style={{ color: '#666' }}>Loading analytics data...</div>
         </div>
       </div>
     )
@@ -785,11 +856,155 @@ function AnalyticsTab() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-        Analytics Dashboard
-      </h2>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1.5rem'
+      }}>
+        <div>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.25rem' }}>
+            Analytics Dashboard
+          </h2>
+          {lastUpdated && (
+            <div style={{ fontSize: '0.8rem', color: '#666' }}>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button
+            onClick={exportToCSV}
+            disabled={!analyticsData}
+            style={{
+              padding: '0.5rem 1rem',
+              background: !analyticsData ? '#ccc' : '#059669',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: !analyticsData ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            📊 Export CSV
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            style={{
+              padding: '0.5rem 1rem',
+              background: refreshing ? '#ccc' : '#1a3a2a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            {refreshing ? '🔄' : '↻'} {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={toggleAutoRefresh}
+              style={{ margin: 0 }}
+            />
+            Auto-refresh (30s)
+          </label>
+        </div>
+      </div>
 
-      {/* Key Metrics */}
+      {/* Real-time Metrics */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+        padding: '1.5rem',
+        borderRadius: '12px',
+        marginBottom: '2rem',
+        border: '1px solid #bae6fd',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 2s infinite'
+        }}></div>
+        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1rem' }}>🔴</span>
+          Live Metrics (Last 30 minutes)
+          <span style={{
+            fontSize: '0.7rem',
+            background: '#ef4444',
+            color: '#fff',
+            padding: '0.2rem 0.5rem',
+            borderRadius: '10px',
+            animation: 'pulse 2s infinite'
+          }}>
+            LIVE
+          </span>
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '1rem'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            padding: '1rem',
+            background: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.5rem' }}>
+              {analyticsData.realtime.activeUsers}
+            </div>
+            <div style={{ color: '#666', fontSize: '0.9rem', fontWeight: 500 }}>Active Users</div>
+            <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '0.25rem' }}>
+              Real-time
+            </div>
+          </div>
+          <div style={{
+            textAlign: 'center',
+            padding: '1rem',
+            background: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.5rem' }}>
+              {analyticsData.realtime.pageViews}
+            </div>
+            <div style={{ color: '#666', fontSize: '0.9rem', fontWeight: 500 }}>Page Views</div>
+            <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '0.25rem' }}>
+              Last 30 min
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Overview Metrics */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -797,55 +1012,135 @@ function AnalyticsTab() {
         marginBottom: '2rem'
       }}>
         <div style={{
-          background: '#f8f9fa',
+          background: '#fff',
           padding: '1.5rem',
           borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {analyticsData.pageViews.toLocaleString()}
+            {analyticsData.overview.totalUsers.toLocaleString()}
+          </div>
+          <div style={{ color: '#666', fontSize: '0.9rem' }}>Total Users</div>
+          <div style={{ color: '#059669', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+            +{analyticsData.overview.newUsers} new this month
+          </div>
+        </div>
+
+        <div style={{
+          background: '#fff',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
+            {analyticsData.overview.pageViews.toLocaleString()}
           </div>
           <div style={{ color: '#666', fontSize: '0.9rem' }}>Page Views</div>
-        </div>
-
-        <div style={{
-          background: '#f8f9fa',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {analyticsData.uniqueVisitors.toLocaleString()}
+          <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+            {analyticsData.overview.sessions.toLocaleString()} sessions
           </div>
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>Unique Visitors</div>
         </div>
 
         <div style={{
-          background: '#f8f9fa',
+          background: '#fff',
           padding: '1.5rem',
           borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {analyticsData.bounceRate.toFixed(1)}%
-          </div>
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>Bounce Rate</div>
-        </div>
-
-        <div style={{
-          background: '#f8f9fa',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {Math.floor(analyticsData.avgSessionDuration)}s
+            {analyticsData.overview.avgSessionDuration}
           </div>
           <div style={{ color: '#666', fontSize: '0.9rem' }}>Avg Session</div>
+          <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.5rem' }}>
+            Bounce Rate: {analyticsData.overview.bounceRate}
+          </div>
         </div>
       </div>
 
-      {/* Charts Section */}
+      {/* Traffic Sources & Devices */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+        gap: '2rem',
+        marginBottom: '2rem'
+      }}>
+        {/* Traffic Sources */}
+        <div style={{
+          background: '#fff',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+            Traffic Sources
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {analyticsData.traffic.sources.map((source: any, index: number) => (
+              <div key={source.source} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.5rem',
+                background: '#f8f9fa',
+                borderRadius: '4px'
+              }}>
+                <span style={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
+                  {source.source}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontWeight: 600, color: '#1a3a2a' }}>
+                    {source.users.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    ({source.percentage}%)
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Device Types */}
+        <div style={{
+          background: '#fff',
+          padding: '1.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+            Device Types
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {analyticsData.traffic.devices.map((device: any, index: number) => (
+              <div key={device.device} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.5rem',
+                background: '#f8f9fa',
+                borderRadius: '4px'
+              }}>
+                <span style={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
+                  {device.device}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontWeight: 600, color: '#1a3a2a' }}>
+                    {device.users.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                    ({device.percentage}%)
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Top Pages & Content Performance */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
@@ -853,21 +1148,22 @@ function AnalyticsTab() {
       }}>
         {/* Top Pages */}
         <div style={{
-          background: '#f8f9fa',
+          background: '#fff',
           padding: '1.5rem',
-          borderRadius: '8px'
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            Top Pages
+            Top Pages (Real-time)
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.topPages.map((page, index) => (
+            {analyticsData.realtime.topPages.map((page: any, index: number) => (
               <div key={page.page} style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '0.5rem',
-                background: '#fff',
+                background: '#f8f9fa',
                 borderRadius: '4px'
               }}>
                 <span style={{ fontSize: '0.9rem' }}>
@@ -881,91 +1177,71 @@ function AnalyticsTab() {
           </div>
         </div>
 
-        {/* User Growth */}
+        {/* Content Performance */}
         <div style={{
-          background: '#f8f9fa',
-          padding: '1.5rem',
-          borderRadius: '8px'
-        }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            User Growth (Last 5 Months)
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.userGrowth.map((data) => (
-              <div key={data.date} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.5rem',
-                background: '#fff',
-                borderRadius: '4px'
-              }}>
-                <span style={{ fontSize: '0.9rem' }}>
-                  {new Date(data.date + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                </span>
-                <span style={{ fontWeight: 600, color: '#1a3a2a' }}>
-                  {data.users} users
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Device Types */}
-        <div style={{
-          background: '#f8f9fa',
-          padding: '1.5rem',
-          borderRadius: '8px'
-        }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            Device Types
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.deviceTypes.map((device) => (
-              <div key={device.device} style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.25rem'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.9rem' }}>{device.device}</span>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                    {device.percentage.toFixed(1)}%
-                  </span>
-                </div>
-                <div style={{
-                  width: '100%',
-                  height: '8px',
-                  background: '#e9ecef',
-                  borderRadius: '4px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${device.percentage}%`,
-                    height: '100%',
-                    background: '#1a3a2a',
-                    borderRadius: '4px'
-                  }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Integration Note */}
-        <div style={{
-          background: '#e7f3ff',
+          background: '#fff',
           padding: '1.5rem',
           borderRadius: '8px',
-          border: '1px solid #b8daff'
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#004085', marginBottom: '1rem' }}>
-            🚀 Connect Real Analytics
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+            Content Performance
           </h3>
-          <p style={{ color: '#004085', fontSize: '0.9rem', lineHeight: '1.5' }}>
-            To get real analytics data, connect Google Analytics, Mixpanel, or another analytics service.
-            The data shown here is estimated based on your current blog posts and users.
-          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {analyticsData.content.topPages.slice(0, 5).map((page: any, index: number) => (
+              <div key={page.page} style={{
+                padding: '0.5rem',
+                background: '#f8f9fa',
+                borderRadius: '4px'
+              }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+                  {page.page}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
+                  <span>{page.views.toLocaleString()} views</span>
+                  <span>{page.avgTime} avg time</span>
+                  <span>{page.bounceRate} bounce</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Goals & Conversions */}
+      <div style={{
+        background: '#fff',
+        padding: '1.5rem',
+        borderRadius: '8px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        marginTop: '2rem'
+      }}>
+        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
+          Goals & Conversions
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1rem'
+        }}>
+          {analyticsData.goals.conversions.map((goal: any) => (
+            <div key={goal.goal} style={{
+              padding: '1rem',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a3a2a' }}>
+                {goal.completions}
+              </div>
+              <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
+                {goal.goal}
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#059669' }}>
+                {goal.conversionRate} conversion rate
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
