@@ -100,6 +100,38 @@ BEGIN
 END;
 $$;
 
+-- Admin settings for global configuration
+CREATE TABLE IF NOT EXISTS admin_settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  setting_key TEXT NOT NULL UNIQUE,
+  setting_value JSONB NOT NULL,
+  description TEXT,
+  created_by UUID REFERENCES admin_users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable RLS on admin_settings table
+ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
+
+-- Only admins can view admin_settings
+CREATE POLICY "Only admins can view admin_settings" ON admin_settings
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM admin_users au
+      WHERE au.user_id = auth.uid()
+    )
+  );
+
+-- Only admins can insert/update admin_settings
+CREATE POLICY "Only admins can modify admin_settings" ON admin_settings
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM admin_users au
+      WHERE au.user_id = auth.uid()
+    )
+  );
+
 -- Notification & Communication Hub Schema
 
 -- Notification templates for reusable messages
