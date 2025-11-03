@@ -126,6 +126,7 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
     { id: 'users', label: 'Users', icon: '👥' },
     { id: 'content', label: 'Content', icon: '📝' },
     { id: 'analytics', label: 'Analytics', icon: '📈' },
+    { id: 'notifications', label: 'Notifications', icon: '📬' },
     { id: 'settings', label: 'Settings', icon: '⚙️' }
   ]
 
@@ -206,6 +207,7 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
         {activeTab === 'users' && <UsersTab users={users} loading={loading} adminStatus={adminStatus} />}
         {activeTab === 'content' && <ContentTab blogPosts={blogPosts} loading={loading} adminStatus={adminStatus} />}
         {activeTab === 'analytics' && <AnalyticsTab />}
+        {activeTab === 'notifications' && <NotificationsTab adminStatus={adminStatus} />}
         {activeTab === 'settings' && <SettingsTab />}
       </div>
     </div>
@@ -413,9 +415,9 @@ function OverviewTab() {
           icon="👥"
           trend={stats.userGrowth >= 0 ? 'up' : 'down'}
         />
-        <StatCard title="Blog Posts" value={stats.totalPosts.toString()} change="Published" icon="�" />
-        <StatCard title="Recent Activity" value={stats.recentActivity.toString()} change="This week" icon="�" />
-        <StatCard title="System Status" value="Online" change="Healthy" icon="✅" />
+        <StatCard title="Blog Posts" value={stats.totalPosts.toString()} change="Published" icon="📝" trend="neutral" />
+        <StatCard title="Recent Activity" value={stats.recentActivity.toString()} change="This week" icon="⚡" trend="neutral" />
+        <StatCard title="System Status" value="Online" change="Healthy" icon="✅" trend="neutral" />
       </div>
 
       {/* Main Dashboard Grid */}
@@ -598,1980 +600,878 @@ function OverviewTab() {
   )
 }
 
-function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boolean, adminStatus: AdminStatus }) {
-  const [fetchedUsers, setFetchedUsers] = useState<User[]>([])
-  const [fetchLoading, setFetchLoading] = useState(false)
-  const [apiNote, setApiNote] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [dateFilter, setDateFilter] = useState('all')
-  const [sortBy, setSortBy] = useState<'email' | 'created_at' | 'last_sign_in_at'>('created_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
-  const [currentPage, setCurrentPage] = useState(1)
-  const usersPerPage = 10
+function NotificationsTab({ adminStatus }: { adminStatus: AdminStatus }) {
+  const [activeSubTab, setActiveSubTab] = useState('templates')
+  const [templates, setTemplates] = useState([])
+  const [campaigns, setCampaigns] = useState([])
+  const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false)
+  const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+  const [showSendNotification, setShowSendNotification] = useState(false)
 
-  // Load users on mount
+  const supabase = createClient()
+
   useEffect(() => {
-    const loadUsers = async () => {
-      setFetchLoading(true)
-      try {
-        const response = await fetch('/api/admin/users')
-        if (response.ok) {
-          const data = await response.json()
-          setFetchedUsers(data.users || [])
-          setApiNote(data.note || '')
-        }
-      } catch (error) {
-        console.error('Error fetching users:', error)
-      } finally {
-        setFetchLoading(false)
-      }
+    if (activeSubTab === 'templates') {
+      fetchTemplates()
+    } else if (activeSubTab === 'campaigns') {
+      fetchCampaigns()
+    } else if (activeSubTab === 'history') {
+      fetchHistory()
     }
-    loadUsers()
-  }, [])
+  }, [activeSubTab])
 
-  const displayUsers = fetchedUsers.length > 0 ? fetchedUsers : users
-
-  // Filter and sort users
-  const filteredUsers = useMemo(() => {
-    let filtered = displayUsers.filter(user => {
-      // Search filter
-      if (searchTerm && !user.email.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false
-      }
-
-      // Date filter
-      if (dateFilter !== 'all') {
-        const now = new Date()
-        const userDate = new Date(user.created_at)
-        const daysDiff = (now.getTime() - userDate.getTime()) / (1000 * 60 * 60 * 24)
-
-        switch (dateFilter) {
-          case 'last7days':
-            if (daysDiff > 7) return false
-            break
-          case 'last30days':
-            if (daysDiff > 30) return false
-            break
-          case 'last90days':
-            if (daysDiff > 90) return false
-            break
-        }
-      }
-
-      return true
-    })
-
-    // Sort users
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any
-
-      switch (sortBy) {
-        case 'email':
-          aValue = a.email.toLowerCase()
-          bValue = b.email.toLowerCase()
-          break
-        case 'created_at':
-          aValue = new Date(a.created_at).getTime()
-          bValue = new Date(b.created_at).getTime()
-          break
-        case 'last_sign_in_at':
-          aValue = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0
-          bValue = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0
-          break
-        default:
-          return 0
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1
-      } else {
-        return aValue < bValue ? 1 : -1
-      }
-    })
-
-    return filtered
-  }, [displayUsers, searchTerm, dateFilter, sortBy, sortOrder])
-
-  // Get user status
-  const getUserStatus = (user: User) => {
-    const now = new Date()
-    const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : null
-    const daysSinceLastSignIn = lastSignIn ? (now.getTime() - lastSignIn.getTime()) / (1000 * 60 * 60 * 24) : Infinity
-
-    if (!lastSignIn || daysSinceLastSignIn > 90) {
-      return { status: 'Inactive', color: '#dc3545' }
-    } else if (daysSinceLastSignIn > 30) {
-      return { status: 'Recent', color: '#ffc107' }
-    } else {
-      return { status: 'Active', color: '#28a745' }
-    }
-  }
-
-  // Bulk actions
-  const handleSelectUser = (userId: string) => {
-    setSelectedUsers(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(userId)) {
-        newSet.delete(userId)
-      } else {
-        newSet.add(userId)
-      }
-      return newSet
-    })
-  }
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedUsers(new Set(paginatedUsers.map(user => user.id)))
-    } else {
-      setSelectedUsers(new Set())
-    }
-  }
-
-  const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedUsers.size} user(s)? This action cannot be undone.`)) {
-      return
-    }
-
+  const fetchTemplates = async () => {
+    setLoading(true)
     try {
-      const deletePromises = Array.from(selectedUsers).map(userId =>
-        fetch(`/api/admin/users?userId=${userId}`, { method: 'DELETE' })
-      )
-
-      const results = await Promise.all(deletePromises)
-      const successCount = results.filter(r => r.ok).length
-
-      if (successCount === selectedUsers.size) {
-        alert(`${successCount} user(s) deleted successfully`)
-        setSelectedUsers(new Set())
-        // Refresh users
-        const loadUsers = async () => {
-          setFetchLoading(true)
-          try {
-            const response = await fetch('/api/admin/users')
-            if (response.ok) {
-              const data = await response.json()
-              setFetchedUsers(data.users || [])
-            }
-          } catch (error) {
-            console.error('Error fetching users:', error)
-          } finally {
-            setFetchLoading(false)
-          }
-        }
-        loadUsers()
-      } else {
-        alert(`Failed to delete some users. ${successCount}/${selectedUsers.size} deleted successfully.`)
+      const response = await fetch('/api/admin/notifications/templates')
+      if (response.ok) {
+        const data = await response.json()
+        setTemplates(data.templates || [])
       }
     } catch (error) {
-      console.error('Error deleting users:', error)
-      alert('Error deleting users')
+      console.error('Error fetching templates:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleBulkExport = () => {
-    const selectedUserData = displayUsers.filter(user => selectedUsers.has(user.id))
-    const csvContent = [
-      ['Email', 'Joined', 'Last Sign In', 'Status'],
-      ...selectedUserData.map(user => [
-        user.email,
-        new Date(user.created_at).toLocaleDateString(),
-        user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never',
-        getUserStatus(user).status
-      ])
-    ].map(row => row.join(',')).join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
+  const fetchCampaigns = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/notifications/campaigns')
+      if (response.ok) {
+        const data = await response.json()
+        setCampaigns(data.campaigns || [])
+      }
+    } catch (error) {
+      console.error('Error fetching campaigns:', error)
+    } finally {
+      setLoading(false)
+    }
   }
-  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!mounted) return // Prevent fetching during SSR
-
-    const loadUsers = async () => {
-      if (adminStatus.isMainAdmin) {
-        setFetchLoading(true)
-        try {
-          const response = await fetch('/api/admin/users')
-          if (response.ok) {
-            const data = await response.json()
-            setFetchedUsers(data.users || [])
-          }
-        } catch (error) {
-          console.error('Error fetching users:', error)
-        } finally {
-          setFetchLoading(false)
-        }
+  const fetchHistory = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/notifications/history')
+      if (response.ok) {
+        const data = await response.json()
+        setHistory(data.history || [])
       }
+    } catch (error) {
+      console.error('Error fetching history:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadUsers()
-  }, [adminStatus.isMainAdmin, mounted])
+  const subTabs = [
+    { id: 'templates', label: 'Templates', icon: '📝' },
+    { id: 'campaigns', label: 'Campaigns', icon: '📢' },
+    { id: 'send', label: 'Send Message', icon: '📤' },
+    { id: 'history', label: 'History', icon: '📚' }
+  ]
 
-  // Filter and sort users
-  const filteredAndSortedUsers = useMemo(() => {
-    let filtered = adminStatus.isMainAdmin ? fetchedUsers : users
+  return (
+    <div>
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1rem' }}>
+          Notification & Communication Hub
+        </h2>
+        <p style={{ color: '#666', fontSize: '1rem' }}>
+          Manage notification templates, campaigns, and communication history
+        </p>
+      </div>
 
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
+      {/* Sub Navigation */}
+      <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '2rem',
+        borderBottom: '1px solid #e9ecef',
+        paddingBottom: '1rem',
+        overflowX: 'auto'
+      }}>
+        {subTabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSubTab(tab.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.5rem',
+              background: activeSubTab === tab.id ? '#1a3a2a' : '#fff',
+              color: activeSubTab === tab.id ? '#fff' : '#1a3a2a',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap',
+              minWidth: 'fit-content'
+            }}
+          >
+            <span>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-    // Apply date filter
-    if (dateFilter !== 'all') {
-      const now = new Date()
-      filtered = filtered.filter(user => {
-        const userDate = new Date(user.created_at)
-        const daysDiff = (now.getTime() - userDate.getTime()) / (1000 * 60 * 60 * 24)
+      {/* Content */}
+      {activeSubTab === 'templates' && (
+        <TemplatesSection
+          templates={templates}
+          loading={loading}
+          onRefresh={fetchTemplates}
+          showCreate={showCreateTemplate}
+          setShowCreate={setShowCreateTemplate}
+        />
+      )}
 
-        switch (dateFilter) {
-          case 'last7days': return daysDiff <= 7
-          case 'last30days': return daysDiff <= 30
-          case 'last90days': return daysDiff <= 90
-          default: return true
-        }
-      })
-    }
+      {activeSubTab === 'campaigns' && (
+        <CampaignsSection
+          campaigns={campaigns}
+          loading={loading}
+          onRefresh={fetchCampaigns}
+          showCreate={showCreateCampaign}
+          setShowCreate={setShowCreateCampaign}
+        />
+      )}
 
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any
+      {activeSubTab === 'send' && (
+        <SendNotificationSection
+          templates={templates}
+          campaigns={campaigns}
+          showSend={showSendNotification}
+          setShowSend={setShowSendNotification}
+        />
+      )}
 
-      switch (sortBy) {
-        case 'email':
-          aValue = a.email.toLowerCase()
-          bValue = b.email.toLowerCase()
-          break
-        case 'created_at':
-          aValue = new Date(a.created_at).getTime()
-          bValue = new Date(b.created_at).getTime()
-          break
-        case 'last_sign_in_at':
-          aValue = a.last_sign_in_at ? new Date(a.last_sign_in_at).getTime() : 0
-          bValue = b.last_sign_in_at ? new Date(b.last_sign_in_at).getTime() : 0
-          break
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1
-      } else {
-        return aValue < bValue ? 1 : -1
-      }
-    })
-
-    return filtered
-  }, [adminStatus.isMainAdmin, fetchedUsers, users, searchTerm, dateFilter, sortBy, sortOrder])
-
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedUsers.length / usersPerPage)
-  const paginatedUsers = filteredAndSortedUsers.slice(
-    (currentPage - 1) * usersPerPage,
-    currentPage * usersPerPage
+      {activeSubTab === 'history' && (
+        <HistorySection
+          history={history}
+          loading={loading}
+          onRefresh={fetchHistory}
+        />
+      )}
+    </div>
   )
+}
 
+function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boolean, adminStatus: AdminStatus }) {
   return (
     <div>
       <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
         User Management
       </h2>
-      {!adminStatus.isMainAdmin && (
-        <div style={{
-          background: '#fff3cd',
-          color: '#856404',
-          padding: '1rem',
-          borderRadius: '6px',
-          marginBottom: '1rem',
-          border: '1px solid #ffeaa7'
-        }}>
-          Note: Only the main admin can view and manage all users.
-        </div>
-      )}
-      {apiNote && (
-        <div style={{
-          background: '#d1ecf1',
-          color: '#0c5460',
-          padding: '1rem',
-          borderRadius: '6px',
-          marginBottom: '1rem',
-          border: '1px solid #bee5eb',
-          fontSize: '0.9rem'
-        }}>
-          <strong>API Status:</strong> {apiNote}
-        </div>
-      )}
-
-      {/* Search and Filter Controls */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '1rem',
-        marginBottom: '1.5rem',
-        padding: '1rem',
-        background: '#f8f9fa',
-        borderRadius: '8px',
-        alignItems: 'center'
-      }}>
-        <div style={{ flex: '1', minWidth: '200px' }}>
-          <input
-            type="text"
-            placeholder="Search by email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '0.9rem'
-            }}
-          />
-        </div>
-        <div>
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            style={{
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '0.9rem'
-            }}
-          >
-            <option value="all">All Users</option>
-            <option value="last7days">Last 7 Days</option>
-            <option value="last30days">Last 30 Days</option>
-            <option value="last90days">Last 90 Days</option>
-          </select>
-        </div>
-        <div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'email' | 'created_at' | 'last_sign_in_at')}
-            style={{
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '0.9rem'
-            }}
-          >
-            <option value="created_at">Sort by Join Date</option>
-            <option value="last_sign_in_at">Sort by Last Sign In</option>
-            <option value="email">Sort by Email</option>
-          </select>
-        </div>
-        <div>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              background: '#fff',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
-      </div>
-
-      {/* Bulk Actions */}
-      {selectedUsers.size > 0 && adminStatus.isMainAdmin && (
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          marginBottom: '1rem',
-          padding: '1rem',
-          background: '#e3f2fd',
-          borderRadius: '8px',
-          alignItems: 'center'
-        }}>
-          <span style={{ fontWeight: 600, color: '#1565c0' }}>
-            {selectedUsers.size} user{selectedUsers.size > 1 ? 's' : ''} selected
-          </span>
-          <button
-            onClick={handleBulkDelete}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#dc3545',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            Delete Selected
-          </button>
-          <button
-            onClick={handleBulkExport}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            Export Selected
-          </button>
-          <button
-            onClick={() => setSelectedUsers(new Set())}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#6c757d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            Clear Selection
-          </button>
-        </div>
-      )}
-
-      {fetchLoading || loading ? (
+      {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>Loading users...</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '0.9rem'
-          }}>
-            <thead>
-              <tr style={{ background: '#f8f9fa' }}>
-                {adminStatus.isMainAdmin && (
-                  <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6', width: '40px' }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.size === paginatedUsers.length && paginatedUsers.length > 0}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      style={{ margin: 0 }}
-                    />
-                  </th>
-                )}
-                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Email</th>
-                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Status</th>
-                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Joined</th>
-                <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Last Sign In</th>
-                {adminStatus.isMainAdmin && (
-                  <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #dee2e6' }}>Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={adminStatus.isMainAdmin ? 6 : 5} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                    {adminStatus.isMainAdmin ? 'No users found' : 'Limited user access - contact main admin'}
-                  </td>
-                </tr>
-              ) : (
-                paginatedUsers.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: '1px solid #f1f3f4' }}>
-                    {adminStatus.isMainAdmin && (
-                      <td style={{ padding: '1rem' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.has(user.id)}
-                          onChange={() => handleSelectUser(user.id)}
-                          style={{ margin: 0 }}
-                        />
-                      </td>
-                    )}
-                    <td style={{ padding: '1rem' }}>{user.email}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '12px',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        background: getUserStatus(user).color,
-                        color: '#fff'
-                      }}>
-                        {getUserStatus(user).status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem' }}>{new Date(user.created_at).toLocaleDateString()}</td>
-                    <td style={{ padding: '1rem' }}>
-                      {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
-                    </td>
-                    {adminStatus.isMainAdmin && (
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => handleViewUserDetails(user)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              background: '#17a2b8',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Details
-                          </button>
-                          <button
-                            onClick={() => handleResetPassword(user.id)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              background: '#ffc107',
-                              color: '#000',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Reset Password
-                          </button>
-                          {user.email !== 'joe@nomadicperformance.com' && (
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              style={{
-                                padding: '0.25rem 0.5rem',
-                                background: '#dc3545',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {filteredUsers.length > usersPerPage && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '1rem',
-          marginTop: '1.5rem',
-          padding: '1rem'
-        }}>
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              background: currentPage === 1 ? '#f8f9fa' : '#fff',
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            Previous
-          </button>
-          <span style={{ fontSize: '0.9rem', color: '#666' }}>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              background: currentPage === totalPages ? '#f8f9fa' : '#fff',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem'
-            }}
-          >
-            Next
-          </button>
-        </div>
-      )}
-    </div>
-  )
-
-  async function handleDeleteUser(userId: string) {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/admin/users?userId=${userId}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        // Refresh the users list
-        const loadUsers = async () => {
-          setFetchLoading(true)
-          try {
-            const response = await fetch('/api/admin/users')
-            if (response.ok) {
-              const data = await response.json()
-              setFetchedUsers(data.users || [])
-            }
-          } catch (error) {
-            console.error('Error fetching users:', error)
-          } finally {
-            setFetchLoading(false)
-          }
-        }
-        loadUsers()
-      } else {
-        alert('Failed to delete user')
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error)
-      alert('Error deleting user')
-    }
-  }
-
-  async function handleResetPassword(userId: string) {
-    if (!confirm('Are you sure you want to reset this user\'s password? They will receive a temporary password.')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/admin/users?userId=${userId}&action=resetPassword`, {
-        method: 'PATCH'
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        alert(`Password reset successful! Temporary password: ${data.tempPassword}\n\nPlease share this password with the user securely.`)
-      } else {
-        const errorData = await response.json()
-        alert(`Failed to reset password: ${errorData.error || 'Unknown error'}`)
-      }
-    } catch (error) {
-      console.error('Error resetting password:', error)
-      alert('Error resetting password')
-    }
-  }
-
-  function handleViewUserDetails(user: any) {
-    const details = `
-User Details:
--------------
-ID: ${user.id}
-Email: ${user.email}
-Created: ${new Date(user.created_at).toLocaleString()}
-Last Sign In: ${user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}
-First Name: ${user.first_name || 'Not set'}
-Last Name: ${user.last_name || 'Not set'}
-Is Current User: ${user.is_current_user ? 'Yes' : 'No'}
-    `.trim()
-
-    alert(details)
-  }
-}
-
-function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[], loading: boolean, adminStatus: AdminStatus }) {
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newPost, setNewPost] = useState({
-    title: '',
-    excerpt: '',
-    content: '',
-    date: new Date().toISOString().split('T')[0]
-  })
-  const [creating, setCreating] = useState(false)
-
-  const handleCreatePost = async () => {
-    if (!newPost.title || !newPost.content) {
-      alert('Title and content are required')
-      return
-    }
-
-    setCreating(true)
-    try {
-      const response = await fetch('/api/admin/blog-posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newPost)
-      })
-
-      if (response.ok) {
-        alert('Blog post created successfully!')
-        setShowCreateModal(false)
-        setNewPost({
-          title: '',
-          excerpt: '',
-          content: '',
-          date: new Date().toISOString().split('T')[0]
-        })
-        // Refresh the blog posts list
-        window.location.reload()
-      } else {
-        alert('Failed to create blog post')
-      }
-    } catch (error) {
-      console.error('Error creating blog post:', error)
-      alert('Error creating blog post')
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  return (
-    <>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a' }}>
-            Content Management
-          </h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: '#1a3a2a',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            + New Post
-          </button>
-        </div>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading content...</div>
-        ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {blogPosts.map((post) => (
-              <div key={post.slug} style={{
-                padding: '1.5rem',
-                border: '1px solid #e9ecef',
-                borderRadius: '8px',
-                background: '#f8f9fa'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <div>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.5rem' }}>
-                      {post.title}
-                    </h3>
-                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      {post.excerpt}
-                    </p>
-                    <p style={{ color: '#999', fontSize: '0.8rem' }}>
-                      Published: {new Date(post.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button style={{
-                      padding: '0.5rem 1rem',
-                      background: '#007bff',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer'
-                    }}>
-                      Edit
-                    </button>
-                    <button style={{
-                      padding: '0.5rem 1rem',
-                      background: '#dc3545',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer'
-                    }}>
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Create Post Modal */}
-      {showCreateModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '2rem',
-            width: '90%',
-            maxWidth: '600px',
-            maxHeight: '80vh',
-            overflow: 'auto'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a3a2a' }}>Create New Blog Post</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: '#666'
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Title</label>
-                <input
-                  type="text"
-                  value={newPost.title}
-                  onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                  placeholder="Enter blog post title"
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Excerpt</label>
-                <input
-                  type="text"
-                  value={newPost.excerpt}
-                  onChange={(e) => setNewPost({ ...newPost, excerpt: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                  placeholder="Brief description of the post"
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Date</label>
-                <input
-                  type="date"
-                  value={newPost.date}
-                  onChange={(e) => setNewPost({ ...newPost, date: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Content (Markdown)</label>
-                <textarea
-                  value={newPost.content}
-                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '6px',
-                    fontSize: '1rem',
-                    minHeight: '200px',
-                    fontFamily: 'monospace'
-                  }}
-                  placeholder="Write your blog post content in Markdown..."
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: '#6c757d',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreatePost}
-                  disabled={creating}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: creating ? '#ccc' : '#1a3a2a',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: creating ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {creating ? 'Creating...' : 'Create Post'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-function AnalyticsTab() {
-  const [analyticsData, setAnalyticsData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [mounted, setMounted] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [autoRefresh, setAutoRefresh] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const fetchAnalytics = async (showRefreshing = false) => {
-    if (showRefreshing) setRefreshing(true)
-    else setLoading(true)
-
-    try {
-      const response = await fetch('/api/admin/analytics')
-      if (response.ok) {
-        const data = await response.json()
-        setAnalyticsData(data.data)
-        setLastUpdated(new Date())
-      } else {
-        console.error('Failed to fetch analytics:', response.status)
-      }
-    } catch (error) {
-      console.error('Error fetching analytics:', error)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!mounted) return // Prevent fetching during SSR
-    fetchAnalytics()
-  }, [mounted])
-
-  // Auto-refresh functionality
-  useEffect(() => {
-    if (!autoRefresh || !mounted) return
-
-    const interval = setInterval(() => {
-      fetchAnalytics(true)
-    }, 30000) // Refresh every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [autoRefresh, mounted])
-
-  const handleRefresh = () => {
-    fetchAnalytics(true)
-  }
-
-  const toggleAutoRefresh = () => {
-    setAutoRefresh(!autoRefresh)
-  }
-
-  const exportToCSV = () => {
-    if (!analyticsData) return
-
-    const csvData = [
-      // Overview data
-      ['Metric', 'Value'],
-      ['Total Users', analyticsData.overview.totalUsers],
-      ['New Users', analyticsData.overview.newUsers],
-      ['Sessions', analyticsData.overview.sessions],
-      ['Page Views', analyticsData.overview.pageViews],
-      ['Avg Session Duration', analyticsData.overview.avgSessionDuration],
-      ['Bounce Rate', analyticsData.overview.bounceRate],
-      [],
-      // Traffic sources
-      ['Traffic Sources'],
-      ['Source', 'Users', 'Percentage'],
-      ...analyticsData.traffic.sources.map((source: any) => [source.source, source.users, `${source.percentage}%`]),
-      [],
-      // Device types
-      ['Device Types'],
-      ['Device', 'Users', 'Percentage'],
-      ...analyticsData.traffic.devices.map((device: any) => [device.device, device.users, `${device.percentage}%`]),
-      [],
-      // Top pages
-      ['Top Pages (Real-time)'],
-      ['Page', 'Views'],
-      ...analyticsData.realtime.topPages.map((page: any) => [page.page, page.views]),
-      [],
-      // Goals
-      ['Goals & Conversions'],
-      ['Goal', 'Completions', 'Conversion Rate'],
-      ...analyticsData.goals.conversions.map((goal: any) => [goal.goal, goal.completions, goal.conversionRate])
-    ]
-
-    const csvContent = csvData.map((row: any[]) =>
-      row.map((cell: any) => `"${cell}"`).join(',')
-    ).join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `analytics-export-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  if (!analyticsData) {
-    return (
-      <div>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem'
-        }}>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a' }}>
-            Analytics Dashboard
-          </h2>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              style={{
-                padding: '0.5rem 1rem',
-                background: refreshing ? '#ccc' : '#1a3a2a',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: refreshing ? 'not-allowed' : 'pointer',
-                fontSize: '0.9rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              {refreshing ? '🔄' : '↻'} {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-              <input
-                type="checkbox"
-                checked={autoRefresh}
-                onChange={toggleAutoRefresh}
-                style={{ margin: 0 }}
-              />
-              Auto-refresh (30s)
-            </label>
-          </div>
-        </div>
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📊</div>
-          <div style={{ color: '#666' }}>Loading analytics data...</div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem'
-      }}>
-        <div>
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.25rem' }}>
-            Analytics Dashboard
-          </h2>
-          {analyticsData.note && (
-            <div style={{
-              fontSize: '0.85rem',
-              color: '#059669',
-              background: '#f0fdf4',
-              padding: '0.5rem',
-              borderRadius: '4px',
-              border: '1px solid #bbf7d0',
-              marginBottom: '0.5rem'
-            }}>
-              <strong>📊 Demo Data:</strong> {analyticsData.note}
-            </div>
-          )}
-          {lastUpdated && (
-            <div style={{ fontSize: '0.8rem', color: '#666' }}>
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </div>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <button
-            onClick={exportToCSV}
-            disabled={!analyticsData}
-            style={{
-              padding: '0.5rem 1rem',
-              background: !analyticsData ? '#ccc' : '#059669',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: !analyticsData ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            📊 Export CSV
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            style={{
-              padding: '0.5rem 1rem',
-              background: refreshing ? '#ccc' : '#1a3a2a',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: refreshing ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            {refreshing ? '🔄' : '↻'} {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={toggleAutoRefresh}
-              style={{ margin: 0 }}
-            />
-            Auto-refresh (30s)
-          </label>
-        </div>
-      </div>
-
-      {/* Real-time Metrics */}
-      <div style={{
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-        padding: '1.5rem',
-        borderRadius: '12px',
-        marginBottom: '2rem',
-        border: '1px solid #bae6fd',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '4px',
-          background: 'linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e)',
-          backgroundSize: '200% 100%',
-          animation: 'shimmer 2s infinite'
-        }}></div>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1rem' }}>🔴</span>
-          Live Metrics (Last 30 minutes)
-          <span style={{
-            fontSize: '0.7rem',
-            background: '#ef4444',
-            color: '#fff',
-            padding: '0.2rem 0.5rem',
-            borderRadius: '10px',
-            animation: 'pulse 2s infinite'
-          }}>
-            LIVE
-          </span>
-        </h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '1rem'
-        }}>
-          <div style={{
-            textAlign: 'center',
-            padding: '1rem',
-            background: '#fff',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            transition: 'transform 0.2s',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.5rem' }}>
-              {analyticsData.realtime.activeUsers}
-            </div>
-            <div style={{ color: '#666', fontSize: '0.9rem', fontWeight: 500 }}>Active Users</div>
-            <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '0.25rem' }}>
-              Real-time
-            </div>
-          </div>
-          <div style={{
-            textAlign: 'center',
-            padding: '1rem',
-            background: '#fff',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            transition: 'transform 0.2s',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.5rem' }}>
-              {analyticsData.realtime.pageViews}
-            </div>
-            <div style={{ color: '#666', fontSize: '0.9rem', fontWeight: 500 }}>Page Views</div>
-            <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: '0.25rem' }}>
-              Last 30 min
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Overview Metrics */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1rem',
-        marginBottom: '2rem'
-      }}>
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {analyticsData.overview.totalUsers.toLocaleString()}
-          </div>
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>Total Users</div>
-          <div style={{ color: '#059669', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-            +{analyticsData.overview.newUsers} new this month
-          </div>
-        </div>
-
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {analyticsData.overview.pageViews.toLocaleString()}
-          </div>
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>Page Views</div>
-          <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-            {analyticsData.overview.sessions.toLocaleString()} sessions
-          </div>
-        </div>
-
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
-            {analyticsData.overview.avgSessionDuration}
-          </div>
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>Avg Session</div>
-          <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-            Bounce Rate: {analyticsData.overview.bounceRate}
-          </div>
-        </div>
-      </div>
-
-      {/* Traffic Sources & Devices */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: '2rem',
-        marginBottom: '2rem'
-      }}>
-        {/* Traffic Sources */}
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            Traffic Sources
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.traffic.sources.map((source: any, index: number) => (
-              <div key={source.source} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.5rem',
-                background: '#f8f9fa',
-                borderRadius: '4px'
-              }}>
-                <span style={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
-                  {source.source}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontWeight: 600, color: '#1a3a2a' }}>
-                    {source.users.toLocaleString()}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                    ({source.percentage}%)
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Device Types */}
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            Device Types
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.traffic.devices.map((device: any, index: number) => (
-              <div key={device.device} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.5rem',
-                background: '#f8f9fa',
-                borderRadius: '4px'
-              }}>
-                <span style={{ fontSize: '0.9rem', textTransform: 'capitalize' }}>
-                  {device.device}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontWeight: 600, color: '#1a3a2a' }}>
-                    {device.users.toLocaleString()}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                    ({device.percentage}%)
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Top Pages & Content Performance */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-        gap: '2rem'
-      }}>
-        {/* Top Pages */}
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            Top Pages (Real-time)
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.realtime.topPages.map((page: any, index: number) => (
-              <div key={page.page} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.5rem',
-                background: '#f8f9fa',
-                borderRadius: '4px'
-              }}>
-                <span style={{ fontSize: '0.9rem' }}>
-                  {index + 1}. {page.page}
-                </span>
-                <span style={{ fontWeight: 600, color: '#1a3a2a' }}>
-                  {page.views.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Content Performance */}
-        <div style={{
-          background: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-            Content Performance
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {analyticsData.content.topPages.slice(0, 5).map((page: any, index: number) => (
-              <div key={page.page} style={{
-                padding: '0.5rem',
-                background: '#f8f9fa',
-                borderRadius: '4px'
-              }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: 500, marginBottom: '0.25rem' }}>
-                  {page.page}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
-                  <span>{page.views.toLocaleString()} views</span>
-                  <span>{page.avgTime} avg time</span>
-                  <span>{page.bounceRate} bounce</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Goals & Conversions */}
-      <div style={{
-        background: '#fff',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        marginTop: '2rem'
-      }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1rem' }}>
-          Goals & Conversions
-        </h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '1rem'
-        }}>
-          {analyticsData.goals.conversions.map((goal: any) => (
-            <div key={goal.goal} style={{
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {users.map((user) => (
+            <div key={user.id} style={{
               padding: '1rem',
-              background: '#f8f9fa',
-              borderRadius: '6px',
-              textAlign: 'center'
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              background: '#f8f9fa'
             }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1a3a2a' }}>
-                {goal.completions}
-              </div>
-              <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>
-                {goal.goal}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#059669' }}>
-                {goal.conversionRate} conversion rate
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1a3a2a' }}>{user.email}</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+                    Joined: {new Date(user.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {user.last_sign_in_at ? `Last login: ${new Date(user.last_sign_in_at).toLocaleDateString()}` : 'Never logged in'}
+                </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[], loading: boolean, adminStatus: AdminStatus }) {
+  return (
+    <div>
+      <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
+        Content Management
+      </h2>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading content...</div>
+      ) : (
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {blogPosts.map((post) => (
+            <div key={post.slug} style={{
+              padding: '1rem',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              background: '#f8f9fa'
+            }}>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#1a3a2a' }}>{post.title}</h4>
+              <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+                {post.excerpt}
+              </p>
+              <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                Published: {new Date(post.date).toLocaleDateString()}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AnalyticsTab() {
+  return (
+    <div>
+      <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
+        Analytics Dashboard
+      </h2>
+      <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+        Analytics features coming soon...
       </div>
     </div>
   )
 }
 
 function SettingsTab() {
-  const [settings, setSettings] = useState({
-    emailNotifications: false,
-    maintenanceMode: false,
-    autoBackup: true,
-    userRegistration: true,
-    blogComments: false,
-    newsletterSignup: true
-  })
-  const [dashboardAccess, setDashboardAccess] = useState({
-    nutrition: { enabled: true, locked: false },
-    training: { enabled: true, locked: false },
-    activities: { enabled: true, locked: false },
-    equipment: { enabled: true, locked: false }
-  })
-  const [loading, setLoading] = useState(false)
-  const [setupStatus, setSetupStatus] = useState<{
-    checked: boolean
-    schemaExists: boolean
-    adminUserExists: boolean
-    instructions?: string[]
-    error?: string
-  }>({ checked: false, schemaExists: false, adminUserExists: false })
-  const [settingUp, setSettingUp] = useState(false)
-
-  const checkAdminSetup = async () => {
-    try {
-      const response = await fetch('/api/admin/setup', { method: 'POST' })
-      const data = await response.json()
-
-      if (response.ok) {
-        setSetupStatus({
-          checked: true,
-          schemaExists: data.schemaExists || false,
-          adminUserExists: data.adminUserExists || false,
-          instructions: data.instructions
-        })
-      } else {
-        setSetupStatus({
-          checked: true,
-          schemaExists: false,
-          adminUserExists: false,
-          error: data.error || 'Failed to check setup status'
-        })
-      }
-    } catch (error) {
-      console.error('Error checking admin setup:', error)
-      setSetupStatus({
-        checked: true,
-        schemaExists: false,
-        adminUserExists: false,
-        error: 'Network error checking setup status'
-      })
-    }
-  }
-
-  const loadDashboardSettings = async () => {
-    try {
-      const response = await fetch('/api/admin/settings')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.settings?.dashboard_access?.value) {
-          setDashboardAccess(data.settings.dashboard_access.value)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading dashboard settings:', error)
-    }
-  }
-
-  const saveDashboardSettings = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          setting_key: 'dashboard_access',
-          setting_value: dashboardAccess
-        })
-      })
-
-      if (response.ok) {
-        alert('Dashboard settings saved successfully!')
-      } else {
-        alert('Failed to save dashboard settings')
-      }
-    } catch (error) {
-      console.error('Error saving dashboard settings:', error)
-      alert('Error saving dashboard settings')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const updateDashboardAccess = (dashboard: keyof typeof dashboardAccess, field: 'enabled' | 'locked', value: boolean) => {
-    setDashboardAccess(prev => ({
-      ...prev,
-      [dashboard]: {
-        ...prev[dashboard],
-        [field]: value
-      }
-    }))
-  }
-
-  const runSetup = async () => {
-    setSettingUp(true)
-    try {
-      await checkAdminSetup()
-    } catch (error) {
-      console.error('Error running setup:', error)
-    } finally {
-      setSettingUp(false)
-    }
-  }
-
-  const updateSetting = (key: string, value: boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-    // In a real app, you'd save this to the database
-    console.log(`Setting ${key} updated to ${value}`)
-  }
-
-  useEffect(() => {
-    checkAdminSetup()
-    loadDashboardSettings()
-  }, [])
-
   return (
     <div>
       <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
         System Settings
       </h2>
-
-      {/* Admin Setup Section */}
-      <div style={{
-        background: '#fff3cd',
-        border: '1px solid #ffeaa7',
-        borderRadius: '8px',
-        padding: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#856404', marginBottom: '1rem' }}>
-          Admin System Setup
-        </h3>
-
-        {!setupStatus.checked ? (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔧</div>
-            <p>Checking admin system status...</p>
-          </div>
-        ) : setupStatus.schemaExists && setupStatus.adminUserExists ? (
-          <div style={{
-            background: '#d4edda',
-            color: '#155724',
-            padding: '1rem',
-            borderRadius: '4px',
-            border: '1px solid #c3e6cb'
-          }}>
-            ✅ Admin system is fully configured and ready to use
-          </div>
-        ) : setupStatus.error ? (
-          <div style={{
-            background: '#f8d7da',
-            color: '#721c24',
-            padding: '1rem',
-            borderRadius: '4px',
-            border: '1px solid #f5c6cb'
-          }}>
-            ❌ Error: {setupStatus.error}
-          </div>
-        ) : (
-          <div>
-            <div style={{
-              background: '#fff3cd',
-              color: '#856404',
-              padding: '1rem',
-              borderRadius: '4px',
-              border: '1px solid #ffeaa7',
-              marginBottom: '1rem'
-            }}>
-              {setupStatus.schemaExists ?
-                '✅ Database schema exists - inserting main admin user...' :
-                '⚠️ Admin system needs to be set up. Please follow these steps:'
-              }
-            </div>
-
-            {setupStatus.instructions && (
-              <ol style={{ paddingLeft: '1.5rem', lineHeight: '1.6' }}>
-                {setupStatus.instructions.map((instruction, index) => (
-                  <li key={index} style={{ marginBottom: '0.5rem', color: '#495057' }}>
-                    {instruction}
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            <div style={{ marginTop: '1rem' }}>
-              <button
-                onClick={runSetup}
-                disabled={settingUp}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: settingUp ? '#ccc' : '#1a3a2a',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: settingUp ? 'not-allowed' : 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                {settingUp ? 'Setting up...' : 'Check Setup Status'}
-              </button>
-            </div>
-          </div>
-        )}
+      <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+        Settings panel coming soon...
       </div>
+    </div>
+  )
+}
 
-      <div style={{ display: 'grid', gap: '1.5rem' }}>
-        {/* Dashboard Access Controls */}
+function StatCard({ title, value, change, icon, trend }: {
+  title: string,
+  value: string,
+  change: string,
+  icon: string,
+  trend?: 'up' | 'down' | 'neutral'
+}) {
+  return (
+    <div style={{
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '1.5rem',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+      border: '1px solid #e9ecef'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
         <div style={{
-          background: '#fff',
-          border: '1px solid #e9ecef',
-          borderRadius: '8px',
-          padding: '1.5rem'
+          fontSize: '1.5rem',
+          color: '#1a3a2a',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '2.5rem',
+          height: '2.5rem',
+          borderRadius: '50%',
+          background: 'rgba(26,58,42,0.1)'
         }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1.5rem'
-          }}>
-            <div>
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.25rem' }}>
-                Dashboard Access Control
-              </h3>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                Control which dashboards are available to users and lock them from user control
-              </p>
-            </div>
-            <button
-              onClick={saveDashboardSettings}
-              disabled={loading}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: loading ? '#ccc' : '#1a3a2a',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: 600
-              }}
-            >
-              {loading ? 'Saving...' : 'Save Settings'}
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {Object.entries(dashboardAccess).map(([dashboard, config]) => (
-              <div key={dashboard} style={{
-                padding: '1rem',
-                border: '1px solid #e9ecef',
-                borderRadius: '6px',
-                background: '#f8f9fa',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <h4 style={{
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    color: '#1a3a2a',
-                    marginBottom: '0.25rem',
-                    textTransform: 'capitalize'
-                  }}>
-                    {dashboard} Dashboard
-                  </h4>
-                  <p style={{ color: '#666', fontSize: '0.8rem' }}>
-                    {config.locked ? '🔒 Locked - Users cannot control access' : '🔓 Unlocked - Users can control access'}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
-                      Enabled
-                    </label>
-                    <ToggleSwitch
-                      enabled={config.enabled}
-                      onChange={(value) => updateDashboardAccess(dashboard as keyof typeof dashboardAccess, 'enabled', value)}
-                    />
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
-                      Locked
-                    </label>
-                    <ToggleSwitch
-                      enabled={config.locked}
-                      onChange={(value) => updateDashboardAccess(dashboard as keyof typeof dashboardAccess, 'locked', value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {icon}
         </div>
+        <div>
+          <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: '#1a3a2a' }}>{title}</h4>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
+            {trend === 'up' ? '📈' : '📉'} {change}
+          </p>
+        </div>
+      </div>
+      <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a' }}>
+        {value}
+      </div>
+    </div>
+  )
+}
 
-        <SettingCard
-          title="Email Notifications"
-          description="Configure automated email notifications for user activities"
-          action={<ToggleSwitch enabled={settings.emailNotifications} onChange={(value) => updateSetting('emailNotifications', value)} />}
-        />
-        <SettingCard
-          title="Maintenance Mode"
-          description="Temporarily disable the site for maintenance"
-          action={<ToggleSwitch enabled={settings.maintenanceMode} onChange={(value) => updateSetting('maintenanceMode', value)} />}
-        />
-        <SettingCard
-          title="User Registration"
-          description="Allow new users to register accounts"
-          action={<ToggleSwitch enabled={settings.userRegistration} onChange={(value) => updateSetting('userRegistration', value)} />}
-        />
-        <SettingCard
-          title="Blog Comments"
-          description="Enable comments on blog posts"
-          action={<ToggleSwitch enabled={settings.blogComments} onChange={(value) => updateSetting('blogComments', value)} />}
-        />
-        <SettingCard
-          title="Newsletter Signup"
-          description="Show newsletter signup forms across the site"
-          action={<ToggleSwitch enabled={settings.newsletterSignup} onChange={(value) => updateSetting('newsletterSignup', value)} />}
-        />
-        <SettingCard
-          title="Automatic Backups"
-          description="Configure automatic database backups"
-          action={<ToggleSwitch enabled={settings.autoBackup} onChange={(value) => updateSetting('autoBackup', value)} />}
-        />
-        <SettingCard
-          title="System Cache"
-          description="Clear system cache and temporary files"
-          action={<button style={{
-            padding: '0.5rem 1rem',
-            background: '#dc3545',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}>Clear Cache</button>}
-        />
-        <SettingCard
-          title="Export Data"
-          description="Export all system data for backup"
-          action={<button style={{
+function TemplatesSection({ templates, loading, onRefresh, showCreate, setShowCreate }: {
+  templates: any[],
+  loading: boolean,
+  onRefresh: () => void,
+  showCreate: boolean,
+  setShowCreate: (show: boolean) => void
+}) {
+  const [newTemplate, setNewTemplate] = useState({
+    name: '',
+    subject: '',
+    message: '',
+    type: 'email',
+    category: 'general'
+  })
+
+  const handleCreateTemplate = async () => {
+    try {
+      const response = await fetch('/api/admin/notifications/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTemplate)
+      })
+
+      if (response.ok) {
+        setShowCreate(false)
+        setNewTemplate({ name: '', subject: '', message: '', type: 'email', category: 'general' })
+        onRefresh()
+      }
+    } catch (error) {
+      console.error('Error creating template:', error)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#1a3a2a' }}>Notification Templates</h3>
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{
             padding: '0.5rem 1rem',
             background: '#1a3a2a',
             color: '#fff',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '6px',
             cursor: 'pointer'
-          }}>Export</button>}
-        />
+          }}
+        >
+          Create Template
+        </button>
       </div>
+
+      {showCreate && (
+        <div style={{
+          padding: '1.5rem',
+          background: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: '1.5rem',
+          border: '1px solid #e9ecef'
+        }}>
+          <h4 style={{ marginBottom: '1rem', color: '#1a3a2a' }}>Create New Template</h4>
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            <input
+              type="text"
+              placeholder="Template Name"
+              value={newTemplate.name}
+              onChange={(e) => setNewTemplate({...newTemplate, name: e.target.value})}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <select
+              value={newTemplate.type}
+              onChange={(e) => setNewTemplate({...newTemplate, type: e.target.value})}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="email">Email</option>
+              <option value="push">Push Notification</option>
+              <option value="in_app">In-App Message</option>
+              <option value="sms">SMS</option>
+            </select>
+            <input
+              type="text"
+              placeholder="Subject (optional)"
+              value={newTemplate.subject}
+              onChange={(e) => setNewTemplate({...newTemplate, subject: e.target.value})}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <textarea
+              placeholder="Message content"
+              value={newTemplate.message}
+              onChange={(e) => setNewTemplate({...newTemplate, message: e.target.value})}
+              rows={4}
+              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                onClick={handleCreateTemplate}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#28a745',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Create
+              </button>
+              <button
+                onClick={() => setShowCreate(false)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#6c757d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading templates...</div>
+      ) : (
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {templates.map((template: any) => (
+            <div key={template.id} style={{
+              padding: '1rem',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              background: '#f8f9fa'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1a3a2a' }}>{template.name}</h4>
+                  <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+                    Type: {template.type} | Category: {template.category}
+                  </p>
+                  {template.subject && (
+                    <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>Subject: {template.subject}</p>
+                  )}
+                  <p style={{ margin: 0, fontSize: '0.9rem' }}>{template.message.substring(0, 100)}...</p>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {new Date(template.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function StatCard({ title, value, change, icon, trend }: { title: string, value: string, change: string, icon: string, trend?: 'up' | 'down' | 'neutral' }) {
+function CampaignsSection({ campaigns, loading, onRefresh, showCreate, setShowCreate }: {
+  campaigns: any[],
+  loading: boolean,
+  onRefresh: () => void,
+  showCreate: boolean,
+  setShowCreate: (show: boolean) => void
+}) {
   return (
-    <div style={{
-      padding: '1.5rem',
-      background: '#f8f9fa',
-      borderRadius: '8px',
-      border: '1px solid #e9ecef',
-      textAlign: 'center'
-    }}>
-      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{icon}</div>
-      <div style={{ fontSize: '2rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.25rem' }}>{value}</div>
-      <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem' }}>{title}</div>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#1a3a2a' }}>Notification Campaigns</h3>
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{
+            padding: '0.5rem 1rem',
+            background: '#1a3a2a',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Create Campaign
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading campaigns...</div>
+      ) : (
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {campaigns.map((campaign: any) => (
+            <div key={campaign.id} style={{
+              padding: '1rem',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              background: '#f8f9fa'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1a3a2a' }}>{campaign.name}</h4>
+                  <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+                    Status: {campaign.status} | Sent: {campaign.sent_count}/{campaign.total_recipients}
+                  </p>
+                  {campaign.description && (
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>{campaign.description}</p>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {new Date(campaign.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SendNotificationSection({ templates, campaigns, showSend, setShowSend }: {
+  templates: any[],
+  campaigns: any[],
+  showSend: boolean,
+  setShowSend: (show: boolean) => void
+}) {
+  const [notificationData, setNotificationData] = useState({
+    send_mode: 'individual', // 'individual', 'all', 'segment'
+    user_ids: '',
+    segment_filters: {
+      dietary_preferences: [] as string[],
+      activities: [] as string[]
+    },
+    template_id: '',
+    campaign_id: '',
+    subject: '',
+    message: '',
+    type: 'email'
+  })
+
+  const handleSendNotification = async () => {
+    try {
+      let payload: any = {
+        template_id: notificationData.template_id || null,
+        campaign_id: notificationData.campaign_id || null,
+        subject: notificationData.subject,
+        message: notificationData.message,
+        type: notificationData.type
+      }
+
+      if (notificationData.send_mode === 'all') {
+        payload.send_to_all = true
+      } else if (notificationData.send_mode === 'segment') {
+        payload.segment_filters = notificationData.segment_filters
+      } else {
+        // individual
+        const userIds = notificationData.user_ids.split(',').map(id => id.trim()).filter(id => id)
+        if (userIds.length === 0) {
+          alert('Please enter at least one user ID')
+          return
+        }
+        payload.user_ids = userIds
+      }
+
+      const response = await fetch('/api/admin/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        alert(`Notification sent successfully to ${result.sent_count} users!`)
+        setShowSend(false)
+        setNotificationData({
+          send_mode: 'individual',
+          user_ids: '',
+          segment_filters: { dietary_preferences: [], activities: [] },
+          template_id: '',
+          campaign_id: '',
+          subject: '',
+          message: '',
+          type: 'email'
+        })
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error)
+      alert('Error sending notification')
+    }
+  }
+
+  const toggleSegmentFilter = (type: 'dietary_preferences' | 'activities', value: string) => {
+    setNotificationData(prev => ({
+      ...prev,
+      segment_filters: {
+        ...prev.segment_filters,
+        [type]: prev.segment_filters[type].includes(value)
+          ? prev.segment_filters[type].filter((item: string) => item !== value)
+          : [...prev.segment_filters[type], value]
+      }
+    }))
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#1a3a2a' }}>Send Notification</h3>
+        <p style={{ color: '#666', fontSize: '0.9rem' }}>
+          Send notifications to individual users, segments, or all users
+        </p>
+      </div>
+
       <div style={{
-        fontSize: '0.8rem',
-        color: trend === 'up' ? '#28a745' : trend === 'down' ? '#dc3545' : '#666',
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.25rem'
+        padding: '1.5rem',
+        background: '#f8f9fa',
+        borderRadius: '8px',
+        border: '1px solid #e9ecef'
       }}>
-        {trend === 'up' && '↗️'}
-        {trend === 'down' && '↘️'}
-        {trend === 'neutral' && '→'}
-        {change}
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {/* Send Mode Selection */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Send Mode
+            </label>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {[
+                { value: 'individual', label: 'Individual Users' },
+                { value: 'segment', label: 'User Segments' },
+                { value: 'all', label: 'All Users' }
+              ].map(mode => (
+                <label key={mode.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="radio"
+                    name="send_mode"
+                    value={mode.value}
+                    checked={notificationData.send_mode === mode.value}
+                    onChange={(e) => setNotificationData({...notificationData, send_mode: e.target.value})}
+                  />
+                  {mode.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Individual User IDs */}
+          {notificationData.send_mode === 'individual' && (
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                User IDs (comma-separated)
+              </label>
+              <input
+                type="text"
+                placeholder="user-id-1, user-id-2, user-id-3"
+                value={notificationData.user_ids}
+                onChange={(e) => setNotificationData({...notificationData, user_ids: e.target.value})}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            </div>
+          )}
+
+          {/* Segment Filters */}
+          {notificationData.send_mode === 'segment' && (
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                User Segments
+              </label>
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    Dietary Preferences:
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {['Vegetarian', 'Vegan', 'Gluten-Free', 'Keto', 'Paleo', 'Mediterranean'].map(pref => (
+                      <label key={pref} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={notificationData.segment_filters.dietary_preferences.includes(pref)}
+                          onChange={() => toggleSegmentFilter('dietary_preferences', pref)}
+                        />
+                        {pref}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    Activities:
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {['Running', 'Cycling', 'Hiking', 'Climbing', 'Yoga', 'Weight Training'].map(activity => (
+                      <label key={activity} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                        <input
+                          type="checkbox"
+                          checked={notificationData.segment_filters.activities.includes(activity)}
+                          onChange={() => toggleSegmentFilter('activities', activity)}
+                        />
+                        {activity}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* All Users Warning */}
+          {notificationData.send_mode === 'all' && (
+            <div style={{
+              padding: '1rem',
+              background: '#fff3cd',
+              border: '1px solid #ffeaa7',
+              borderRadius: '4px',
+              color: '#856404'
+            }}>
+              ⚠️ This will send the notification to ALL users in the system. Please confirm this is intentional.
+            </div>
+          )}
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Template (optional)
+            </label>
+            <select
+              value={notificationData.template_id}
+              onChange={(e) => setNotificationData({...notificationData, template_id: e.target.value})}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="">Select a template...</option>
+              {templates.map((template: any) => (
+                <option key={template.id} value={template.id}>
+                  {template.name} ({template.type})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Campaign (optional)
+            </label>
+            <select
+              value={notificationData.campaign_id}
+              onChange={(e) => setNotificationData({...notificationData, campaign_id: e.target.value})}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="">Select a campaign...</option>
+              {campaigns.filter((c: any) => c.status === 'draft').map((campaign: any) => (
+                <option key={campaign.id} value={campaign.id}>
+                  {campaign.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Notification Type
+            </label>
+            <select
+              value={notificationData.type}
+              onChange={(e) => setNotificationData({...notificationData, type: e.target.value})}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="email">Email</option>
+              <option value="push">Push Notification</option>
+              <option value="in_app">In-App Message</option>
+              <option value="sms">SMS</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Subject (optional)
+            </label>
+            <input
+              type="text"
+              placeholder="Notification subject"
+              value={notificationData.subject}
+              onChange={(e) => setNotificationData({...notificationData, subject: e.target.value})}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Message
+            </label>
+            <textarea
+              placeholder="Notification message content"
+              value={notificationData.message}
+              onChange={(e) => setNotificationData({...notificationData, message: e.target.value})}
+              rows={4}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+          </div>
+
+          <button
+            onClick={handleSendNotification}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#1a3a2a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
+            Send Notification
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-function SettingCard({ title, description, action }: { title: string, description: string, action: React.ReactNode }) {
+function HistorySection({ history, loading, onRefresh }: {
+  history: any[],
+  loading: boolean,
+  onRefresh: () => void
+}) {
   return (
-    <div style={{
-      padding: '1.5rem',
-      border: '1px solid #e9ecef',
-      borderRadius: '8px',
-      background: '#f8f9fa',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    }}>
-      <div>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.25rem' }}>
-          {title}
-        </h3>
-        <p style={{ color: '#666', fontSize: '0.9rem' }}>{description}</p>
+    <div>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#1a3a2a' }}>Communication History</h3>
+        <p style={{ color: '#666', fontSize: '0.9rem' }}>
+          View all notification sends and user interactions
+        </p>
       </div>
-      {action}
-    </div>
-  )
-}
 
-function ToggleSwitch({ enabled, onChange }: { enabled: boolean, onChange: (value: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onChange(!enabled)}
-      style={{
-        width: '50px',
-        height: '24px',
-        borderRadius: '12px',
-        border: 'none',
-        background: enabled ? '#1a3a2a' : '#ccc',
-        position: 'relative',
-        cursor: 'pointer',
-        transition: 'background 0.2s'
-      }}
-    >
-      <div style={{
-        width: '18px',
-        height: '18px',
-        borderRadius: '50%',
-        background: '#fff',
-        position: 'absolute',
-        top: '3px',
-        left: enabled ? '29px' : '3px',
-        transition: 'left 0.2s'
-      }}></div>
-    </button>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading history...</div>
+      ) : (
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {history.map((item: any) => (
+            <div key={item.id} style={{
+              padding: '1rem',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              background: '#f8f9fa'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      background: item.direction === 'outbound' ? '#1a3a2a' : '#28a745',
+                      color: '#fff',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600
+                    }}>
+                      {item.direction === 'outbound' ? 'SENT' : 'RECEIVED'}
+                    </span>
+                    <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                      {item.type.toUpperCase()}
+                    </span>
+                  </div>
+                  {item.subject && (
+                    <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>{item.subject}</p>
+                  )}
+                  <p style={{ margin: 0, fontSize: '0.9rem' }}>{item.message.substring(0, 150)}...</p>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#666', textAlign: 'right' }}>
+                  <div>{new Date(item.created_at).toLocaleDateString()}</div>
+                  <div>{new Date(item.created_at).toLocaleTimeString()}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
