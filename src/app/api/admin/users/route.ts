@@ -40,9 +40,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
-        // For main admin, prioritize service role key over limited user data
+    // For main admin, prioritize service role key over limited user data
     if (isMainAdmin) {
-      try {
       // Check if service role key is configured
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
       if (serviceRoleKey) {
@@ -115,6 +114,7 @@ export async function GET(request: NextRequest) {
         }
       } else {
         // No service role key, fall back to limited user data
+        console.log('No service role key configured, falling back to limited data')
         try {
           const { data: userPrefs, error: prefsError } = await supabase
             .from('user_preferences')
@@ -146,82 +146,6 @@ export async function GET(request: NextRequest) {
           }
         } catch (prefsError) {
           console.error('Error fetching user preferences:', prefsError)
-        }
-      }
-
-        // Check if service role key is configured for full user access
-        if (serviceRoleKey) {
-          try {
-            // Create admin client with service role key for full user access
-            const adminSupabase = createAdminClient(
-              process.env.NEXT_PUBLIC_SUPABASE_URL!,
-              serviceRoleKey,
-              {
-                auth: {
-                  autoRefreshToken: false,
-                  persistSession: false
-                }
-              }
-            )
-
-            // Fetch all users from auth.users
-            const { data: allUsers, error: usersError } = await adminSupabase.auth.admin.listUsers()
-
-            console.log('Admin API - Service role users fetch:', {
-              userCount: allUsers?.users?.length || 0,
-              error: usersError,
-              hasServiceRole: !!serviceRoleKey
-            })
-
-            if (!usersError && allUsers) {
-              // Get user preferences for additional data
-              const userIds = allUsers.users.map(u => u.id)
-              const { data: userPrefs } = await supabase
-                .from('user_preferences')
-                .select('user_id, first_name, last_name')
-                .in('user_id', userIds)
-
-              // Combine auth users with preferences
-              const users = allUsers.users.map(authUser => {
-                const prefs = userPrefs?.find((p: any) => p.user_id === authUser.id)
-                return {
-                  id: authUser.id,
-                  email: authUser.email || '',
-                  created_at: authUser.created_at,
-                  last_sign_in_at: authUser.last_sign_in_at,
-                  is_current_user: authUser.id === user.id,
-                  first_name: prefs?.first_name || null,
-                  last_name: prefs?.last_name || null
-                }
-              })
-
-              console.log('Admin API - Returning users:', { count: users.length, hasRealUsers: users.length > 0 })
-
-              // If no users found, include current user
-              if (users.length === 0) {
-                users.push({
-                  id: user.id,
-                  email: user.email || '',
-                  created_at: user.created_at,
-                  last_sign_in_at: user.last_sign_in_at,
-                  is_current_user: true,
-                  first_name: null,
-                  last_name: null
-                })
-              }
-
-              return NextResponse.json({
-                users,
-                total: users.length,
-                note: users.length === 1 && users[0].is_current_user ? 'Only current admin user found' : 'Real user data from Supabase Auth'
-              })
-            } else {
-              console.log('Admin API - Users fetch failed or returned no data:', { error: usersError, data: allUsers })
-            }
-          } catch (adminError) {
-            console.error('Error with admin client:', adminError)
-            // Fall back to mock data if admin client fails
-          }
         }
 
         // Fallback: return mock user data if service role key not configured or failed
@@ -259,21 +183,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
           users: mockUsers,
-          note: serviceRoleKey ? 'Service role configured but no real users found - showing demo data' : 'Configure SERVICE_ROLE_KEY for real user data.'
-        })
-      } catch (error) {
-        console.error('Error fetching users:', error)
-        return NextResponse.json({
-          users: [
-            {
-              id: user.id,
-              email: user.email || '',
-              created_at: user.created_at,
-              last_sign_in_at: user.last_sign_in_at || null,
-              is_current_user: true
-            }
-          ],
-          note: 'Error fetching users, showing current user only'
+          note: 'Configure SUPABASE_SERVICE_ROLE_KEY for real user data'
         })
       }
     }
