@@ -12,22 +12,26 @@ CREATE TABLE IF NOT EXISTS admin_users (
 -- Enable RLS on admin_users table
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
--- Only admins can view admin_users table
+-- Only admins can view admin_users table (or service role)
 CREATE POLICY "Only admins can view admin_users" ON admin_users
   FOR SELECT USING (
+    auth.role() = 'service_role' OR
+    auth.email() = 'joe@nomadicperformance.com' OR
     EXISTS (
       SELECT 1 FROM admin_users au
       WHERE au.user_id = auth.uid()
-    ) OR auth.email() = 'joe@nomadicperformance.com'
+    )
   );
 
--- Only admins can modify admin_users table
+-- Only admins can modify admin_users table (or service role)
 CREATE POLICY "Only admins can modify admin_users" ON admin_users
   FOR ALL USING (
+    auth.role() = 'service_role' OR
+    auth.email() = 'joe@nomadicperformance.com' OR
     EXISTS (
       SELECT 1 FROM admin_users au
       WHERE au.user_id = auth.uid()
-    ) OR auth.email() = 'joe@nomadicperformance.com'
+    )
   );
 
 -- System logs for admin actions
@@ -123,18 +127,20 @@ CREATE TABLE IF NOT EXISTS admin_settings (
 -- Enable RLS on admin_settings table
 ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
 
--- Only admins can view admin_settings
+-- Only admins can view admin_settings (or service role)
 CREATE POLICY "Only admins can view admin_settings" ON admin_settings
   FOR SELECT USING (
+    auth.role() = 'service_role' OR
     EXISTS (
       SELECT 1 FROM admin_users au
       WHERE au.user_id = auth.uid()
     )
   );
 
--- Only admins can insert/update admin_settings
+-- Only admins can modify admin_settings (or service role)
 CREATE POLICY "Only admins can modify admin_settings" ON admin_settings
   FOR ALL USING (
+    auth.role() = 'service_role' OR
     EXISTS (
       SELECT 1 FROM admin_users au
       WHERE au.user_id = auth.uid()

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase-server'
 
+console.log('=== API Route Module Loaded: /api/admin/settings ===')
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -56,6 +58,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('=== POST /api/admin/settings called ===')
   try {
     console.log('Starting dashboard settings update...')
     const supabase = await createClient()
@@ -64,6 +67,8 @@ export async function POST(request: NextRequest) {
     const { dashboardSettings } = body
 
     console.log('Received dashboard settings:', dashboardSettings)
+    console.log('Type of dashboardSettings:', typeof dashboardSettings)
+    console.log('Keys in dashboardSettings:', Object.keys(dashboardSettings || {}))
 
     if (!dashboardSettings) {
       console.log('No dashboardSettings provided')
@@ -139,28 +144,53 @@ export async function POST(request: NextRequest) {
 
     // Update the dashboard access settings (use admin client to bypass RLS)
     console.log('Updating dashboard settings...')
-    const { data: updatedSetting, error: updateError } = await adminSupabase
-      .from('admin_settings')
-      .upsert({
-        setting_key: 'dashboard_access',
-        setting_value: dashboardSettings,
-        description: 'Global dashboard access controls for all users',
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'setting_key'
-      })
-      .select()
-      .single()
+    let updatedSetting
+    try {
+      // First try to update existing record
+      const { data: existingRecord } = await adminSupabase
+        .from('admin_settings')
+        .select('id')
+        .eq('setting_key', 'dashboard_access')
+        .single()
 
-    if (updateError) {
+      if (existingRecord) {
+        console.log('Updating existing record...')
+        const { data, error } = await adminSupabase
+          .from('admin_settings')
+          .update({
+            setting_value: dashboardSettings,
+            description: 'Global dashboard access controls for all users',
+            updated_at: new Date().toISOString()
+          })
+          .eq('setting_key', 'dashboard_access')
+          .select()
+          .single()
+        updatedSetting = data
+        if (error) throw error
+      } else {
+        console.log('Inserting new record...')
+        const { data, error } = await adminSupabase
+          .from('admin_settings')
+          .insert({
+            setting_key: 'dashboard_access',
+            setting_value: dashboardSettings,
+            description: 'Global dashboard access controls for all users'
+          })
+          .select()
+          .single()
+        updatedSetting = data
+        if (error) throw error
+      }
+
+      console.log('Dashboard settings updated successfully:', updatedSetting)
+
+    } catch (updateError) {
       console.error('Error updating dashboard settings:', updateError)
       return NextResponse.json({
         error: 'Failed to update dashboard settings',
-        details: updateError.message
+        details: updateError instanceof Error ? updateError.message : 'Unknown database error'
       }, { status: 500 })
     }
-
-    console.log('Dashboard settings updated successfully:', updatedSetting)
 
     // Log the setting change (only if we have an admin user)
     if (adminUser) {
@@ -191,7 +221,9 @@ export async function POST(request: NextRequest) {
       message: 'Dashboard settings updated successfully'
     })
   } catch (error) {
-    console.error('Unexpected error in dashboard settings update:', error)
+    console.error('=== UNEXPECTED ERROR in POST /api/admin/settings ===')
+    console.error('Error details:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json({
       error: 'Failed to update dashboard settings',
       details: error instanceof Error ? error.message : 'Unknown error'
