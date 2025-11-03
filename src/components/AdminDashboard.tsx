@@ -204,7 +204,7 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
         border: '1px solid #e9ecef'
       }}>
         {activeTab === 'overview' && <OverviewTab />}
-        {activeTab === 'users' && <UsersTab users={users} loading={loading} adminStatus={adminStatus} />}
+        {activeTab === 'users' && <UsersTab users={users} loading={loading} adminStatus={adminStatus} fetchUsers={fetchUsers} />}
         {activeTab === 'content' && <ContentTab blogPosts={blogPosts} loading={loading} adminStatus={adminStatus} />}
         {activeTab === 'analytics' && <AnalyticsTab />}
         {activeTab === 'notifications' && <NotificationsTab adminStatus={adminStatus} />}
@@ -762,7 +762,7 @@ function NotificationsTab({ adminStatus }: { adminStatus: AdminStatus }) {
   )
 }
 
-function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boolean, adminStatus: AdminStatus }) {
+function UsersTab({ users, loading, adminStatus, fetchUsers }: { users: User[], loading: boolean, adminStatus: AdminStatus, fetchUsers: () => Promise<void> }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -823,8 +823,8 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
 
       if (response.ok) {
         alert('User deleted successfully!')
-        // Refresh the users list
-        window.location.reload()
+        // Refresh the users list immediately
+        fetchUsers()
       } else {
         const error = await response.json()
         alert(`Error: ${error.error}`)
