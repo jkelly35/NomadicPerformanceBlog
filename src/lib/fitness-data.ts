@@ -4463,6 +4463,34 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
 
     // CURRENT DAY INSIGHTS - Priority 1
 
+    // 0. Basic meal logging acknowledgment (always show if meals logged)
+    if (todayStats.meals > 0) {
+      if (todayStats.meals === 1) {
+        insights.push({
+          id: 'nutrition-meal-logged',
+          type: 'nutrition',
+          priority: 'low',
+          title: 'Meal Logged! 📝',
+          message: 'Great job logging your first meal today.',
+          recommendation: 'Continue tracking your nutrition throughout the day for optimal performance.',
+          data: { mealsToday: todayStats.meals },
+          created_at: new Date().toISOString()
+        })
+      } else {
+        // This will prevent general insights from showing
+        insights.push({
+          id: 'nutrition-meals-logged',
+          type: 'nutrition',
+          priority: 'low',
+          title: 'Meals Tracked Today 📊',
+          message: `You've logged ${todayStats.meals} meals so far today.`,
+          recommendation: 'Keep up the great work tracking your nutrition!',
+          data: { mealsToday: todayStats.meals },
+          created_at: new Date().toISOString()
+        })
+      }
+    }
+
     // 1. Calorie tracking insight
     const calorieProgress = (todayStats.calories / calorieGoal) * 100
     if (todayStats.calories > 0) {
@@ -4573,7 +4601,7 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
     // GENERAL INSIGHTS - Priority 2 (only if no current day insights)
 
     if (insights.length === 0) {
-      // No meals logged today
+      // No meals logged today - only show this if truly no meals logged
       if (todayStats.meals === 0) {
         insights.push({
           id: 'nutrition-start-day',
@@ -4586,8 +4614,9 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
         })
       }
 
-      // General protein insight based on history
-      if (avgProtein > 0 && avgProtein < proteinGoal * 0.8) {
+      // General protein insight based on history (only if today's intake isn't already good)
+      const todaysProteinProgress = (todayStats.protein / proteinGoal) * 100
+      if (avgProtein > 0 && avgProtein < proteinGoal * 0.8 && todaysProteinProgress < 80) {
         insights.push({
           id: 'nutrition-general-protein',
           type: 'nutrition',
@@ -4595,7 +4624,7 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
           title: 'Consider Increasing Protein 🥩',
           message: `Your average daily protein intake is ${Math.round(avgProtein)}g, below your ${proteinGoal}g goal.`,
           recommendation: 'Focus on protein-rich foods like lean meats, fish, eggs, dairy, legumes, and nuts.',
-          data: { average: Math.round(avgProtein), goal: proteinGoal },
+          data: { average: Math.round(avgProtein), goal: proteinGoal, today: Math.round(todayStats.protein) },
           created_at: new Date().toISOString()
         })
       }

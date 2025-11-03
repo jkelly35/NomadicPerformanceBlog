@@ -55,12 +55,14 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
 
   useEffect(() => {
     const fetchInsights = async () => {
-      const now = Date.now()
-
-      // Check if we have cached data that's still fresh
-      if (insights.length > 0 && (now - lastFetchTime) < CACHE_DURATION) {
-        setLoading(false)
-        return
+      // Always fetch fresh data when refreshTrigger changes
+      if (refreshTrigger === 0) {
+        const now = Date.now()
+        // Check if we have cached data that's still fresh
+        if (insights.length > 0 && (now - lastFetchTime) < CACHE_DURATION) {
+          setLoading(false)
+          return
+        }
       }
 
       try {
@@ -68,7 +70,7 @@ export default function InsightsDisplay({ limit, showHeader = true, compact = fa
         const data = await getAllInsights()
         const filteredData = filterInsights(data)
         setInsights(limit ? filteredData.slice(0, limit) : filteredData)
-        setLastFetchTime(now)
+        setLastFetchTime(Date.now())
       } catch (err) {
         setError('Failed to load insights')
         console.error('Error fetching insights:', err)
