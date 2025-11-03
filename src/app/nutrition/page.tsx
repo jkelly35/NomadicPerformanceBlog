@@ -9,7 +9,7 @@ import { getDailyCaffeineTotal } from '@/lib/fitness-data'
 export const dynamic = 'force-dynamic'
 
 // Dynamically import the heavy NutritionClient component
-const NutritionClient = dynamicImport(() => import('../../components/NutritionClient'), {
+const NutritionClient = dynamicImport(() => import('../../components/features/nutrition/NutritionClient'), {
   loading: () => <SkeletonLoader type="nutrition" />
 })
 

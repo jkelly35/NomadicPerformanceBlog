@@ -7,12 +7,13 @@ import dynamic from 'next/dynamic'
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import BottomNavigation from "@/components/BottomNavigation";
-import FoodSearch from "@/components/FoodSearch";
-import NutritionFacts from "@/components/NutritionFacts";
+import FoodSearch from "./FoodSearch";
+import NutritionFacts from "./NutritionFacts";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import { BarcodeFood } from '@/lib/barcode-api';
 import { useToast } from '@/components/Toast'
-import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, FoodItem, Meal, MealTemplate, MealTemplateItem, NutritionGoal, logHydration, getHydrationLogs, getDailyHydrationTotal, logCaffeine, getCaffeineLogs, getDailyCaffeineTotal, getMicronutrients, getFoodMicronutrients, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, Micronutrient, FoodMicronutrient, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake, getRandomMeal, searchMealsByName, getMealsByCategory, getMealById, getMealCategories, getMealAreas, getSmartRecipeSuggestions, MealDBRecipe } from '@/lib/fitness-data'
+import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, generateNutritionInsights, FoodItem, Meal, NutritionGoal } from '@/lib/features/nutrition'
+import { getHydrationLogs, getCaffeineLogs, getDailyCaffeineTotal, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake, getRandomMeal, searchMealsByName, getMealsByCategory, getMealById, getMealCategories, getMealAreas, getSmartRecipeSuggestions, MealDBRecipe, MealTemplate, MealTemplateItem, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, Micronutrient, FoodMicronutrient, logHydration, getDailyHydrationTotal, logCaffeine, getMicronutrients, getFoodMicronutrients } from '@/lib/fitness-data'
 
 interface NutritionData {
   foodItems: FoodItem[]

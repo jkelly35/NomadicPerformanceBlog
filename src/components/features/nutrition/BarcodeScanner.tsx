@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react'
-import { BarcodeFood, searchByBarcode } from '../lib/barcode-api'
+import { BarcodeFood, searchByBarcode } from '../../../lib/barcode-api'
 
 interface BarcodeScannerProps {
   onFoodFound: (food: BarcodeFood) => void
