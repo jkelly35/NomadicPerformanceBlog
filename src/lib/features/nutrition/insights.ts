@@ -1437,15 +1437,17 @@ export async function generateNutritionInsights(): Promise<NutritionInsight[]> {
         })
       }
 
-      // No meals logged today
-      if (todayStats.meals === 0) {
+      // No substantial meals logged today (early day or very low intake)
+      if ((todayStats.meals === 0 && currentHour < 10) || (todayStats.calories < 200 && currentHour < 12)) {
         insights.push({
           id: 'nutrition-start-day',
           type: 'nutrition',
           priority: 'high',
           title: 'Start Your Nutrition Day 🌅',
-          message: 'You haven\'t logged any meals yet today.',
-          recommendation: 'Begin with a balanced breakfast containing protein, complex carbs, and healthy fats to fuel your day.',
+          message: todayStats.calories < 200 && todayStats.meals > 0
+            ? 'You\'ve logged some snacks but haven\'t started your main nutrition yet.'
+            : 'You haven\'t logged any meals yet today.',
+          recommendation: 'Begin with a balanced breakfast or meal containing protein, complex carbs, and healthy fats to fuel your day.',
           created_at: new Date().toISOString()
         })
       }
