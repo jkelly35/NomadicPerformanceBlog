@@ -46,8 +46,73 @@ export async function GET(request: NextRequest) {
       // Check if service role key is configured
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
       if (serviceRoleKey) {
-        // Service role key is configured, skip to admin API logic below
         console.log('Service role key configured, attempting to fetch real users...')
+        // Execute admin API logic immediately
+        const adminSupabase = createAdminClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          serviceRoleKey,
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false
+            }
+          }
+        )
+
+        // Fetch all users from auth.users
+        const { data: allUsers, error: usersError } = await adminSupabase.auth.admin.listUsers()
+
+        console.log('Admin API - Service role users fetch:', {
+          userCount: allUsers?.users?.length || 0,
+          error: usersError,
+          hasServiceRole: !!serviceRoleKey
+        })
+
+        if (!usersError && allUsers && allUsers.users.length > 0) {
+          // Get user preferences for additional data
+          const userIds = allUsers.users.map(u => u.id)
+          const { data: userPrefs } = await supabase
+            .from('user_preferences')
+            .select('user_id, first_name, last_name')
+            .in('user_id', userIds)
+
+          // Combine auth users with preferences
+          const users = allUsers.users.map(authUser => {
+            const prefs = userPrefs?.find((p: any) => p.user_id === authUser.id)
+            return {
+              id: authUser.id,
+              email: authUser.email || '',
+              created_at: authUser.created_at,
+              last_sign_in_at: authUser.last_sign_in_at,
+              is_current_user: authUser.id === user.id,
+              first_name: prefs?.first_name || null,
+              last_name: prefs?.last_name || null
+            }
+          })
+
+          console.log('Admin API - Returning real users:', users.length)
+          return NextResponse.json({
+            users,
+            total: allUsers.users.length,
+            note: 'Real user data from Supabase Auth'
+          })
+        } else {
+          console.log('Admin API - No users found with service role, falling back to current user')
+          // Return current user only
+          return NextResponse.json({
+            users: [{
+              id: user.id,
+              email: user.email || '',
+              created_at: user.created_at,
+              last_sign_in_at: user.last_sign_in_at,
+              is_current_user: true,
+              first_name: null,
+              last_name: null
+            }],
+            total: 1,
+            note: 'Only current admin user found in database'
+          })
+        }
       } else {
         // No service role key, fall back to limited user data
         try {
