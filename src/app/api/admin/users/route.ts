@@ -40,56 +40,51 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
-        // For main admin, try to get user information from available tables
+        // For main admin, prioritize service role key over limited user data
     if (isMainAdmin) {
       try {
-        // Try to get user count from user_preferences table
-        const { data: userPrefs, error: prefsError } = await supabase
-          .from('user_preferences')
-          .select('user_id, first_name, last_name, created_at, updated_at')
+      // Check if service role key is configured
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (serviceRoleKey) {
+        // Service role key is configured, skip to admin API logic below
+        console.log('Service role key configured, attempting to fetch real users...')
+      } else {
+        // No service role key, fall back to limited user data
+        try {
+          const { data: userPrefs, error: prefsError } = await supabase
+            .from('user_preferences')
+            .select('user_id, first_name, last_name, created_at, updated_at')
 
-        if (!prefsError && userPrefs) {
-          // Get additional user info by joining with auth.users (this might not work due to RLS)
-          // For now, return what we can get
-          const users: Array<{
-            id: string
-            email: string
-            created_at: string
-            last_sign_in_at?: string
-            first_name?: string | null
-            last_name?: string | null
-            is_current_user: boolean
-          }> = userPrefs.map((pref: any) => ({
-            id: pref.user_id,
-            email: 'user@example.com', // Can't get email without admin privileges
-            created_at: pref.created_at,
-            last_sign_in_at: undefined,
-            first_name: pref.first_name,
-            last_name: pref.last_name,
-            is_current_user: pref.user_id === user.id
-          }))
+          if (!prefsError && userPrefs && userPrefs.length > 0) {
+            const users: Array<{
+              id: string
+              email: string
+              created_at: string
+              last_sign_in_at?: string
+              first_name?: string | null
+              last_name?: string | null
+              is_current_user: boolean
+            }> = userPrefs.map((pref: any) => ({
+              id: pref.user_id,
+              email: pref.user_id === user.id ? user.email || '' : 'user@example.com',
+              created_at: pref.created_at,
+              last_sign_in_at: pref.user_id === user.id ? user.last_sign_in_at : undefined,
+              first_name: pref.first_name,
+              last_name: pref.last_name,
+              is_current_user: pref.user_id === user.id
+            }))
 
-          // Add current user if not in preferences
-          if (!users.find((u: any) => u.id === user.id)) {
-            users.push({
-              id: user.id,
-              email: user.email || '',
-              created_at: user.created_at,
-              last_sign_in_at: user.last_sign_in_at,
-              first_name: null,
-              last_name: null,
-              is_current_user: true
+            return NextResponse.json({
+              users,
+              note: 'Limited user data - SUPABASE_SERVICE_ROLE_KEY not configured'
             })
           }
-
-          return NextResponse.json({
-            users,
-            note: 'Limited user data available without service role configuration'
-          })
+        } catch (prefsError) {
+          console.error('Error fetching user preferences:', prefsError)
         }
+      }
 
         // Check if service role key is configured for full user access
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
         if (serviceRoleKey) {
           try {
             // Create admin client with service role key for full user access
