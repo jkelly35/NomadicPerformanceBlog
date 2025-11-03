@@ -5,6 +5,9 @@ import {
   getLatestReadinessScore,
   ReadinessMetric
 } from '@/lib/fitness-data'
+import { createClient } from '@/lib/supabase-server'
+import { checkDashboardAccess } from '@/lib/dashboard-access'
+import { redirect } from 'next/navigation'
 
 interface ReadinessData {
   latestReadiness: ReadinessMetric | null
@@ -38,6 +41,20 @@ async function getReadinessData(): Promise<ReadinessData> {
 export const dynamic = 'force-dynamic'
 
 export default async function ReadinessPage() {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  // Check if readiness dashboard is accessible
+  const hasAccess = await checkDashboardAccess('readiness')
+  if (!hasAccess) {
+    redirect('/dashboard')
+  }
+
   const data = await getReadinessData()
 
   return <ReadinessClient initialData={data} />

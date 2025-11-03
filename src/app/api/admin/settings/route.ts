@@ -36,21 +36,32 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ settings: settingsObject })
+    // Extract dashboard access settings for the SettingsTab
+    const dashboardSettings = settingsObject.dashboard_access?.value || {
+      nutrition: { enabled: true, locked: false },
+      training: { enabled: true, locked: false },
+      activities: { enabled: true, locked: false },
+      equipment: { enabled: true, locked: false },
+      goals: { enabled: true, locked: false },
+      analytics: { enabled: true, locked: false },
+      readiness: { enabled: true, locked: false }
+    }
+
+    return NextResponse.json({ settings: dashboardSettings })
   } catch (error) {
     console.error('Error fetching admin settings:', error)
     return NextResponse.json({ error: 'Failed to fetch admin settings' }, { status: 500 })
   }
 }
 
-export async function PATCH(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const body = await request.json()
-    const { setting_key, setting_value } = body
+    const { dashboardSettings } = body
 
-    if (!setting_key || setting_value === undefined) {
-      return NextResponse.json({ error: 'setting_key and setting_value are required' }, { status: 400 })
+    if (!dashboardSettings) {
+      return NextResponse.json({ error: 'dashboardSettings is required' }, { status: 400 })
     }
 
     // Check if user is main admin
@@ -64,12 +75,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized - only main admin can modify settings' }, { status: 403 })
     }
 
-    // Update the setting
+    // Update the dashboard access settings
     const { data: updatedSetting, error: updateError } = await supabase
       .from('admin_settings')
       .upsert({
-        setting_key,
-        setting_value,
+        setting_key: 'dashboard_access',
+        setting_value: dashboardSettings,
+        description: 'Global dashboard access controls for all users',
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'setting_key'
@@ -78,36 +90,35 @@ export async function PATCH(request: NextRequest) {
       .single()
 
     if (updateError) {
-      console.error('Error updating admin setting:', updateError)
-      return NextResponse.json({ error: 'Failed to update setting' }, { status: 500 })
+      console.error('Error updating dashboard settings:', updateError)
+      return NextResponse.json({ error: 'Failed to update dashboard settings' }, { status: 500 })
     }
 
     // Log the setting change
     try {
       await supabase.from('admin_logs').insert({
         admin_id: user.id,
-        action: 'update_admin_setting',
+        action: 'update_dashboard_access',
         resource_type: 'admin_setting',
-        resource_id: setting_key,
+        resource_id: 'dashboard_access',
         details: {
           updated_by: user.email,
-          old_value: null, // Could be enhanced to track old values
-          new_value: setting_value
+          dashboard_settings: dashboardSettings
         }
       })
     } catch (logError) {
       console.log('Logging error (non-critical):', logError)
     }
 
-    console.log(`Admin ${user.email} updated setting ${setting_key}`)
+    console.log(`Admin ${user.email} updated dashboard access settings`)
 
     return NextResponse.json({
       success: true,
       setting: updatedSetting,
-      message: `Setting ${setting_key} updated successfully`
+      message: 'Dashboard settings updated successfully'
     })
   } catch (error) {
-    console.error('Error updating admin setting:', error)
-    return NextResponse.json({ error: 'Failed to update admin setting' }, { status: 500 })
+    console.error('Error updating dashboard settings:', error)
+    return NextResponse.json({ error: 'Failed to update dashboard settings' }, { status: 500 })
   }
 }

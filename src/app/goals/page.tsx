@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase-server'
 import { getActiveGoals, getActiveEvents } from '@/lib/fitness-data'
 import GoalsClient from '@/components/GoalsClient'
+import { checkDashboardAccess } from '@/lib/dashboard-access'
+import { redirect } from 'next/navigation'
 
 export default async function GoalsPage() {
   const supabase = await createClient()
@@ -16,6 +18,12 @@ export default async function GoalsPage() {
         </div>
       </div>
     )
+  }
+
+  // Check if goals dashboard is accessible
+  const hasAccess = await checkDashboardAccess('goals')
+  if (!hasAccess) {
+    redirect('/dashboard')
   }
 
   // Fetch user's goals and events
