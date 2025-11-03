@@ -125,6 +125,16 @@ export default function NavBar() {
                 transition: 'color 0.2s'
               }} className="nav-link">Dashboard</Link>
             )}
+            {user.email === 'joe@nomadicperformance.com' && (
+              <Link href="/admin" style={{
+                margin: '0 1rem',
+                fontSize: '1.1rem',
+                color: '#fff',
+                textDecoration: 'none',
+                fontWeight: 600,
+                transition: 'color 0.2s'
+              }} className="nav-link">Admin</Link>
+            )}
             <button
               onClick={handleSignOut}
               style={{
@@ -261,6 +271,23 @@ export default function NavBar() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
+                </Link>
+              )}
+              {user.email === 'joe@nomadicperformance.com' && (
+                <Link
+                  href="/admin"
+                  style={{
+                    color: 'var(--nav-text, #fff)',
+                    textDecoration: 'none',
+                    fontSize: '1.2rem',
+                    fontWeight: 600,
+                    padding: '0.5rem 1rem',
+                    width: '100%',
+                    textAlign: 'center'
+                  }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin
                 </Link>
               )}
               <button
