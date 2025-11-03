@@ -9,11 +9,12 @@ import Footer from "@/components/Footer";
 import BottomNavigation from "@/components/BottomNavigation";
 import FoodSearch from "./FoodSearch";
 import NutritionFacts from "./NutritionFacts";
+import NutritionOverviewCard from "./NutritionOverviewCard";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import { BarcodeFood } from '@/lib/barcode-api';
 import { useToast } from '@/components/Toast'
 import { getFoodItems, createFoodItem, updateFoodItem, deleteFoodItem, logMeal, deleteMeal, upsertNutritionGoal, generateNutritionInsights, FoodItem, Meal, NutritionGoal } from '@/lib/features/nutrition'
-import { getHydrationLogs, getCaffeineLogs, getDailyCaffeineTotal, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake, getRandomMeal, searchMealsByName, getMealsByCategory, getMealById, getMealCategories, getMealAreas, getSmartRecipeSuggestions, MealDBRecipe, MealTemplate, MealTemplateItem, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, Micronutrient, FoodMicronutrient, logHydration, getDailyHydrationTotal, logCaffeine, getMicronutrients, getFoodMicronutrients } from '@/lib/fitness-data'
+import { getHydrationLogs, getCaffeineLogs, getDailyCaffeineTotal, getUserInsights, markInsightAsRead, getHabitPatterns, getMetricCorrelations, HydrationLog, CaffeineLog, UserInsight, HabitPattern, MetricCorrelation, generateWeeklyInsights, getSavedFoods, saveFood, removeSavedFood, SavedFood, getDailyMicronutrientIntake, getRandomMeal, searchMealsByName, getMealsByCategory, getMealById, getMealCategories, getMealAreas, getSmartRecipeSuggestions, MealDBRecipe, MealTemplate, MealTemplateItem, createMealTemplate, updateMealTemplate, deleteMealTemplate, logMealFromTemplate, getMealTemplateWithItems, Micronutrient, FoodMicronutrient, logHydration, getDailyHydrationTotal, logCaffeine, getMicronutrients, getFoodMicronutrients, getMealsByDate } from '@/lib/fitness-data'
 
 interface NutritionData {
   foodItems: FoodItem[]
@@ -458,6 +459,71 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
       setMetricCorrelations(correlations)
     } catch (error) {
       console.error('Error loading correlations data:', error)
+    }
+  }
+
+  // Function to refresh nutrition stats from server
+  const refreshNutritionStats = async () => {
+    try {
+      // Use local date instead of UTC to match meal logging
+      const today = (() => {
+        const d = new Date()
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      })()
+      
+      // Get fresh meals data for today
+      const todayMeals = await getMealsByDate(today)
+      
+      // Recalculate daily nutrition stats
+      const recalculatedStats = todayMeals.reduce(
+        (acc: {
+          total_calories: number
+          total_protein: number
+          total_carbs: number
+          total_fat: number
+          total_fiber: number
+          meals_count: number
+        }, meal: Meal) => ({
+          total_calories: acc.total_calories + (meal.total_calories || 0),
+          total_protein: acc.total_protein + (meal.total_protein || 0),
+          total_carbs: acc.total_carbs + (meal.total_carbs || 0),
+          total_fat: acc.total_fat + (meal.total_fat || 0),
+          total_fiber: acc.total_fiber + (meal.total_fiber || 0),
+          meals_count: acc.meals_count + 1
+        }),
+        {
+          total_calories: 0,
+          total_protein: 0,
+          total_carbs: 0,
+          total_fat: 0,
+          total_fiber: 0,
+          meals_count: 0
+        }
+      )
+      
+      // Update the data state with fresh stats
+      setData(prev => ({
+        ...prev,
+        meals: todayMeals,
+        dailyNutritionStats: recalculatedStats
+      }))
+      
+      // Also update hydration and caffeine data
+      const [hydrationTotal, caffeineTotal] = await Promise.all([
+        getDailyHydrationTotal(today),
+        getDailyCaffeineTotal(today)
+      ])
+      
+      setData(prev => ({
+        ...prev,
+        dailyHydrationTotal: hydrationTotal,
+        dailyCaffeineTotal: caffeineTotal
+      }))
+    } catch (error) {
+      console.error('Error refreshing nutrition stats:', error)
     }
   }
 
@@ -1307,14 +1373,59 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'nutritionDataUpdated') {
-        // Refresh the page to get updated data
-        router.refresh()
+        // Refresh nutrition stats instead of full page refresh
+        refreshNutritionStats()
       }
     }
 
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [router])
+  }, [])
+
+  // Load fresh nutrition data when component mounts
+  useEffect(() => {
+    if (user) {
+      refreshNutritionStats()
+    }
+  }, [user])
+
+  // Refresh nutrition stats when component mounts (user navigates back to nutrition page)
+  useEffect(() => {
+    if (user) {
+      refreshNutritionStats()
+    }
+  }, [user])
+
+  // Refresh nutrition stats when page becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        refreshNutritionStats()
+      }
+    }
+
+    const handleFocus = () => {
+      if (user) {
+        refreshNutritionStats()
+      }
+    }
+
+    // Also refresh periodically every 30 seconds
+    const interval = setInterval(() => {
+      if (user && !document.hidden) {
+        refreshNutritionStats()
+      }
+    }, 30000)
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+      clearInterval(interval)
+    }
+  }, [user])
 
   return (
     <main style={{ minHeight: '100vh', background: '#f9f9f9', paddingBottom: '5rem' }} className="md:pb-0">
@@ -2098,271 +2209,21 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
             </div>
 
             {/* Consolidated Nutrition Card */}
-            <div style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '16px',
-              padding: 'clamp(1.5rem, 5vw, 2rem)',
-              marginBottom: '2rem',
-              color: '#fff'
-            }}>
-              <h3 style={{
-                fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                fontWeight: 600,
-                marginBottom: '1.5rem',
-                textAlign: 'center',
-                color: '#fff'
-              }}>
-                🍎 Today's Macros
-              </h3>
-
-              {/* Calories - Main Focus */}
-              <div style={{
-                textAlign: 'center',
-                marginBottom: '1.5rem',
-                padding: 'clamp(0.75rem, 3vw, 1rem)',
-                background: 'rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                backdropFilter: 'blur(10px)'
-              }}>
-                <div style={{
-                  fontSize: 'clamp(2rem, 8vw, 2.5rem)',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  marginBottom: '0.5rem'
-                }}>
-                  {Math.round(data.dailyNutritionStats.total_calories)}
-                </div>
-                <div style={{
-                  fontSize: 'clamp(0.9rem, 3vw, 1rem)',
-                  color: 'rgba(255,255,255,0.8)',
-                  marginBottom: '0.5rem'
-                }}>
-                  Calories
-                </div>
-                <div style={{
-                  fontSize: 'clamp(0.75rem, 2.5vw, 0.9rem)',
-                  color: 'rgba(255,255,255,0.6)'
-                }}>
-                  Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'daily_calories')?.target_value || 2200}
-                </div>
-              </div>
-
-              {/* Macro Breakdown */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(100px, 20vw, 120px), 1fr))',
-                gap: 'clamp(0.5rem, 2vw, 1rem)'
-              }}>
-                <div style={{
-                  textAlign: 'center',
-                  padding: 'clamp(0.75rem, 2.5vw, 1rem)',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <div style={{
-                    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {Math.round(data.dailyNutritionStats.total_protein)}g
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
-                    color: 'rgba(255,255,255,0.8)',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Protein
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
-                    color: 'rgba(255,255,255,0.6)'
-                  }}>
-                    Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'protein_target')?.target_value || 150}g
-                  </div>
-                </div>
-
-                <div style={{
-                  textAlign: 'center',
-                  padding: 'clamp(0.75rem, 2.5vw, 1rem)',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <div style={{
-                    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {Math.round(data.dailyNutritionStats.total_carbs)}g
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
-                    color: 'rgba(255,255,255,0.8)',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Carbs
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
-                    color: 'rgba(255,255,255,0.6)'
-                  }}>
-                    Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'carb_target')?.target_value || 250}g
-                  </div>
-                </div>
-
-                <div style={{
-                  textAlign: 'center',
-                  padding: 'clamp(0.75rem, 2.5vw, 1rem)',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <div style={{
-                    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: '0.25rem'
-                  }}>
-                    {Math.round(data.dailyNutritionStats.total_fat)}g
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)',
-                    color: 'rgba(255,255,255,0.8)',
-                    marginBottom: '0.25rem'
-                  }}>
-                    Fat
-                  </div>
-                  <div style={{
-                    fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
-                    color: 'rgba(255,255,255,0.6)'
-                  }}>
-                    Goal: {data.nutritionGoals.find((g: NutritionGoal) => g.goal_type === 'fat_target')?.target_value || 70}g
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Hydration & Caffeine Summary Cards */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '1rem',
-              marginBottom: '2rem'
-            }}>
-              {/* Hydration Card */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
+            <NutritionOverviewCard
+              nutritionStats={data.dailyNutritionStats}
+              nutritionGoals={data.nutritionGoals}
+              hydrationTotal={dailyHydrationTotal}
+              caffeineTotal={dailyCaffeineTotal}
+              onQuickAddWater={() => {
                 const amount = prompt('Enter hydration amount in ml:', '500')
                 if (amount && !isNaN(parseInt(amount))) {
                   handleLogHydration(parseInt(amount))
                 }
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  💧
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Hydration
-                </h4>
-                <p style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#1976d2',
-                  marginBottom: '0.5rem'
-                }}>
-                  {dailyHydrationTotal}ml
-                </p>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Goal: 3000ml
-                </p>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#2196f3',
-                  fontWeight: 'bold',
-                  marginTop: '0.5rem'
-                }}>
-                  Click to log hydration
-                </p>
-              </div>
+              }}
+              showQuickActions={true}
+            />
 
-              {/* Caffeine Card */}
-              <div style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                border: '1px solid #e9ecef',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                  borderRadius: '50%',
-                  margin: '0 auto 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: '#fff'
-                }}>
-                  ☕
-                </div>
-                <h4 style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  color: '#1a3a2a',
-                  marginBottom: '0.5rem'
-                }}>
-                  Caffeine
-                </h4>
-                <p style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  color: dailyCaffeineTotal > 400 ? '#f44336' : '#f57c00',
-                  marginBottom: '0.5rem'
-                }}>
-                  {dailyCaffeineTotal}mg
-                </p>
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  Limit: 400mg
-                </p>
-              </div>
-            </div>
+
 
             {/* Micronutrients Overview */}
             <div style={{

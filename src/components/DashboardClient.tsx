@@ -13,6 +13,7 @@ import WeatherWidget from "@/components/WeatherWidget";
 import InsightsDisplay from "@/components/InsightsDisplay";
 import TrainingOptimizationDisplay from "@/components/TrainingOptimizationDisplay";
 import GoalPredictionDisplay from "@/components/GoalPredictionDisplay";
+import { NutritionOverviewCard } from "@/components/features/nutrition";
 import {
   Workout,
   HealthMetric,
@@ -712,121 +713,19 @@ function DashboardContent({
                 <p className="text-slate-600 font-medium">Track macronutrients and optimize your performance fuel</p>
               </div>
 
-              {/* Compact Nutrition Overview */}
-              <div className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 rounded-3xl p-10 shadow-xl border border-slate-200/50 backdrop-blur-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-                  {/* Calories */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-600 mb-2">
-                      {localNutritionStats.total_calories}
-                    </div>
-                    <div className="text-sm font-semibold text-slate-700 mb-3">
-                      Calories
-                    </div>
-                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
-                      <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_calories / (data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200)) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Goal: {data.nutritionGoals.find(g => g.goal_type === 'daily_calories')?.target_value || 2200}
-                    </div>
-                  </div>
-
-                  {/* Protein */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600 mb-2">
-                      {Math.round(localNutritionStats.total_protein)}g
-                    </div>
-                    <div className="text-sm font-semibold text-slate-700 mb-3">
-                      Protein
-                    </div>
-                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
-                      <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_protein / (data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150)) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Goal: {data.nutritionGoals.find(g => g.goal_type === 'protein_target')?.target_value || 150}g
-                    </div>
-                  </div>
-
-                  {/* Carbs */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-pink-600 mb-2">
-                      {Math.round(localNutritionStats.total_carbs)}g
-                    </div>
-                    <div className="text-sm font-semibold text-slate-700 mb-3">
-                      Carbs
-                    </div>
-                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
-                      <div className="bg-gradient-to-r from-pink-400 to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_carbs / (data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250)) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Goal: {data.nutritionGoals.find(g => g.goal_type === 'carb_target')?.target_value || 250}g
-                    </div>
-                  </div>
-
-                  {/* Fat */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-cyan-600 mb-2">
-                      {Math.round(localNutritionStats.total_fat)}g
-                    </div>
-                    <div className="text-sm font-semibold text-slate-700 mb-3">
-                      Fat
-                    </div>
-                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
-                      <div className="bg-gradient-to-r from-cyan-400 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localNutritionStats.total_fat / (data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70)) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Goal: {data.nutritionGoals.find(g => g.goal_type === 'fat_target')?.target_value || 70}g
-                    </div>
-                  </div>
-
-                  {/* Hydration */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-600 mb-2">
-                      {Math.round(localHydrationTotal)}ml
-                    </div>
-                    <div className="text-sm font-semibold text-slate-700 mb-3">
-                      💧 Hydration
-                    </div>
-                    <div className="bg-slate-200 rounded-full h-4 overflow-hidden mb-2">
-                      <div className="bg-gradient-to-r from-blue-400 to-cyan-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((localHydrationTotal / 3000) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Goal: 3000ml
-                    </div>
-                  </div>
-                </div>
-
-                {/* Meals Summary & Quick Actions */}
-                <div className="mt-8 pt-6 border-t border-slate-300">
-                  <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-                    <div className="text-sm text-stone-600">
-                      Meals logged today: <strong className="text-stone-800">{localNutritionStats.meals_count}</strong>
-                    </div>
-                    <div className="text-sm text-stone-600">
-                      Fiber: <strong className="text-stone-800">{Math.round(localNutritionStats.total_fiber)}g</strong>
-                    </div>
-                  </div>
-
-                  {/* Quick Add Buttons */}
-                  <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    <button
-                      onClick={() => {
-                        setFoodSelectorOpen(true)
-                        loadFoodData()
-                      }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                    >
-                      ⚡ Quick Add Food
-                    </button>
-                    <button
-                      onClick={() => setShowHydrationModal(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                    >
-                      💧 Quick Add Water
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <NutritionOverviewCard
+                nutritionStats={localNutritionStats}
+                nutritionGoals={data.nutritionGoals}
+                hydrationTotal={localHydrationTotal}
+                caffeineTotal={0} // Dashboard doesn't track caffeine
+                onQuickAddFood={() => {
+                  setFoodSelectorOpen(true)
+                  loadFoodData()
+                }}
+                onQuickAddWater={() => setShowHydrationModal(true)}
+                variant="dashboard"
+                showQuickActions={true}
+              />
             </div>
           )}
 
