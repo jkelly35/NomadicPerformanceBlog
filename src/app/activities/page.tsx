@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import SendsClient from '@/components/SendsClient'
+import { checkDashboardAccess } from '@/lib/dashboard-access'
 
 export default async function ActivitiesPage() {
   const supabase = await createClient()
@@ -9,6 +10,12 @@ export default async function ActivitiesPage() {
 
   if (!user) {
     redirect('/login')
+  }
+
+  // Check if activities dashboard is accessible
+  const hasAccess = await checkDashboardAccess('activities')
+  if (!hasAccess) {
+    redirect('/dashboard')
   }
 
   // Fetch initial data for the sends page

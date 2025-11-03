@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import SkeletonLoader from '@/components/SkeletonLoader'
 import { ToastProvider } from '@/components/Toast'
 import { getDailyCaffeineTotal } from '@/lib/fitness-data'
+import { checkDashboardAccess } from '@/lib/dashboard-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,12 @@ export default async function NutritionPage() {
 
   if (!user) {
     redirect('/login')
+  }
+
+  // Check if nutrition dashboard is accessible
+  const hasAccess = await checkDashboardAccess('nutrition')
+  if (!hasAccess) {
+    redirect('/dashboard')
   }
 
   // Fetch initial data for the nutrition page

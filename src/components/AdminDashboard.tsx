@@ -2137,6 +2137,13 @@ function SettingsTab() {
     blogComments: false,
     newsletterSignup: true
   })
+  const [dashboardAccess, setDashboardAccess] = useState({
+    nutrition: { enabled: true, locked: false },
+    training: { enabled: true, locked: false },
+    activities: { enabled: true, locked: false },
+    equipment: { enabled: true, locked: false }
+  })
+  const [loading, setLoading] = useState(false)
   const [setupStatus, setSetupStatus] = useState<{
     checked: boolean
     schemaExists: boolean
@@ -2177,6 +2184,57 @@ function SettingsTab() {
     }
   }
 
+  const loadDashboardSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/settings')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.settings?.dashboard_access?.value) {
+          setDashboardAccess(data.settings.dashboard_access.value)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading dashboard settings:', error)
+    }
+  }
+
+  const saveDashboardSettings = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          setting_key: 'dashboard_access',
+          setting_value: dashboardAccess
+        })
+      })
+
+      if (response.ok) {
+        alert('Dashboard settings saved successfully!')
+      } else {
+        alert('Failed to save dashboard settings')
+      }
+    } catch (error) {
+      console.error('Error saving dashboard settings:', error)
+      alert('Error saving dashboard settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateDashboardAccess = (dashboard: keyof typeof dashboardAccess, field: 'enabled' | 'locked', value: boolean) => {
+    setDashboardAccess(prev => ({
+      ...prev,
+      [dashboard]: {
+        ...prev[dashboard],
+        [field]: value
+      }
+    }))
+  }
+
   const runSetup = async () => {
     setSettingUp(true)
     try {
@@ -2196,6 +2254,7 @@ function SettingsTab() {
 
   useEffect(() => {
     checkAdminSetup()
+    loadDashboardSettings()
   }, [])
 
   return (
@@ -2289,6 +2348,94 @@ function SettingsTab() {
       </div>
 
       <div style={{ display: 'grid', gap: '1.5rem' }}>
+        {/* Dashboard Access Controls */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e9ecef',
+          borderRadius: '8px',
+          padding: '1.5rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.5rem'
+          }}>
+            <div>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '0.25rem' }}>
+                Dashboard Access Control
+              </h3>
+              <p style={{ color: '#666', fontSize: '0.9rem' }}>
+                Control which dashboards are available to users and lock them from user control
+              </p>
+            </div>
+            <button
+              onClick={saveDashboardSettings}
+              disabled={loading}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: loading ? '#ccc' : '#1a3a2a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 600
+              }}
+            >
+              {loading ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {Object.entries(dashboardAccess).map(([dashboard, config]) => (
+              <div key={dashboard} style={{
+                padding: '1rem',
+                border: '1px solid #e9ecef',
+                borderRadius: '6px',
+                background: '#f8f9fa',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h4 style={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: '#1a3a2a',
+                    marginBottom: '0.25rem',
+                    textTransform: 'capitalize'
+                  }}>
+                    {dashboard} Dashboard
+                  </h4>
+                  <p style={{ color: '#666', fontSize: '0.8rem' }}>
+                    {config.locked ? '🔒 Locked - Users cannot control access' : '🔓 Unlocked - Users can control access'}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
+                      Enabled
+                    </label>
+                    <ToggleSwitch
+                      enabled={config.enabled}
+                      onChange={(value) => updateDashboardAccess(dashboard as keyof typeof dashboardAccess, 'enabled', value)}
+                    />
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#666', marginBottom: '0.25rem' }}>
+                      Locked
+                    </label>
+                    <ToggleSwitch
+                      enabled={config.locked}
+                      onChange={(value) => updateDashboardAccess(dashboard as keyof typeof dashboardAccess, 'locked', value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <SettingCard
           title="Email Notifications"
           description="Configure automated email notifications for user activities"

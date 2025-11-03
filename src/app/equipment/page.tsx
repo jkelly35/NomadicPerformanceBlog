@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import EquipmentClient from '@/components/EquipmentClient'
+import { checkDashboardAccess } from '@/lib/dashboard-access'
 
 export default async function EquipmentPage() {
   const supabase = await createClient()
@@ -9,6 +10,12 @@ export default async function EquipmentPage() {
 
   if (!user) {
     redirect('/login')
+  }
+
+  // Check if equipment dashboard is accessible
+  const hasAccess = await checkDashboardAccess('equipment')
+  if (!hasAccess) {
+    redirect('/dashboard')
   }
 
   // TODO: Fetch equipment data from database when equipment tables are created

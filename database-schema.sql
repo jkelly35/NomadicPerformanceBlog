@@ -1155,3 +1155,63 @@ DROP TRIGGER IF EXISTS update_strength_workouts_updated_at ON strength_workouts;
 CREATE TRIGGER update_strength_workouts_updated_at
     BEFORE UPDATE ON strength_workouts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Admin settings table for global admin controls
+CREATE TABLE IF NOT EXISTS admin_settings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  setting_key TEXT UNIQUE NOT NULL,
+  setting_value JSONB NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable RLS on admin_settings table
+ALTER TABLE admin_settings ENABLE ROW LEVEL SECURITY;
+
+-- Only main admin can access admin settings
+CREATE POLICY "Only main admin can access admin settings" ON admin_settings
+  FOR ALL USING (auth.jwt() ->> 'email' = 'joe@nomadicperformance.com');
+
+-- Insert default dashboard settings
+INSERT INTO admin_settings (setting_key, setting_value, description) VALUES
+('dashboard_access', '{
+  "nutrition": {"enabled": true, "locked": false},
+  "training": {"enabled": true, "locked": false},
+  "activities": {"enabled": true, "locked": false},
+  "equipment": {"enabled": true, "locked": false}
+}', 'Controls which dashboards are enabled and locked for users')
+ON CONFLICT (setting_key) DO NOTHING;
+
+-- Function to check if a dashboard is accessible to a user
+CREATE OR REPLACE FUNCTION is_dashboard_accessible(dashboard_name TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  admin_setting JSONB;
+  dashboard_config JSONB;
+BEGIN
+  -- Get the dashboard access settings
+  SELECT setting_value INTO admin_setting
+  FROM admin_settings
+  WHERE setting_key = 'dashboard_access';
+
+  IF admin_setting IS NULL THEN
+    -- Default to enabled if no settings exist
+    RETURN TRUE;
+  END IF;
+
+  -- Get the specific dashboard configuration
+  dashboard_config := admin_setting -> dashboard_name;
+
+  IF dashboard_config IS NULL THEN
+    -- Default to enabled if dashboard not configured
+    RETURN TRUE;
+  END IF;
+
+  -- Return whether the dashboard is enabled
+  RETURN (dashboard_config ->> 'enabled')::boolean;
+END;
+$$;

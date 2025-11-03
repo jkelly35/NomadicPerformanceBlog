@@ -206,7 +206,19 @@ function DashboardContent({
   const [savedFoods, setSavedFoods] = useState<SavedFood[]>([])
   const [isLoadingFoods, setIsLoadingFoods] = useState(false)
 
-  // Local nutrition stats are now passed as props
+  // Admin settings state
+  const [adminSettings, setAdminSettings] = useState<{
+    nutrition: { enabled: boolean; locked: boolean };
+    training: { enabled: boolean; locked: boolean };
+    activities: { enabled: boolean; locked: boolean };
+    equipment: { enabled: boolean; locked: boolean };
+  }>({
+    nutrition: { enabled: true, locked: false },
+    training: { enabled: true, locked: false },
+    activities: { enabled: true, locked: false },
+    equipment: { enabled: true, locked: false }
+  })
+  const [adminSettingsLoading, setAdminSettingsLoading] = useState(true)
 
   // Helper functions to get data
   const getStatValue = (statType: string) => {
@@ -387,12 +399,32 @@ function DashboardContent({
     setLocalNutritionStats(data.dailyNutritionStats)
   }, [data.dailyNutritionStats])
 
+  // Load admin settings
+  useEffect(() => {
+    const loadAdminSettings = async () => {
+      try {
+        const response = await fetch('/api/admin/settings')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.settings?.dashboard_access?.value) {
+            setAdminSettings(data.settings.dashboard_access.value)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading admin settings:', error)
+      } finally {
+        setAdminSettingsLoading(false)
+      }
+    }
+    loadAdminSettings()
+  }, [])
+
   // Calculate enabled dashboard sections for dynamic layout
   const enabledSections = {
-    nutrition: preferences?.dashboards?.nutrition === true,
-    training: preferences?.dashboards?.training === true,
-    activities: preferences?.dashboards?.activities === true,
-    equipment: preferences?.dashboards?.equipment === true
+    nutrition: preferences?.dashboards?.nutrition === true && adminSettings.nutrition.enabled,
+    training: preferences?.dashboards?.training === true && adminSettings.training.enabled,
+    activities: preferences?.dashboards?.activities === true && adminSettings.activities.enabled,
+    equipment: preferences?.dashboards?.equipment === true && adminSettings.equipment.enabled
   }
 
   const enabledSectionsCount = Object.values(enabledSections).filter(Boolean).length
@@ -410,7 +442,7 @@ function DashboardContent({
 
   // Dynamic grid classes for main content based on enabled sections
   const getMainGridClasses = () => {
-    const activitiesEnabled = preferences?.dashboards?.activities === true
+    const activitiesEnabled = preferences?.dashboards?.activities === true && adminSettings.activities.enabled
     const goalsAlwaysShown = true // Goals & Events is always shown
 
     // If activities is disabled, goals takes full width
@@ -640,7 +672,7 @@ function DashboardContent({
               </div>
             ) : (
               <div className={`grid ${getQuickAccessGridClasses()} gap-8`}>
-            {!preferencesLoading && preferences?.dashboards?.nutrition === true && (
+            {!preferencesLoading && !adminSettingsLoading && preferences?.dashboards?.nutrition === true && adminSettings.nutrition.enabled && (
                 <Link href="/nutrition" className="group relative bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-green-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative z-10 text-center">
@@ -656,7 +688,7 @@ function DashboardContent({
                   </div>
                 </Link>
               )}
-            {!preferencesLoading && preferences?.dashboards?.activities === true && (
+            {!preferencesLoading && !adminSettingsLoading && preferences?.dashboards?.activities === true && adminSettings.activities.enabled && (
                 <Link href="/activities" className="group relative bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 to-sky-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative z-10 text-center">
@@ -672,7 +704,7 @@ function DashboardContent({
                   </div>
                 </Link>
               )}
-            {!preferencesLoading && preferences?.dashboards?.training === true && (
+            {!preferencesLoading && !adminSettingsLoading && preferences?.dashboards?.training === true && adminSettings.training.enabled && (
                 <Link href="/training" className="group relative bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-red-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative z-10 text-center">
@@ -688,7 +720,7 @@ function DashboardContent({
                   </div>
                 </Link>
               )}
-              {!preferencesLoading && preferences?.dashboards?.equipment === true && (
+              {!preferencesLoading && !adminSettingsLoading && preferences?.dashboards?.equipment === true && adminSettings.equipment.enabled && (
               <Link href="/equipment" className="group relative bg-gradient-to-br from-purple-500 via-indigo-500 to-pink-600 rounded-3xl p-8 text-white no-underline block transition-all duration-500 hover:scale-[1.02] shadow-xl hover:shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div className="relative z-10 text-center">
@@ -710,7 +742,7 @@ function DashboardContent({
 
 
           {/* Nutrition Section */}
-          {!preferencesLoading && preferences?.dashboards?.nutrition === true && (
+          {!preferencesLoading && !adminSettingsLoading && preferences?.dashboards?.nutrition === true && adminSettings.nutrition.enabled && (
             <div className="mb-16">
               <div className="text-center mb-10">
                 <h2 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">
@@ -742,7 +774,7 @@ function DashboardContent({
           )}
 
           {/* Training Optimization Section */}
-          {!preferencesLoading && preferences?.dashboards?.training === true && (
+          {!preferencesLoading && preferences?.dashboards?.training === true && adminSettings.training.enabled && (
             <div className="mb-12">
               <TrainingOptimizationDisplay showHeader={true} compact={true} />
             </div>
@@ -752,7 +784,7 @@ function DashboardContent({
           <div className={`grid ${getMainGridClasses()} gap-8 mb-8`}>
 
             {/* Activity Logs */}
-            {!preferencesLoading && preferences?.dashboards?.activities === true && (
+            {!preferencesLoading && preferences?.dashboards?.activities === true && adminSettings.activities.enabled && (
               <div className="bg-gradient-to-br from-stone-50 to-emerald-50 rounded-xl p-8 shadow-lg border border-stone-200">
                 <div className="flex items-center justify-between mb-8">
                   <h3 className="text-2xl font-bold text-stone-800 flex items-center gap-2">
@@ -900,7 +932,7 @@ function DashboardContent({
               </div>
 
               {/* Goal Predictions */}
-              {!preferencesLoading && preferences?.dashboards?.nutrition === true && data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
+              {!preferencesLoading && preferences?.dashboards?.nutrition === true && adminSettings.nutrition.enabled && data.goals.filter(g => !['weekly_workouts', 'monthly_minutes', 'strength_goals'].includes(g.goal_type)).length > 0 && (
                 <div className="mt-6 pt-6 border-t border-stone-300">
                   <h4 className="text-lg font-semibold text-stone-800 mb-4">AI Goal Predictions</h4>
                   <div className="grid gap-4">

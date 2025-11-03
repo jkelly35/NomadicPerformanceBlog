@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     // Check if admin tables already exist by trying to query them
     let tablesExist = false
     let adminUserExists = false
+    let adminSettingsExist = false
 
     try {
       const { data, error } = await supabase
@@ -37,17 +38,27 @@ export async function POST(request: NextRequest) {
           .single()
 
         adminUserExists = !adminError && adminData !== null
+
+        // Check if admin_settings table exists
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('admin_settings')
+          .select('id')
+          .limit(1)
+
+        adminSettingsExist = !settingsError
       }
     } catch (e) {
       tablesExist = false
       adminUserExists = false
+      adminSettingsExist = false
     }
 
-    if (tablesExist && adminUserExists) {
+    if (tablesExist && adminUserExists && adminSettingsExist) {
       return NextResponse.json({
         message: 'Admin system is fully configured',
         schemaExists: true,
-        adminUserExists: true
+        adminUserExists: true,
+        adminSettingsExist: true
       })
     }
 
@@ -69,39 +80,82 @@ export async function POST(request: NextRequest) {
     }
 
     // Tables exist but admin user doesn't - insert the main admin user
-    try {
-      const { error: insertError } = await supabase
-        .from('admin_users')
-        .insert({
-          user_id: user.id,
-          role: 'super_admin',
-          permissions: {
-            read: true,
-            write: true,
-            delete: true,
-            manage_users: true
-          }
-        })
+    if (tablesExist && !adminUserExists) {
+      try {
+        const { error: insertError } = await supabase
+          .from('admin_users')
+          .insert({
+            user_id: user.id,
+            role: 'super_admin',
+            permissions: {
+              read: true,
+              write: true,
+              delete: true,
+              manage_users: true
+            }
+          })
 
-      if (insertError) {
+        if (insertError) {
+          console.error('Error inserting admin user:', insertError)
+          return NextResponse.json({
+            error: 'Failed to insert main admin user',
+            details: insertError.message
+          }, { status: 500 })
+        }
+
+        return NextResponse.json({
+          message: 'Main admin user inserted successfully',
+          schemaExists: true,
+          adminUserExists: true,
+          adminSettingsExist: adminSettingsExist
+        })
+      } catch (insertError) {
         console.error('Error inserting admin user:', insertError)
         return NextResponse.json({
           error: 'Failed to insert main admin user',
-          details: insertError.message
+          details: insertError
         }, { status: 500 })
       }
+    }
 
-      return NextResponse.json({
-        message: 'Main admin user inserted successfully',
-        schemaExists: true,
-        adminUserExists: true
-      })
-    } catch (insertError) {
-      console.error('Error inserting admin user:', insertError)
-      return NextResponse.json({
-        error: 'Failed to insert main admin user',
-        details: insertError
-      }, { status: 500 })
+    // Tables and admin user exist but admin_settings don't - create them
+    if (tablesExist && adminUserExists && !adminSettingsExist) {
+      try {
+        // Insert default dashboard settings
+        const { error: settingsError } = await supabase
+          .from('admin_settings')
+          .insert({
+            setting_key: 'dashboard_access',
+            setting_value: {
+              nutrition: { enabled: true, locked: false },
+              training: { enabled: true, locked: false },
+              activities: { enabled: true, locked: false },
+              equipment: { enabled: true, locked: false }
+            },
+            description: 'Controls which dashboards are enabled and locked for users'
+          })
+
+        if (settingsError) {
+          console.error('Error creating admin settings:', settingsError)
+          return NextResponse.json({
+            error: 'Failed to create admin settings',
+            details: settingsError.message
+          }, { status: 500 })
+        }
+
+        return NextResponse.json({
+          message: 'Admin settings created successfully',
+          schemaExists: true,
+          adminUserExists: true,
+          adminSettingsExist: true
+        })
+      } catch (settingsError) {
+        console.error('Error creating admin settings:', settingsError)
+        return NextResponse.json({
+          error: 'Failed to create admin settings',
+          details: settingsError
+        }, { status: 500 })
+      }
     }
 
   } catch (error) {

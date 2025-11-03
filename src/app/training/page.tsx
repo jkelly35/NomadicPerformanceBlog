@@ -4,6 +4,7 @@ import NavBar from '@/components/NavBar'
 import Footer from '@/components/Footer'
 import BottomNavigation from '@/components/BottomNavigation'
 import TrainingDashboard from '@/components/TrainingDashboard'
+import { checkDashboardAccess } from '@/lib/dashboard-access'
 
 export default async function TrainingPage() {
   const supabase = await createClient()
@@ -12,6 +13,12 @@ export default async function TrainingPage() {
 
   if (!user) {
     redirect('/login')
+  }
+
+  // Check if training dashboard is accessible
+  const hasAccess = await checkDashboardAccess('training')
+  if (!hasAccess) {
+    redirect('/dashboard')
   }
 
   // Fetch workout data
