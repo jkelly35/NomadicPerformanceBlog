@@ -18,7 +18,16 @@ CREATE POLICY "Only admins can view admin_users" ON admin_users
     EXISTS (
       SELECT 1 FROM admin_users au
       WHERE au.user_id = auth.uid()
-    )
+    ) OR auth.email() = 'joe@nomadicperformance.com'
+  );
+
+-- Only admins can modify admin_users table
+CREATE POLICY "Only admins can modify admin_users" ON admin_users
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM admin_users au
+      WHERE au.user_id = auth.uid()
+    ) OR auth.email() = 'joe@nomadicperformance.com'
   );
 
 -- System logs for admin actions
