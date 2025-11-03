@@ -781,7 +781,7 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage)
 
   const handleResetPassword = async (userId: string) => {
-    if (!confirm('Are you sure you want to reset this user\'s password? They will receive an email to set a new password.')) {
+    if (!confirm('Are you sure you want to reset this user\'s password? A temporary password will be generated and displayed.')) {
       return
     }
 
@@ -790,11 +790,12 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
       const response = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, action: 'reset_password' })
+        body: JSON.stringify({ userId, action: 'resetPassword' })
       })
 
       if (response.ok) {
-        alert('Password reset email sent successfully!')
+        const data = await response.json()
+        alert(`Password reset successfully! Temporary password: ${data.tempPassword}`)
       } else {
         const error = await response.json()
         alert(`Error: ${error.error}`)
