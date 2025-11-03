@@ -763,35 +763,313 @@ function NotificationsTab({ adminStatus }: { adminStatus: AdminStatus }) {
 }
 
 function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boolean, adminStatus: AdminStatus }) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showUserModal, setShowUserModal] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const usersPerPage = 10
+
+  // Filter users based on search term
+  const filteredUsers = users.filter(user =>
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  // Paginate users
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
+  const startIndex = (currentPage - 1) * usersPerPage
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage)
+
+  const handleResetPassword = async (userId: string) => {
+    if (!confirm('Are you sure you want to reset this user\'s password? They will receive an email to set a new password.')) {
+      return
+    }
+
+    setActionLoading(userId)
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action: 'reset_password' })
+      })
+
+      if (response.ok) {
+        alert('Password reset email sent successfully!')
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error)
+      alert('Error resetting password')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete user ${email}? This action cannot be undone.`)) {
+      return
+    }
+
+    setActionLoading(userId)
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+
+      if (response.ok) {
+        alert('User deleted successfully!')
+        // Refresh the users list
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      alert('Error deleting user')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user)
+    setShowUserModal(true)
+  }
+
   return (
     <div>
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-        User Management
-      </h2>
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1rem' }}>
+          User Management
+        </h2>
+        <p style={{ color: '#666', fontSize: '1rem' }}>
+          Manage user accounts, reset passwords, and view user details
+        </p>
+      </div>
+
+      {/* Search and Filters */}
+      <div style={{
+        background: '#f8f9fa',
+        padding: '1.5rem',
+        borderRadius: '8px',
+        marginBottom: '2rem',
+        border: '1px solid #e9ecef'
+      }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              placeholder="Search users by email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                fontSize: '0.9rem'
+              }}
+            />
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>
+            {filteredUsers.length} users found
+          </div>
+        </div>
+      </div>
+
+      {/* Users Table */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>Loading users...</div>
       ) : (
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {users.map((user) => (
+        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef', overflow: 'hidden' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
+            gap: '1rem',
+            padding: '1rem',
+            background: '#f8f9fa',
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            color: '#1a3a2a',
+            borderBottom: '1px solid #e9ecef'
+          }}>
+            <div>Email</div>
+            <div>Joined</div>
+            <div>Last Login</div>
+            <div>Actions</div>
+          </div>
+
+          {paginatedUsers.map((user) => (
             <div key={user.id} style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
+              gap: '1rem',
               padding: '1rem',
-              border: '1px solid #e9ecef',
-              borderRadius: '8px',
-              background: '#f8f9fa'
+              borderBottom: '1px solid #f0f0f0',
+              alignItems: 'center'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#1a3a2a' }}>{user.email}</h4>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666' }}>
-                    Joined: {new Date(user.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                  {user.last_sign_in_at ? `Last login: ${new Date(user.last_sign_in_at).toLocaleDateString()}` : 'Never logged in'}
-                </div>
+              <div style={{ fontWeight: 500 }}>{user.email}</div>
+              <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                {new Date(user.created_at).toLocaleDateString()}
+              </div>
+              <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => handleViewUser(user)}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#17a2b8',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => handleResetPassword(user.id)}
+                  disabled={actionLoading === user.id}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#ffc107',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: actionLoading === user.id ? 'not-allowed' : 'pointer',
+                    fontSize: '0.8rem',
+                    opacity: actionLoading === user.id ? 0.6 : 1
+                  }}
+                >
+                  {actionLoading === user.id ? '...' : 'Reset PW'}
+                </button>
+                <button
+                  onClick={() => handleDeleteUser(user.id, user.email)}
+                  disabled={actionLoading === user.id}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#dc3545',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: actionLoading === user.id ? 'not-allowed' : 'pointer',
+                    fontSize: '0.8rem',
+                    opacity: actionLoading === user.id ? 0.6 : 1
+                  }}
+                >
+                  {actionLoading === user.id ? '...' : 'Delete'}
+                </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '1rem',
+          marginTop: '2rem'
+        }}>
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            style={{
+              padding: '0.5rem 1rem',
+              background: currentPage === 1 ? '#e9ecef' : '#1a3a2a',
+              color: currentPage === 1 ? '#6c757d' : '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: '0.9rem', color: '#666' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: '0.5rem 1rem',
+              background: currentPage === totalPages ? '#e9ecef' : '#1a3a2a',
+              color: currentPage === totalPages ? '#6c757d' : '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {showUserModal && selectedUser && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '8px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ marginBottom: '1.5rem', color: '#1a3a2a' }}>User Details</h3>
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              <div>
+                <strong>Email:</strong> {selectedUser.email}
+              </div>
+              <div>
+                <strong>User ID:</strong> {selectedUser.id}
+              </div>
+              <div>
+                <strong>Joined:</strong> {new Date(selectedUser.created_at).toLocaleString()}
+              </div>
+              <div>
+                <strong>Last Login:</strong> {selectedUser.last_sign_in_at ? new Date(selectedUser.last_sign_in_at).toLocaleString() : 'Never'}
+              </div>
+            </div>
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowUserModal(false)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#6c757d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -844,13 +1122,325 @@ function AnalyticsTab() {
 }
 
 function SettingsTab() {
+  const [dashboardSettings, setDashboardSettings] = useState({
+    nutrition: { enabled: true, locked: false },
+    training: { enabled: true, locked: false },
+    activities: { enabled: true, locked: false },
+    equipment: { enabled: true, locked: false },
+    goals: { enabled: true, locked: false },
+    analytics: { enabled: true, locked: false },
+    readiness: { enabled: true, locked: false }
+  })
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetchDashboardSettings()
+  }, [])
+
+  const fetchDashboardSettings = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/settings')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.settings) {
+          setDashboardSettings(data.settings)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard settings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveDashboardSettings = async () => {
+    setSaving(true)
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dashboardSettings })
+      })
+
+      if (response.ok) {
+        alert('Dashboard settings saved successfully!')
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error saving dashboard settings:', error)
+      alert('Error saving settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateDashboardSetting = (dashboard: keyof typeof dashboardSettings, setting: 'enabled' | 'locked', value: boolean) => {
+    setDashboardSettings(prev => ({
+      ...prev,
+      [dashboard]: {
+        ...prev[dashboard],
+        [setting]: value
+      }
+    }))
+  }
+
+  const dashboardOptions = [
+    { key: 'nutrition', label: 'Nutrition Dashboard', icon: '🥗' },
+    { key: 'training', label: 'Training Dashboard', icon: '💪' },
+    { key: 'activities', label: 'Activities Dashboard', icon: '🏃' },
+    { key: 'equipment', label: 'Equipment Dashboard', icon: '🏋️' },
+    { key: 'goals', label: 'Goals Dashboard', icon: '🎯' },
+    { key: 'analytics', label: 'Analytics Dashboard', icon: '📊' },
+    { key: 'readiness', label: 'Readiness Dashboard', icon: '⚡' }
+  ]
+
   return (
     <div>
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1.5rem' }}>
-        System Settings
-      </h2>
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-        Settings panel coming soon...
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '1rem' }}>
+          System Settings
+        </h2>
+        <p style={{ color: '#666', fontSize: '1rem' }}>
+          Configure dashboard access controls and system-wide settings
+        </p>
+      </div>
+
+      {/* Dashboard Access Controls */}
+      <div style={{
+        background: '#f8f9fa',
+        padding: '2rem',
+        borderRadius: '8px',
+        border: '1px solid #e9ecef',
+        marginBottom: '2rem'
+      }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
+          Dashboard Access Controls
+        </h3>
+        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          Control which dashboards are available to users and whether they can modify their own access.
+        </p>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading settings...</div>
+        ) : (
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {dashboardOptions.map(({ key, label, icon }) => (
+              <div key={key} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1rem',
+                background: '#fff',
+                borderRadius: '6px',
+                border: '1px solid #e9ecef'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>{icon}</span>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1a3a2a' }}>
+                      {label}
+                    </h4>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+                      {dashboardSettings[key as keyof typeof dashboardSettings].enabled ? 'Enabled' : 'Disabled'}
+                      {dashboardSettings[key as keyof typeof dashboardSettings].locked && ' • Locked'}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.8rem', color: '#666' }}>Enabled:</label>
+                    <button
+                      onClick={() => updateDashboardSetting(key as keyof typeof dashboardSettings, 'enabled', !dashboardSettings[key as keyof typeof dashboardSettings].enabled)}
+                      style={{
+                        width: '40px',
+                        height: '20px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: dashboardSettings[key as keyof typeof dashboardSettings].enabled ? '#1a3a2a' : '#ccc',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: '2px',
+                        left: dashboardSettings[key as keyof typeof dashboardSettings].enabled ? '22px' : '2px',
+                        transition: 'left 0.2s'
+                      }}></div>
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.8rem', color: '#666' }}>Locked:</label>
+                    <button
+                      onClick={() => updateDashboardSetting(key as keyof typeof dashboardSettings, 'locked', !dashboardSettings[key as keyof typeof dashboardSettings].locked)}
+                      style={{
+                        width: '40px',
+                        height: '20px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: dashboardSettings[key as keyof typeof dashboardSettings].locked ? '#dc3545' : '#ccc',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: '2px',
+                        left: dashboardSettings[key as keyof typeof dashboardSettings].locked ? '22px' : '2px',
+                        transition: 'left 0.2s'
+                      }}></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={saveDashboardSettings}
+            disabled={saving}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: '#1a3a2a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              fontWeight: 600,
+              opacity: saving ? 0.6 : 1
+            }}
+          >
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+        </div>
+      </div>
+
+      {/* Additional Settings */}
+      <div style={{
+        background: '#f8f9fa',
+        padding: '2rem',
+        borderRadius: '8px',
+        border: '1px solid #e9ecef'
+      }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: '#1a3a2a', marginBottom: '1.5rem' }}>
+          System Configuration
+        </h3>
+
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1rem',
+            background: '#fff',
+            borderRadius: '6px',
+            border: '1px solid #e9ecef'
+          }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1a3a2a' }}>
+                Database Maintenance
+              </h4>
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+                Run database optimization and cleanup tasks
+              </p>
+            </div>
+            <button
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#17a2b8',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Run Maintenance
+            </button>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1rem',
+            background: '#fff',
+            borderRadius: '6px',
+            border: '1px solid #e9ecef'
+          }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1a3a2a' }}>
+                Cache Management
+              </h4>
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+                Clear application caches and refresh data
+              </p>
+            </div>
+            <button
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#28a745',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Clear Cache
+            </button>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1rem',
+            background: '#fff',
+            borderRadius: '6px',
+            border: '1px solid #e9ecef'
+          }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#1a3a2a' }}>
+                System Backup
+              </h4>
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+                Create a full system backup
+              </p>
+            </div>
+            <button
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#ffc107',
+                color: '#000',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Create Backup
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
