@@ -287,3 +287,101 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to process user deletion' }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const action = searchParams.get('action')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 })
+    }
+
+    if (!action) {
+      return NextResponse.json({ error: 'Action required' }, { status: 400 })
+    }
+
+    // Check if user is main admin
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    if (user.email !== 'joe@nomadicperformance.com') {
+      return NextResponse.json({ error: 'Not authorized - only main admin can perform this action' }, { status: 403 })
+    }
+
+    // Check if service role key is configured
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!serviceRoleKey) {
+      return NextResponse.json({
+        error: 'Service role key not configured',
+        note: 'Configure SUPABASE_SERVICE_ROLE_KEY to enable user management'
+      }, { status: 500 })
+    }
+
+    // Create admin client
+    const adminSupabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      serviceRoleKey,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    if (action === 'resetPassword') {
+      // Generate a temporary password
+      const tempPassword = Math.random().toString(36).slice(-12) + 'Temp2024!'
+
+      try {
+        // Update user password
+        const { error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
+          password: tempPassword
+        })
+
+        if (updateError) {
+          console.error('Error resetting password:', updateError)
+          return NextResponse.json({
+            error: 'Failed to reset password',
+            details: updateError.message
+          }, { status: 500 })
+        }
+
+        // Log the password reset
+        try {
+          await supabase.from('admin_logs').insert({
+            admin_id: user.id,
+            action: 'reset_password',
+            resource_type: 'user',
+            resource_id: userId,
+            details: { reset_by: user.email, target_user_id: userId }
+          })
+        } catch (logError) {
+          console.log('Logging error (non-critical):', logError)
+        }
+
+        console.log(`Admin ${user.email} successfully reset password for user ${userId}`)
+
+        return NextResponse.json({
+          success: true,
+          message: `Password reset successfully. Temporary password: ${tempPassword}`,
+          tempPassword: tempPassword
+        })
+      } catch (error) {
+        console.error('Error resetting password:', error)
+        return NextResponse.json({ error: 'Failed to reset password' }, { status: 500 })
+      }
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  } catch (error) {
+    console.error('Error processing user action:', error)
+    return NextResponse.json({ error: 'Failed to process user action' }, { status: 500 })
+  }
+}

@@ -1117,12 +1117,12 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
                     </td>
                     {adminStatus.isMainAdmin && (
                       <td style={{ padding: '1rem' }}>
-                        {user.email !== 'joe@nomadicperformance.com' && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                           <button
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleViewUserDetails(user)}
                             style={{
                               padding: '0.25rem 0.5rem',
-                              background: '#dc3545',
+                              background: '#17a2b8',
                               color: '#fff',
                               border: 'none',
                               borderRadius: '4px',
@@ -1130,9 +1130,39 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
                               cursor: 'pointer'
                             }}
                           >
-                            Delete
+                            Details
                           </button>
-                        )}
+                          <button
+                            onClick={() => handleResetPassword(user.id)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              background: '#ffc107',
+                              color: '#000',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Reset Password
+                          </button>
+                          {user.email !== 'joe@nomadicperformance.com' && (
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              style={{
+                                padding: '0.25rem 0.5rem',
+                                background: '#dc3545',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -1223,6 +1253,45 @@ function UsersTab({ users, loading, adminStatus }: { users: User[], loading: boo
       console.error('Error deleting user:', error)
       alert('Error deleting user')
     }
+  }
+
+  async function handleResetPassword(userId: string) {
+    if (!confirm('Are you sure you want to reset this user\'s password? They will receive a temporary password.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users?userId=${userId}&action=resetPassword`, {
+        method: 'PATCH'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`Password reset successful! Temporary password: ${data.tempPassword}\n\nPlease share this password with the user securely.`)
+      } else {
+        const errorData = await response.json()
+        alert(`Failed to reset password: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error)
+      alert('Error resetting password')
+    }
+  }
+
+  function handleViewUserDetails(user: any) {
+    const details = `
+User Details:
+-------------
+ID: ${user.id}
+Email: ${user.email}
+Created: ${new Date(user.created_at).toLocaleString()}
+Last Sign In: ${user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}
+First Name: ${user.first_name || 'Not set'}
+Last Name: ${user.last_name || 'Not set'}
+Is Current User: ${user.is_current_user ? 'Yes' : 'No'}
+    `.trim()
+
+    alert(details)
   }
 }
 
