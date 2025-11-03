@@ -4390,7 +4390,12 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
 
     const insights: Insight[] = []
     const today = new Date()
-    const todayString = today.toISOString().split('T')[0]
+    const todayString = (() => {
+      const year = today.getFullYear()
+      const month = String(today.getMonth() + 1).padStart(2, '0')
+      const day = String(today.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })()
 
     // Get today's meals and nutrition data
     const { data: todayMeals } = await supabase
@@ -4409,11 +4414,17 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
     // Get recent meal history for comparison (last 7 days)
     const sevenDaysAgo = new Date(today)
     sevenDaysAgo.setDate(today.getDate() - 7)
+    const sevenDaysAgoString = (() => {
+      const year = sevenDaysAgo.getFullYear()
+      const month = String(sevenDaysAgo.getMonth() + 1).padStart(2, '0')
+      const day = String(sevenDaysAgo.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })()
     const { data: recentMeals } = await supabase
       .from('meals')
       .select('*')
       .eq('user_id', user.id)
-      .gte('meal_date', sevenDaysAgo.toISOString().split('T')[0])
+      .gte('meal_date', sevenDaysAgoString)
 
     // Calculate today's nutrition stats
     const todayStats = todayMeals?.reduce((acc, meal) => ({
@@ -4541,13 +4552,7 @@ export async function generateNutritionInsights(): Promise<Insight[]> {
     }
 
     // 4. Hydration reminder (if meals logged but hydration not tracked)
-    const { data: todayHydration } = await supabase
-      .from('hydration_logs')
-      .select('amount_ml')
-      .eq('user_id', user.id)
-      .eq('log_date', todayString)
-
-    const totalHydration = todayHydration?.reduce((sum, log) => sum + (log.amount_ml || 0), 0) || 0
+    const totalHydration = await getDailyHydrationTotal(todayString)
     if (todayStats.meals > 0 && totalHydration < 1500) {
       insights.push({
         id: 'nutrition-hydration-reminder',
@@ -4616,16 +4621,8 @@ export async function generateHealthInsights(): Promise<Insight[]> {
       .limit(30)
 
     if (!metrics || metrics.length === 0) {
-      insights.push({
-        id: 'health-start-tracking',
-        type: 'health',
-        priority: 'medium',
-        title: 'Track Your Health Metrics',
-        message: 'Start monitoring key health indicators to optimize your performance and recovery.',
-        recommendation: 'Log your weight, body fat percentage, or resting heart rate to see trends over time.',
-        created_at: new Date().toISOString()
-      })
-      return insights
+      // Don't generate "start tracking health" insights for nutrition-focused dashboard
+      return []
     }
 
     // Analyze weight trends
@@ -4676,16 +4673,8 @@ export async function generateGoalInsights(): Promise<Insight[]> {
       .eq('is_active', true)
 
     if (!goals || goals.length === 0) {
-      insights.push({
-        id: 'goals-set-first',
-        type: 'goals',
-        priority: 'high',
-        title: 'Set Your First Goal',
-        message: 'Goals help you stay motivated and track your progress toward specific targets.',
-        recommendation: 'Set a realistic goal like "Workout 3 times per week" or "Lose 1kg per month".',
-        created_at: new Date().toISOString()
-      })
-      return insights
+      // Don't generate "set your first goal" insights for nutrition-focused dashboard
+      return []
     }
 
     // Analyze goal progress
@@ -4747,16 +4736,8 @@ export async function generateHydrationInsights(): Promise<Insight[]> {
       .limit(7)
 
     if (!hydration || hydration.length === 0) {
-      insights.push({
-        id: 'hydration-start',
-        type: 'hydration',
-        priority: 'medium',
-        title: 'Stay Hydrated',
-        message: 'Start tracking your daily water intake to maintain optimal performance and health.',
-        recommendation: 'Aim for at least 2-3 liters of water per day, more if you\'re active.',
-        created_at: new Date().toISOString()
-      })
-      return insights
+      // Don't generate "start tracking hydration" insights for nutrition-focused dashboard
+      return []
     }
 
     // Analyze hydration consistency
