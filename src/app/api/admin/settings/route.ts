@@ -78,30 +78,49 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure the admin user exists in admin_users table (use admin client to bypass RLS)
-    const { data: adminUser, error: adminCheckError } = await adminSupabase
-      .from('admin_users')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (adminCheckError || !adminUser) {
-      // Create the admin user if it doesn't exist
-      const { error: createAdminError } = await adminSupabase
+    let adminUser = null;
+    try {
+      const { data: existingAdmin, error: adminCheckError } = await adminSupabase
         .from('admin_users')
-        .insert({
-          user_id: user.id,
-          role: 'super_admin',
-          permissions: {
-            read: true,
-            write: true,
-            delete: true,
-            manage_users: true
-          }
-        })
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
 
-      if (createAdminError) {
-        console.error('Error creating admin user:', createAdminError)
-        return NextResponse.json({ error: 'Failed to setup admin user' }, { status: 500 })
+      if (!adminCheckError && existingAdmin) {
+        adminUser = existingAdmin;
+      }
+    } catch (checkError) {
+      console.log('Admin user check error (non-critical):', checkError);
+    }
+
+    if (!adminUser) {
+      try {
+        const { data: newAdminUser, error: createAdminError } = await adminSupabase
+          .from('admin_users')
+          .insert({
+            user_id: user.id,
+            role: 'super_admin',
+            permissions: {
+              read: true,
+              write: true,
+              delete: true,
+              manage_users: true
+            }
+          })
+          .select('id')
+          .single()
+
+        if (createAdminError) {
+          console.error('Error creating admin user:', createAdminError)
+          // Don't fail the whole request - continue without admin user for now
+          console.log('Continuing without admin user creation...')
+        } else {
+          adminUser = newAdminUser;
+        }
+      } catch (createError) {
+        console.error('Exception creating admin user:', createError)
+        // Don't fail the whole request
+        console.log('Continuing without admin user creation...')
       }
     }
 
@@ -124,20 +143,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update dashboard settings' }, { status: 500 })
     }
 
-    // Log the setting change (use regular client since admin_logs should work with RLS)
-    try {
-      await supabase.from('admin_logs').insert({
-        admin_id: user.id,
-        action: 'update_dashboard_access',
-        resource_type: 'admin_setting',
-        resource_id: 'dashboard_access',
-        details: {
-          updated_by: user.email,
-          dashboard_settings: dashboardSettings
-        }
-      })
-    } catch (logError) {
-      console.log('Logging error (non-critical):', logError)
+    // Log the setting change (only if we have an admin user)
+    if (adminUser) {
+      try {
+        await supabase.from('admin_logs').insert({
+          admin_id: adminUser.id,
+          action: 'update_dashboard_access',
+          resource_type: 'admin_setting',
+          resource_id: 'dashboard_access',
+          details: {
+            updated_by: user.email,
+            dashboard_settings: dashboardSettings
+          }
+        })
+      } catch (logError) {
+        console.log('Logging error (non-critical):', logError)
+      }
     }
 
     console.log(`Admin ${user.email} updated dashboard access settings`)
