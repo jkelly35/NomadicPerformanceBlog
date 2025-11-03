@@ -35,6 +35,7 @@ import {
   logHydration,
   getDailyNutritionStats,
   getDailyHydrationTotal,
+  getDailyCaffeineTotal,
   Event as FitnessEvent,
   Send,
   Equipment,
@@ -62,6 +63,7 @@ interface DashboardData {
     meals_count: number
   }
   dailyHydrationTotal: number
+  dailyCaffeineTotal: number
   equipment: Equipment[]
 }
 
@@ -83,6 +85,7 @@ function DashboardContent({
   onHydrationSubmit,
   isSubmitting,
   localHydrationTotal,
+  localCaffeineTotal,
   localNutritionStats,
   setLocalNutritionStats,
   user,
@@ -113,6 +116,7 @@ function DashboardContent({
   onHydrationSubmit: (formData: FormData) => Promise<void>
   isSubmitting: boolean
   localHydrationTotal: number
+  localCaffeineTotal: number
   localNutritionStats: {
     total_calories: number
     total_protein: number
@@ -717,13 +721,12 @@ function DashboardContent({
                 nutritionStats={localNutritionStats}
                 nutritionGoals={data.nutritionGoals}
                 hydrationTotal={localHydrationTotal}
-                caffeineTotal={0} // Dashboard doesn't track caffeine
+                caffeineTotal={localCaffeineTotal}
                 onQuickAddFood={() => {
                   setFoodSelectorOpen(true)
                   loadFoodData()
                 }}
                 onQuickAddWater={() => setShowHydrationModal(true)}
-                variant="dashboard"
                 showQuickActions={true}
               />
             </div>
@@ -2052,12 +2055,14 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   // Local state for immediate UI updates
   const [localNutritionStats, setLocalNutritionStats] = useState(data.dailyNutritionStats)
   const [localHydrationTotal, setLocalHydrationTotal] = useState(data.dailyHydrationTotal)
+  const [localCaffeineTotal, setLocalCaffeineTotal] = useState(data.dailyCaffeineTotal)
 
   // Update local state when data changes
   useEffect(() => {
     setLocalNutritionStats(data.dailyNutritionStats)
     setLocalHydrationTotal(data.dailyHydrationTotal)
-  }, [data.dailyNutritionStats, data.dailyHydrationTotal])
+    setLocalCaffeineTotal(data.dailyCaffeineTotal)
+  }, [data.dailyNutritionStats, data.dailyHydrationTotal, data.dailyCaffeineTotal])
 
   // Function to refresh nutrition stats from server
   const refreshNutritionStats = async () => {
@@ -2070,12 +2075,14 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         const day = String(d.getDate()).padStart(2, '0')
         return `${year}-${month}-${day}`
       })()
-      const [freshStats, freshHydrationTotal] = await Promise.all([
+      const [freshStats, freshHydrationTotal, freshCaffeineTotal] = await Promise.all([
         getDailyNutritionStats(today),
-        getDailyHydrationTotal(today)
+        getDailyHydrationTotal(today),
+        getDailyCaffeineTotal(today)
       ])
       setLocalNutritionStats(freshStats)
       setLocalHydrationTotal(freshHydrationTotal)
+      setLocalCaffeineTotal(freshCaffeineTotal)
     } catch (error) {
       console.error('Error refreshing nutrition stats:', error)
     }
@@ -2724,6 +2731,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     onHydrationSubmit={handleHydrationSubmit}
     isSubmitting={isSubmitting}
     localHydrationTotal={localHydrationTotal}
+    localCaffeineTotal={localCaffeineTotal}
     localNutritionStats={localNutritionStats}
     setLocalNutritionStats={setLocalNutritionStats}
     user={user}

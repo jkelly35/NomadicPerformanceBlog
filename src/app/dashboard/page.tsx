@@ -25,7 +25,8 @@ import {
   Equipment,
   getUserEquipment,
   getRecentSends,
-  Send
+  Send,
+  getDailyCaffeineTotal
 } from '@/lib/fitness-data'
 
 // Dynamically import the heavy DashboardClient component
@@ -52,6 +53,7 @@ interface DashboardData {
     meals_count: number
   }
   dailyHydrationTotal: number
+  dailyCaffeineTotal: number
   equipment: Equipment[]
 }
 
@@ -66,7 +68,7 @@ async function getDashboardData(): Promise<DashboardData> {
   })()
 
   // Fetch all dashboard data
-  const [workouts, sends, healthMetrics, goals, events, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats, dailyHydrationTotal, equipment] = await Promise.all([
+  const [workouts, sends, healthMetrics, goals, events, userStats, weeklyStats, meals, nutritionGoals, dailyNutritionStats, dailyHydrationTotal, dailyCaffeineTotal, equipment] = await Promise.all([
     getRecentWorkouts(5),
     getRecentSends(5),
     getHealthMetrics(),
@@ -78,6 +80,7 @@ async function getDashboardData(): Promise<DashboardData> {
     getNutritionGoals(),
     getDailyNutritionStats(today),
     getDailyHydrationTotal(today),
+    getDailyCaffeineTotal(today),
     getUserEquipment()
   ])
 
@@ -93,6 +96,7 @@ async function getDashboardData(): Promise<DashboardData> {
     nutritionGoals,
     dailyNutritionStats,
     dailyHydrationTotal,
+    dailyCaffeineTotal,
     equipment
   }
 }

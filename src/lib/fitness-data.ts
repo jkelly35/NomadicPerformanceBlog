@@ -1357,6 +1357,7 @@ export async function getDailyNutritionStats(date: string): Promise<{
       .from('meals')
       .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
       .eq('meal_date', date)
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
 
     if (error) {
       console.error('Error fetching daily nutrition stats:', error)
@@ -2243,6 +2244,7 @@ export async function getDailyHydrationTotal(date: string): Promise<number> {
     const { data, error } = await supabase
       .from('meals')
       .select('notes')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .eq('meal_date', date)
       .eq('meal_type', 'hydration')
 
@@ -2341,6 +2343,7 @@ export async function getDailyCaffeineTotal(date: string): Promise<number> {
     const { data: manualLogs, error: manualError } = await supabase
       .from('caffeine_logs')
       .select('amount_mg')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .gte('logged_time', startOfDay.toISOString())
       .lte('logged_time', endOfDay.toISOString())
 
@@ -2354,6 +2357,7 @@ export async function getDailyCaffeineTotal(date: string): Promise<number> {
     const { data: meals, error: mealsError } = await supabase
       .from('meals')
       .select('id')
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
       .eq('meal_date', date)
 
     if (mealsError) {
