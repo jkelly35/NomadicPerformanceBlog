@@ -866,6 +866,19 @@ function AnalyticsTab() {
           <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1a3a2a', marginBottom: '0.25rem' }}>
             Analytics Dashboard
           </h2>
+          {analyticsData.note && (
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#059669',
+              background: '#f0fdf4',
+              padding: '0.5rem',
+              borderRadius: '4px',
+              border: '1px solid #bbf7d0',
+              marginBottom: '0.5rem'
+            }}>
+              <strong>📊 Demo Data:</strong> {analyticsData.note}
+            </div>
+          )}
           {lastUpdated && (
             <div style={{ fontSize: '0.8rem', color: '#666' }}>
               Last updated: {lastUpdated.toLocaleTimeString()}

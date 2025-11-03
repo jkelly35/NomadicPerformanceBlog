@@ -44,10 +44,13 @@ export async function GET(request: NextRequest) {
 
     // Check if GA4 credentials are configured
     const ga4PropertyId = process.env.GA4_PROPERTY_ID
+    const ga4Credentials = process.env.GA4_CREDENTIALS_JSON
 
-    if (!ga4PropertyId) {
-      // Return mock data if GA4 not configured
+    if (!ga4PropertyId || !ga4Credentials) {
+      // Return mock data with Vercel Analytics note
       const mockAnalyticsData = {
+        note: "This dashboard shows demonstration data. Real analytics tracking is active via Vercel Analytics and available in your Vercel dashboard at https://vercel.com/dashboard.",
+        provider: "vercel-demo",
         realtime: {
           activeUsers: Math.floor(Math.random() * 50) + 10,
           pageViews: Math.floor(Math.random() * 200) + 50,

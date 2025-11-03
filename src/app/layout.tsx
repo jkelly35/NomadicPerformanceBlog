@@ -9,7 +9,7 @@ import StructuredData, { organizationStructuredData } from '@/components/Structu
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SkipLink from '@/components/SkipLink';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Nomadic Performance - Physical Therapy & Outdoor Performance Training",
