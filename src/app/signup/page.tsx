@@ -39,7 +39,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/profile&setup=true`
+          emailRedirectTo: `${window.location.origin}/api/auth/callback`
         }
       })
 

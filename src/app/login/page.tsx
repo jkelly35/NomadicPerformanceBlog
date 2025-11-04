@@ -23,7 +23,7 @@ function LoginForm() {
     setError('')
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -31,7 +31,16 @@ function LoginForm() {
       if (error) {
         setError(error.message)
       } else {
-        router.push('/dashboard')
+        // Check if user has a profile
+        const { data: profile } = await supabase
+          .from('user_preferences')
+          .select('user_id')
+          .eq('user_id', data.user?.id)
+          .single()
+
+        // If no profile exists, redirect to profile setup
+        const redirectTo = profile ? '/dashboard' : '/profile?setup=true'
+        router.push(redirectTo)
       }
     } catch {
       setError('An unexpected error occurred')
