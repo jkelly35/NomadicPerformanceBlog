@@ -28,7 +28,19 @@ export default function ProfilePage() {
     lastName: '',
     bio: '',
     activities: [] as string[],
-    dietaryPreferences: [] as string[]
+    dietaryPreferences: [] as string[],
+    avatarUrl: '',
+    website: '',
+    twitterHandle: '',
+    instagramHandle: '',
+    linkedinUrl: '',
+    githubUsername: '',
+    fitnessLevel: '',
+    goals: [] as string[],
+    newsletterSubscription: true,
+    publicProfile: true,
+    location: '',
+    timezone: ''
   })
   const [metricsData, setMetricsData] = useState({
     gender: '',
@@ -94,7 +106,19 @@ export default function ProfilePage() {
               lastName: data.last_name || '',
               bio: data.bio || '',
               activities: data.activities || [],
-              dietaryPreferences: data.dietary_preferences || []
+              dietaryPreferences: data.dietary_preferences || [],
+              avatarUrl: data.avatar_url || '',
+              website: data.website || '',
+              twitterHandle: data.twitter_handle || '',
+              instagramHandle: data.instagram_handle || '',
+              linkedinUrl: data.linkedin_url || '',
+              githubUsername: data.github_username || '',
+              fitnessLevel: data.fitness_level || '',
+              goals: data.goals || [],
+              newsletterSubscription: data.newsletter_subscription ?? true,
+              publicProfile: data.public_profile ?? true,
+              location: data.location || '',
+              timezone: data.timezone || ''
             });
           } else {
             console.log('No preferences found, setting defaults');
@@ -105,7 +129,19 @@ export default function ProfilePage() {
               lastName: '',
               bio: '',
               activities: [],
-              dietaryPreferences: []
+              dietaryPreferences: [],
+              avatarUrl: '',
+              website: '',
+              twitterHandle: '',
+              instagramHandle: '',
+              linkedinUrl: '',
+              githubUsername: '',
+              fitnessLevel: '',
+              goals: [],
+              newsletterSubscription: true,
+              publicProfile: true,
+              location: '',
+              timezone: ''
             });
           }
         } catch (error) {
@@ -116,7 +152,19 @@ export default function ProfilePage() {
             lastName: '',
             bio: '',
             activities: [],
-            dietaryPreferences: []
+            dietaryPreferences: [],
+            avatarUrl: '',
+            website: '',
+            twitterHandle: '',
+            instagramHandle: '',
+            linkedinUrl: '',
+            githubUsername: '',
+            fitnessLevel: '',
+            goals: [],
+            newsletterSubscription: true,
+            publicProfile: true,
+            location: '',
+            timezone: ''
           });
         }
       };
@@ -224,7 +272,19 @@ export default function ProfilePage() {
           last_name: formData.lastName,
           bio: formData.bio,
           activities: formData.activities,
-          dietary_preferences: formData.dietaryPreferences
+          dietary_preferences: formData.dietaryPreferences,
+          avatar_url: formData.avatarUrl,
+          website: formData.website,
+          twitter_handle: formData.twitterHandle,
+          instagram_handle: formData.instagramHandle,
+          linkedin_url: formData.linkedinUrl,
+          github_username: formData.githubUsername,
+          fitness_level: formData.fitnessLevel,
+          goals: formData.goals,
+          newsletter_subscription: formData.newsletterSubscription,
+          public_profile: formData.publicProfile,
+          location: formData.location,
+          timezone: formData.timezone
         }, {
           onConflict: 'user_id'
         });
@@ -573,6 +633,314 @@ export default function ProfilePage() {
                         resize: 'vertical'
                       }}
                     />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Avatar URL
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.avatarUrl}
+                        onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                        placeholder="https://..."
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Website
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        placeholder="https://..."
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Twitter
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.twitterHandle}
+                        onChange={(e) => setFormData({ ...formData, twitterHandle: e.target.value })}
+                        placeholder="@username"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Instagram
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.instagramHandle}
+                        onChange={(e) => setFormData({ ...formData, instagramHandle: e.target.value })}
+                        placeholder="@username"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        GitHub
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.githubUsername}
+                        onChange={(e) => setFormData({ ...formData, githubUsername: e.target.value })}
+                        placeholder="username"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: '#1a3a2a',
+                      marginBottom: '0.5rem'
+                    }}>
+                      LinkedIn URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.linkedinUrl}
+                      onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                      placeholder="https://linkedin.com/in/username"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '1rem',
+                        background: '#fff'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Fitness Level
+                      </label>
+                      <select
+                        value={formData.fitnessLevel}
+                        onChange={(e) => setFormData({ ...formData, fitnessLevel: e.target.value })}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      >
+                        <option value="">Select level</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="expert">Expert</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="City, Country"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Timezone
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.timezone}
+                        onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                        placeholder="America/New_York"
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Goals
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.goals.join(', ')}
+                        onChange={(e) => setFormData({ ...formData, goals: e.target.value.split(',').map(g => g.trim()).filter(g => g) })}
+                        placeholder="Weight loss, muscle gain, endurance..."
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: '1rem',
+                          background: '#fff'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        type="checkbox"
+                        id="newsletter"
+                        checked={formData.newsletterSubscription}
+                        onChange={(e) => setFormData({ ...formData, newsletterSubscription: e.target.checked })}
+                        style={{ width: '1rem', height: '1rem' }}
+                      />
+                      <label htmlFor="newsletter" style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a'
+                      }}>
+                        Subscribe to newsletter
+                      </label>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input
+                        type="checkbox"
+                        id="publicProfile"
+                        checked={formData.publicProfile}
+                        onChange={(e) => setFormData({ ...formData, publicProfile: e.target.checked })}
+                        style={{ width: '1rem', height: '1rem' }}
+                      />
+                      <label htmlFor="publicProfile" style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#1a3a2a'
+                      }}>
+                        Make profile public
+                      </label>
+                    </div>
                   </div>
 
                   {message && (
