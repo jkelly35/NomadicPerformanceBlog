@@ -22,6 +22,13 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'settings' | 'metrics'>('settings')
   const [updating, setUpdating] = useState(false)
   const [message, setMessage] = useState('')
+  const [isFirstTimeSetup, setIsFirstTimeSetup] = useState(false)
+
+  useEffect(() => {
+    // Check if this is first-time setup
+    const urlParams = new URLSearchParams(window.location.search)
+    setIsFirstTimeSetup(urlParams.get('setup') === 'true')
+  }, [])
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -295,6 +302,12 @@ export default function ProfilePage() {
       } else {
         console.log('Profile saved successfully')
         setMessage('Profile updated successfully!')
+        // Redirect to dashboard after first-time setup
+        if (isFirstTimeSetup) {
+          setTimeout(() => {
+            router.push('/dashboard')
+          }, 2000)
+        }
       }
     } catch (error) {
       console.error('Unexpected error:', error)

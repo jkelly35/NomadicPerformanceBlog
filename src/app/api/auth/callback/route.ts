@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get('next') ?? '/dashboard'
+  const setup = searchParams.get('setup')
 
   if (code) {
     let supabaseResponse = NextResponse.next({
@@ -35,17 +36,28 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // Check if user has a profile
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: profile } = await supabase
+        .from('user_preferences')
+        .select('user_id')
+        .eq('user_id', user?.id)
+        .single()
+
+      // If no profile exists, redirect to profile setup
+      const finalRedirect = profile ? next : `/profile${setup ? '?setup=true' : ''}`
+
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development'
       let redirectUrl: string
 
       if (isLocalEnv) {
         // We can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        redirectUrl = `${origin}${next}`
+        redirectUrl = `${origin}${finalRedirect}`
       } else if (forwardedHost) {
-        redirectUrl = `https://${forwardedHost}${next}`
+        redirectUrl = `https://${forwardedHost}${finalRedirect}`
       } else {
-        redirectUrl = `${origin}${next}`
+        redirectUrl = `${origin}${finalRedirect}`
       }
 
       // Copy cookies to the redirect response
