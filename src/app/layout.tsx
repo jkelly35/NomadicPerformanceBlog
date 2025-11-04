@@ -9,6 +9,7 @@ import StructuredData, { organizationStructuredData } from '@/components/Structu
 import ErrorBoundary from '@/components/ErrorBoundary';
 import SkipLink from '@/components/SkipLink';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
@@ -106,6 +107,7 @@ export default function RootLayout({
               {children}
               <PWAInstallPrompt />
               <OfflineIndicator />
+              <AnalyticsTracker />
             </PreferencesProvider>
           </AuthProvider>
         </ErrorBoundary>
