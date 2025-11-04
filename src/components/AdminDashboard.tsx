@@ -823,8 +823,10 @@ function UsersTab({ users, loading, adminStatus, fetchUsers }: { users: User[], 
 
       if (response.ok) {
         alert('User deleted successfully!')
-        // Refresh the users list immediately
-        fetchUsers()
+        // Add a small delay to allow Supabase to propagate the deletion
+        setTimeout(() => {
+          fetchUsers()
+        }, 1000)
       } else {
         const error = await response.json()
         alert(`Error: ${error.error}`)

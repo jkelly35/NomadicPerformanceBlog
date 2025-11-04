@@ -324,6 +324,24 @@ export async function DELETE(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // Clean up user preferences and related data
+    try {
+      await adminSupabase
+        .from('user_preferences')
+        .delete()
+        .eq('user_id', userId)
+
+      // Also clean up any admin user records
+      await adminSupabase
+        .from('admin_users')
+        .delete()
+        .eq('user_id', userId)
+
+      console.log(`Cleaned up related data for user ${userId}`)
+    } catch (cleanupError) {
+      console.log('Cleanup error (non-critical):', cleanupError)
+    }
+
     console.log(`Admin ${user.email} successfully deleted user ${userId}`)
 
     return NextResponse.json({
