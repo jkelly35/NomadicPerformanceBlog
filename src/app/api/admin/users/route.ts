@@ -68,9 +68,9 @@ export async function GET(request: NextRequest) {
         })
 
         if (!usersError && allUsers && allUsers.users.length > 0) {
-          // Get user preferences for additional data
+          // Get user preferences for additional data using service role to bypass RLS
           const userIds = allUsers.users.map(u => u.id)
-          const { data: userPrefs } = await supabase
+          const { data: userPrefs } = await adminSupabase
             .from('user_preferences')
             .select('user_id, first_name, last_name')
             .in('user_id', userIds)
@@ -188,7 +188,55 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // For other admins, return limited information
+    // For other admins, also try to use service role if available
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (serviceRoleKey && isAuthorized) {
+      console.log('Service role key available for non-main admin, attempting to fetch real users...')
+      const adminSupabase = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      )
+
+      const { data: allUsers, error: usersError } = await adminSupabase.auth.admin.listUsers()
+
+      if (!usersError && allUsers && allUsers.users.length > 0) {
+        // Get user preferences for additional data using service role to bypass RLS
+        const userIds = allUsers.users.map(u => u.id)
+        const { data: userPrefs } = await adminSupabase
+          .from('user_preferences')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds)
+
+        // Combine auth users with preferences
+        const users = allUsers.users.map(authUser => {
+          const prefs = userPrefs?.find((p: any) => p.user_id === authUser.id)
+          return {
+            id: authUser.id,
+            email: authUser.email || '',
+            created_at: authUser.created_at,
+            last_sign_in_at: authUser.last_sign_in_at,
+            is_current_user: authUser.id === user.id,
+            first_name: prefs?.first_name || null,
+            last_name: prefs?.last_name || null
+          }
+        })
+
+        console.log('Admin API - Returning real users for authorized admin:', users.length)
+        return NextResponse.json({
+          users,
+          total: allUsers.users.length,
+          note: 'Real user data from Supabase Auth (authorized admin)'
+        })
+      }
+    }
+
+    // For other admins without service role access, return limited information
     const users = [
       {
         id: user.id,
