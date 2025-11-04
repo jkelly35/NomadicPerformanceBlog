@@ -8,7 +8,7 @@ import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import BottomNavigation from "@/components/BottomNavigation";
 import FoodSearch from "./FoodSearch";
-import NutritionFacts from "./NutritionFacts";
+import NutritionFacts from "../../NutritionFacts";
 import NutritionOverviewCard from "./NutritionOverviewCard";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import { BarcodeFood } from '@/lib/barcode-api';

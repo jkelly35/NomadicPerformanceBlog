@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server'
 // PUT /api/admin/posts/[id] - Update blog post
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -25,7 +25,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const postId = params.id
+    const { id: postId } = await params
     const body = await request.json()
     const {
       title,
@@ -109,7 +109,7 @@ export async function PUT(
 // DELETE /api/admin/posts/[id] - Delete blog post
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -130,7 +130,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const postId = params.id
+    const { id: postId } = await params
 
     const { error: deleteError } = await supabase
       .from('blog_posts')
@@ -153,7 +153,7 @@ export async function DELETE(
 // GET /api/admin/posts/[id] - Get single blog post
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -174,7 +174,7 @@ export async function GET(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const postId = params.id
+    const { id: postId } = await params
 
     const { data: post, error: postError } = await supabase
       .from('blog_posts')
