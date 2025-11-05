@@ -159,6 +159,8 @@ export default async function NutritionPage() {
     supabase.from('metric_correlations').select('*').eq('is_significant', true).order('correlation_coefficient', { ascending: false })
   ])
 
+  console.log('Food items loaded:', foodItems?.length || 0, foodItems)
+
   // Process meals data to include food items in the expected format
   const processedMeals = (meals || []).map((meal: any) => ({
     ...meal,
