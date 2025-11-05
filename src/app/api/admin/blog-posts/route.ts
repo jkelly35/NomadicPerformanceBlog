@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import fs from 'fs'
-import path from 'path'
-import matter from 'gray-matter'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,60 +7,70 @@ export async function GET(request: NextRequest) {
 
     // Check if user is admin
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-
     if (userError || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const isMainAdmin = user.email === 'joe@nomadicperformance.com'
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
 
-    let isAuthorized = isMainAdmin
-
-    if (!isMainAdmin) {
-      // Check database admin status
-      try {
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', user.id)
-          .single()
-
-        isAuthorized = adminUser !== null
-      } catch (dbError) {
-        // Table might not exist, only main admin can access
-        console.log('Admin users table not found or error:', dbError)
-        isAuthorized = false
-      }
+    if (adminError || !adminCheck) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    // Get query parameters
+    const { searchParams } = new URL(request.url)
+    const status = searchParams.get('status') || 'all'
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const offset = parseInt(searchParams.get('offset') || '0')
+
+    let query = supabase
+      .from('blog_posts')
+      .select(`
+        *,
+        author:user_preferences(first_name, last_name)
+      `)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (status !== 'all') {
+      query = query.eq('status', status)
     }
 
-    const postsDirectory = path.join(process.cwd(), 'src/content/posts')
-    const filenames = fs.readdirSync(postsDirectory)
+    const { data: posts, error: postsError } = await query
 
-    const posts = filenames
-      .filter(filename => filename.endsWith('.mdx'))
-      .map(filename => {
-        const filePath = path.join(postsDirectory, filename)
-        const fileContents = fs.readFileSync(filePath, 'utf8')
-        const { data } = matter(fileContents)
+    if (postsError) {
+      console.error('Error fetching posts:', postsError)
+      return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 })
+    }
 
-        return {
-          slug: filename.replace('.mdx', ''),
-          title: data.title || 'Untitled',
-          date: data.date || new Date().toISOString(),
-          excerpt: data.excerpt || data.description || 'No excerpt available',
-          ...data
-        }
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    // Get total count for pagination
+    let countQuery = supabase
+      .from('blog_posts')
+      .select('*', { count: 'exact', head: true })
 
-    return NextResponse.json(posts)
+    if (status !== 'all') {
+      countQuery = countQuery.eq('status', status)
+    }
+
+    const { count, error: countError } = await countQuery
+
+    if (countError) {
+      console.error('Error getting count:', countError)
+    }
+
+    return NextResponse.json({
+      posts: posts || [],
+      total: count || 0,
+      limit,
+      offset
+    })
   } catch (error) {
-    console.error('Error fetching blog posts:', error)
-    return NextResponse.json({ error: 'Failed to fetch blog posts' }, { status: 500 })
+    console.error('Unexpected error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -73,71 +80,195 @@ export async function POST(request: NextRequest) {
 
     // Check if user is admin
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-
     if (userError || !user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const isMainAdmin = user.email === 'joe@nomadicperformance.com'
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
 
-    let isAuthorized = isMainAdmin
-
-    if (!isMainAdmin) {
-      // Check database admin status
-      try {
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', user.id)
-          .single()
-
-        isAuthorized = adminUser !== null
-      } catch (dbError) {
-        // Table might not exist, only main admin can access
-        console.log('Admin users table not found or error:', dbError)
-        isAuthorized = false
-      }
-    }
-
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
+    if (adminError || !adminCheck) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
     const body = await request.json()
-    const { title, content, excerpt, date } = body
+    const {
+      title,
+      slug,
+      excerpt,
+      content,
+      featured_image_url,
+      status = 'draft',
+      categories = [],
+      tags = [],
+      seo_title,
+      seo_description,
+      seo_keywords = []
+    } = body
 
-    if (!title || !content) {
-      return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
+    if (!title || !slug || !content) {
+      return NextResponse.json({ error: 'Title, slug, and content are required' }, { status: 400 })
     }
 
-    // Generate slug from title
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
+    // Calculate reading time and word count
+    const wordCount = content.split(/\s+/).length
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200))
 
-    // Create frontmatter
-    const frontmatter = `---
-title: "${title}"
-date: "${date || new Date().toISOString()}"
-excerpt: "${excerpt || ''}"
----
+    const { data: post, error: insertError } = await supabase
+      .from('blog_posts')
+      .insert({
+        title,
+        slug,
+        excerpt,
+        content,
+        featured_image_url,
+        status,
+        author_id: user.id,
+        categories,
+        tags,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        reading_time_minutes: readingTime,
+        word_count: wordCount,
+        published_at: status === 'published' ? new Date().toISOString() : null
+      })
+      .select()
+      .single()
 
-`
+    if (insertError) {
+      console.error('Error creating post:', insertError)
+      return NextResponse.json({ error: 'Failed to create post' }, { status: 500 })
+    }
 
-    const fullContent = frontmatter + content
-    const filePath = path.join(process.cwd(), 'src/content/posts', `${slug}.mdx`)
-
-    // Write file
-    fs.writeFileSync(filePath, fullContent, 'utf8')
-
-    return NextResponse.json({
-      success: true,
-      slug,
-      message: 'Blog post created successfully'
-    })
+    return NextResponse.json({ post }, { status: 201 })
   } catch (error) {
-    console.error('Error creating blog post:', error)
-    return NextResponse.json({ error: 'Failed to create blog post' }, { status: 500 })
+    console.error('Unexpected error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    // Check if user is admin
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (adminError || !adminCheck) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const {
+      id,
+      title,
+      slug,
+      excerpt,
+      content,
+      featured_image_url,
+      status,
+      categories = [],
+      tags = [],
+      seo_title,
+      seo_description,
+      seo_keywords = []
+    } = body
+
+    if (!id || !title || !slug || !content) {
+      return NextResponse.json({ error: 'ID, title, slug, and content are required' }, { status: 400 })
+    }
+
+    // Calculate reading time and word count
+    const wordCount = content.split(/\s+/).length
+    const readingTime = Math.max(1, Math.ceil(wordCount / 200))
+
+    const { data: post, error: updateError } = await supabase
+      .from('blog_posts')
+      .update({
+        title,
+        slug,
+        excerpt,
+        content,
+        featured_image_url,
+        status,
+        categories,
+        tags,
+        seo_title,
+        seo_description,
+        seo_keywords,
+        reading_time_minutes: readingTime,
+        word_count: wordCount,
+        published_at: status === 'published' ? new Date().toISOString() : null
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Error updating post:', updateError)
+      return NextResponse.json({ error: 'Failed to update post' }, { status: 500 })
+    }
+
+    return NextResponse.json({ post })
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+
+    // Check if user is admin
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (adminError || !adminCheck) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'Post ID is required' }, { status: 400 })
+    }
+
+    const { error: deleteError } = await supabase
+      .from('blog_posts')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      console.error('Error deleting post:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete post' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
