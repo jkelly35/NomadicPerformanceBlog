@@ -4,14 +4,7 @@ import { useMemo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import PostCard from './PostCard';
 import { BlogCardSkeleton, GridSkeleton } from './SkeletonLoaders';
-
-type PostMeta = {
-  title: string;
-  slug: string;
-  date: string;
-  excerpt: string;
-  tags?: string[];
-};
+import type { PostMeta } from '@/lib/posts';
 
 interface BlogContentProps {
   posts: PostMeta[];

@@ -2,14 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-
-type PostMeta = {
-  title: string;
-  slug: string;
-  date: string;
-  excerpt: string;
-  tags?: string[];
-};
+import type { PostMeta } from '@/lib/posts';
 
 interface RelatedPostsProps {
   currentPost: PostMeta;

@@ -2,18 +2,11 @@
 
 import React, { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { PostMeta } from '@/lib/posts';
 
 interface TagFilterProps {
   posts: PostMeta[];
 }
-
-type PostMeta = {
-  title: string;
-  slug: string;
-  date: string;
-  excerpt: string;
-  tags?: string[];
-};
 
 export default function TagFilter({ posts }: TagFilterProps) {
   const router = useRouter();

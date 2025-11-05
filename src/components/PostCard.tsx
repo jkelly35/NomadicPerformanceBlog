@@ -3,14 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-
-type PostMeta = {
-  title: string;
-  slug: string;
-  date: string;
-  excerpt: string;
-  tags?: string[];
-};
+import type { PostMeta } from '@/lib/posts';
 
 interface PostCardProps {
   post: PostMeta;
