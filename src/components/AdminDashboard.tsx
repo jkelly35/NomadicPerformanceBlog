@@ -11,7 +11,7 @@ interface User {
 }
 
 interface BlogPost {
-  id?: string
+  id: string
   slug: string
   title: string
   excerpt?: string
@@ -88,7 +88,7 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
         totalUsers: userStats,
         totalPosts: posts.length || 0,
         recentActivity: posts.filter((post: BlogPost) => {
-          const postDate = new Date(post.date)
+          const postDate = new Date(post.created_at || post.date || '')
           const weekAgo = new Date()
           weekAgo.setDate(weekAgo.getDate() - 7)
           return postDate > weekAgo
@@ -1305,7 +1305,7 @@ function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[]
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
           {filteredPosts.map((post) => (
-            <div key={post.id || post.slug} style={{
+            <div key={post.id} style={{
               background: '#fff',
               borderRadius: '8px',
               padding: '1.5rem',
@@ -1345,20 +1345,20 @@ function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[]
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDeletePost(post.id || post.slug)}
-                    disabled={actionLoading === (post.id || post.slug)}
+                    onClick={() => handleDeletePost(post.id)}
+                    disabled={actionLoading === post.id}
                     style={{
                       padding: '0.25rem 0.75rem',
                       background: '#dc3545',
                       color: '#fff',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: actionLoading === (post.id || post.slug) ? 'not-allowed' : 'pointer',
+                      cursor: actionLoading === post.id ? 'not-allowed' : 'pointer',
                       fontSize: '0.8rem',
-                      opacity: actionLoading === (post.id || post.slug) ? 0.6 : 1
+                      opacity: actionLoading === post.id ? 0.6 : 1
                     }}
                   >
-                    {actionLoading === (post.id || post.slug) ? '...' : 'Delete'}
+                    {actionLoading === post.id ? '...' : 'Delete'}
                   </button>
                 </div>
               </div>
