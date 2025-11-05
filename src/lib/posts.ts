@@ -1,5 +1,6 @@
 // src/lib/posts.ts
 import { createClient } from '@/lib/supabase-server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import path from 'path';
 
 export type PostMeta = {
@@ -20,7 +21,28 @@ export type PostMeta = {
 const POSTS_DIR = path.join(process.cwd(), "src/content/posts");
 
 export async function getPostSlugs() {
-  const supabase = await createClient()
+  try {
+    // Try server client first (for runtime requests)
+    const supabase = await createClient()
+    const { data: posts, error } = await supabase
+      .from('blog_posts')
+      .select('slug')
+      .eq('status', 'published')
+
+    if (!error && posts) {
+      return posts.map(post => post.slug)
+    }
+  } catch (error) {
+    // Fall back to admin client for static generation
+    console.log('Using admin client for getPostSlugs')
+  }
+
+  // Fallback for static generation
+  const supabase = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   const { data: posts, error } = await supabase
     .from('blog_posts')
     .select('slug')
@@ -35,7 +57,30 @@ export async function getPostSlugs() {
 }
 
 export async function getPostBySlug(slug: string) {
-  const supabase = await createClient()
+  try {
+    // Try server client first (for runtime requests)
+    const supabase = await createClient()
+    const { data: post, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single()
+
+    if (!error && post) {
+      return processPostData(post)
+    }
+  } catch (error) {
+    // Fall back to admin client for static generation
+    console.log('Using admin client for getPostBySlug')
+  }
+
+  // Fallback for static generation
+  const supabase = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   const { data: post, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -47,6 +92,10 @@ export async function getPostBySlug(slug: string) {
     throw new Error(`Post not found: ${slug}`)
   }
 
+  return processPostData(post)
+}
+
+function processPostData(post: any) {
   // Convert database format to PostMeta format
   const meta: PostMeta = {
     title: post.title,
@@ -67,7 +116,30 @@ export async function getPostBySlug(slug: string) {
 }
 
 export async function getAllPostsMeta(): Promise<PostMeta[]> {
-  const supabase = await createClient()
+  try {
+    // Try server client first (for runtime requests)
+    const supabase = await createClient()
+    const { data: posts, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+
+    if (!error && posts) {
+      return posts.map(processPostMeta)
+    }
+  } catch (error) {
+    // Fall back to admin client for static generation
+    console.log('Using admin client for getAllPostsMeta')
+  }
+
+  // Fallback for static generation
+  const supabase = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   const { data: posts, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -80,7 +152,11 @@ export async function getAllPostsMeta(): Promise<PostMeta[]> {
     return []
   }
 
-  return posts?.map(post => ({
+  return posts?.map(processPostMeta) || []
+}
+
+function processPostMeta(post: any): PostMeta {
+  return {
     title: post.title,
     slug: post.slug,
     date: post.published_at || post.created_at,
@@ -93,5 +169,5 @@ export async function getAllPostsMeta(): Promise<PostMeta[]> {
     seo_title: post.seo_title,
     seo_description: post.seo_description,
     seo_keywords: post.seo_keywords
-  })) || []
+  }
 }
