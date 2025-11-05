@@ -1,5 +1,6 @@
 // src/lib/posts.ts
 import { createClient } from '@/lib/supabase-server'
+import path from 'path';
 
 export type PostMeta = {
   title: string;
