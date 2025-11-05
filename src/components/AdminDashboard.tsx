@@ -1123,7 +1123,7 @@ function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[]
     if (searchTerm) {
       filtered = filtered.filter(post =>
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
+        (post.excerpt?.toLowerCase() || '').includes(searchTerm.toLowerCase())
       )
     }
 
