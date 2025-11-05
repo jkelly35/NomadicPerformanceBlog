@@ -2633,3 +2633,114 @@ function PostModal({ post, categories, tags, onSave, onClose, loading }: {
     </div>
   )
 }
+
+function HistorySection({ history, loading, onRefresh }: {
+  history: any[],
+  loading: boolean,
+  onRefresh: () => void
+}) {
+  return (
+    <div style={{
+      background: '#fff',
+      borderRadius: '12px',
+      padding: '2rem',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '2rem'
+      }}>
+        <h2 style={{
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          color: '#1a3a2a',
+          margin: 0
+        }}>
+          Communication History
+        </h2>
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          style={{
+            padding: '0.5rem 1rem',
+            background: '#1a3a2a',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            opacity: loading ? 0.6 : 1
+          }}
+        >
+          {loading ? 'Loading...' : 'Refresh'}
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          Loading history...
+        </div>
+      ) : history.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+          No communication history found.
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '0.9rem'
+          }}>
+            <thead>
+              <tr style={{
+                background: '#f8f9fa',
+                borderBottom: '2px solid #e9ecef'
+              }}>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>Date</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>Type</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>Subject</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600 }}>User</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((item: any, index: number) => (
+                <tr key={index} style={{
+                  borderBottom: '1px solid #e9ecef',
+                  background: index % 2 === 0 ? '#fff' : '#f8f9fa'
+                }}>
+                  <td style={{ padding: '1rem' }}>
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    {item.type || 'N/A'}
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    {item.notifications?.subject || 'N/A'}
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      background: item.status === 'sent' ? '#d4edda' : '#f8d7da',
+                      color: item.status === 'sent' ? '#155724' : '#721c24'
+                    }}>
+                      {item.status || 'unknown'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    {item.user_id ? item.user_id.substring(0, 8) + '...' : 'N/A'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
