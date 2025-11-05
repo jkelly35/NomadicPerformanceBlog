@@ -2761,6 +2761,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
         {activeTab === 'calendar' && (
           <MealPlanningTab
             mealTemplates={initialData.mealTemplates}
+            foodItems={initialData.foodItems}
+            savedFoods={initialData.savedFoods}
             userGoals={initialData.nutritionGoals}
             onMealPlanned={(meal) => {
               // TODO: Handle meal planning

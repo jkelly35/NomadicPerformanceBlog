@@ -17,15 +17,18 @@ import {
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns'
 import MealPlanningCalendar from './MealPlanningCalendar'
 import SmartRecipeSuggestions from './SmartRecipeSuggestions'
-import { MealTemplate, PlannedMeal } from '@/lib/fitness-data'
+import { MealTemplate, PlannedMeal, SavedFood } from '@/lib/fitness-data'
+import { FoodItem } from '@/lib/features/nutrition'
 
 interface MealPlanningTabProps {
   mealTemplates: MealTemplate[]
+  foodItems: FoodItem[]
+  savedFoods: SavedFood[]
   userGoals?: any[] // TODO: Add proper NutritionGoal type
   onMealPlanned?: (meal: PlannedMeal) => void
 }
 
-export default function MealPlanningTab({ mealTemplates, userGoals = [], onMealPlanned }: MealPlanningTabProps) {
+export default function MealPlanningTab({ mealTemplates, foodItems, savedFoods, userGoals = [], onMealPlanned }: MealPlanningTabProps) {
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [plannedMeals, setPlannedMeals] = useState<PlannedMeal[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -141,6 +144,13 @@ export default function MealPlanningTab({ mealTemplates, userGoals = [], onMealP
     }
   }
 
+  const addMealToCalendar = (dateStr: string, mealType: string, meal: PlannedMeal) => {
+    setPlannedMeals(prev => [...prev, meal])
+    if (onMealPlanned) {
+      onMealPlanned(meal)
+    }
+  }
+
   const removePlannedMeal = async (mealId: string) => {
     try {
       setPlannedMeals(prev => prev.filter(m => m.id !== mealId))
@@ -234,6 +244,9 @@ export default function MealPlanningTab({ mealTemplates, userGoals = [], onMealP
               mealTypes={mealTypes}
               plannedMeals={plannedMeals}
               onRemoveMeal={removePlannedMeal}
+              onAddMeal={addMealToCalendar}
+              availableFoods={foodItems}
+              mealTemplates={mealTemplates}
               isLoading={isLoading}
             />
           </div>
