@@ -1325,7 +1325,7 @@ function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[]
                       color: post.status === 'published' ? '#28a745' :
                              post.status === 'draft' ? '#ffc107' : '#6c757d'
                     }}>{post.status}</strong></span>
-                    <span>Created: {new Date(post.created_at || post.date).toLocaleDateString()}</span>
+                    <span>Created: {new Date(post.created_at || post.date || '').toLocaleDateString()}</span>
                     {post.published_at && <span>Published: {new Date(post.published_at).toLocaleDateString()}</span>}
                   </div>
                 </div>
