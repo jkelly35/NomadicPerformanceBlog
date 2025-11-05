@@ -126,8 +126,8 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
       // Fetch blog posts from the content directory
       const response = await fetch('/api/admin/blog-posts')
       if (response.ok) {
-        const posts = await response.json()
-        setBlogPosts(posts)
+        const data = await response.json()
+        setBlogPosts(data.posts || [])
       }
     } catch (error) {
       console.error('Error fetching blog posts:', error)
