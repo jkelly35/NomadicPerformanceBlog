@@ -10,6 +10,8 @@ import BottomNavigation from "@/components/BottomNavigation";
 import FoodSearch from "./FoodSearch";
 import NutritionFacts from "../../NutritionFacts";
 import NutritionOverviewCard from "./NutritionOverviewCard";
+import MealPlanningTab from "./MealPlanningTab";
+import NutritionProgressTab from "./NutritionProgressTab";
 import { FoodItem as USDAFoodItem } from "@/lib/nutrition-api";
 import { BarcodeFood } from '@/lib/barcode-api';
 import { useToast } from '@/components/Toast'
@@ -50,7 +52,7 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
   const { addToast } = useToast()
 
   const [data, setData] = useState<NutritionData>(initialData)
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'progress' | 'foods' | 'usda-search' | 'barcode-scan' | 'meals' | 'templates' | 'saved' | 'log' | 'goals' | 'ai-insights'>('dashboard')
   const [aiInsightsSubTab, setAiInsightsSubTab] = useState<'insights' | 'habits' | 'correlations'>('insights')
   const [recipeSuggestions, setRecipeSuggestions] = useState<MealDBRecipe[]>([])
   const [loadingRecipes, setLoadingRecipes] = useState(false)
@@ -1453,6 +1455,8 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
           }}>
             {[
               { id: 'dashboard', label: 'Overview', icon: '📊' },
+              { id: 'calendar', label: 'Meal Planning', icon: '📅' },
+              { id: 'progress', label: 'Progress', icon: '📈' },
               { id: 'foods', label: 'Food Database', icon: '🥕' },
               { id: 'usda-search', label: 'USDA Search', icon: '🔍' },
               { id: 'barcode-scan', label: 'Scan Barcode', icon: '📱' },
@@ -2751,6 +2755,25 @@ export default function NutritionClient({ initialData }: NutritionClientProps) {
               })()}
             </div>
           </div>
+        )}
+
+        {/* Meal Planning Calendar Tab */}
+        {activeTab === 'calendar' && (
+          <MealPlanningTab
+            mealTemplates={initialData.mealTemplates}
+            userGoals={initialData.nutritionGoals}
+            onMealPlanned={(meal) => {
+              // TODO: Handle meal planning
+              console.log('Meal planned:', meal)
+            }}
+          />
+        )}
+
+        {/* Progress Visualization Tab */}
+        {activeTab === 'progress' && (
+          <NutritionProgressTab
+            userId={user?.id || ''}
+          />
         )}
 
         {/* Food Database Tab */}

@@ -592,6 +592,24 @@ export interface MealTemplateItem {
   food_item?: FoodItem
 }
 
+export interface PlannedMeal {
+  id: string
+  user_id: string
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  planned_date: string
+  planned_time?: string
+  meal_template_id?: string
+  recipe_id?: string
+  recipe_name?: string
+  recipe_image?: string
+  custom_name?: string
+  notes?: string
+  is_completed: boolean
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
 export interface EquipmentCategory {
   id: string
   category_name: string
