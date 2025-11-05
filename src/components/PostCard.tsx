@@ -117,7 +117,7 @@ export default function PostCard({ post }: PostCardProps) {
             fontWeight: '600',
             zIndex: 2
           }}>
-            {new Date(post.date).toLocaleDateString('en-US', {
+            {new Date(post.date || '').toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric'
             })}

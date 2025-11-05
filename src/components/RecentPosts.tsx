@@ -102,7 +102,7 @@ export default function RecentPosts({ posts }: RecentPostsProps) {
                   fontSize: 'clamp(0.75rem, 2vw, 0.85rem)',
                   fontWeight: '600'
                 }}>
-                  {new Date(post.date).toLocaleDateString('en-US', {
+                  {new Date(post.date || '').toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric'
                   })}

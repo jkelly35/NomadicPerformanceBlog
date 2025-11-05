@@ -127,7 +127,7 @@ export default function RelatedPosts({ currentPost, allPosts, limit = 3 }: Relat
                   color: '#999',
                   fontWeight: '500'
                 }}>
-                  {new Date(post.date).toLocaleDateString('en-US', {
+                  {new Date(post.date || '').toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'

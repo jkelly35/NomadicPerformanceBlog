@@ -345,7 +345,7 @@ function OverviewTab() {
             id: `post-${post.slug}`,
             type: 'post' as const,
             message: `New blog post: "${post.title}"`,
-            timestamp: new Date(post.date),
+            timestamp: new Date(post.created_at || post.date || ''),
             icon: '📝'
           })
         })
