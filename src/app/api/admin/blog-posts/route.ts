@@ -3,11 +3,15 @@ import { createClient } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Blog Posts API: Called')
     const supabase = await createClient()
 
     // Check if user is admin
     const { data: { user }, error: userError } = await supabase.auth.getUser()
+    console.log('Blog Posts API: Auth check:', { user: user?.email, error: userError })
+
     if (userError || !user) {
+      console.log('Blog Posts API: Not authenticated')
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
@@ -17,7 +21,10 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
+    console.log('Blog Posts API: Admin check:', { adminCheck, adminError })
+
     if (adminError || !adminCheck) {
+      console.log('Blog Posts API: Admin access required')
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 

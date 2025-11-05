@@ -121,13 +121,21 @@ export default function AdminDashboard({ adminStatus }: { adminStatus: AdminStat
   }
 
   const fetchBlogPosts = async () => {
+    console.log('AdminDashboard: fetchBlogPosts called')
     setLoading(true)
     try {
       // Fetch blog posts from the content directory
+      console.log('AdminDashboard: Making API call to /api/admin/blog-posts')
       const response = await fetch('/api/admin/blog-posts')
+      console.log('AdminDashboard: API response status:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('AdminDashboard: API response data:', data)
         setBlogPosts(data.posts || [])
+        console.log('AdminDashboard: Set blog posts:', data.posts?.length || 0)
+      } else {
+        const errorData = await response.json()
+        console.log('AdminDashboard: API error:', errorData)
       }
     } catch (error) {
       console.error('Error fetching blog posts:', error)
