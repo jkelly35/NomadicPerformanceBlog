@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('blog_posts')
       .select(`
-        *,
-        author:user_preferences(first_name, last_name)
+        *
       `)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
