@@ -1383,7 +1383,7 @@ function ContentTab({ blogPosts, loading, adminStatus }: { blogPosts: BlogPost[]
             setShowCreateModal(false)
             setEditingPost(null)
           }}
-          loading={actionLoading === 'create' || (editingPost && actionLoading === editingPost.id)}
+          loading={!!(actionLoading === 'create' || (editingPost && actionLoading === editingPost.id))}
         />
       )}
     </div>
