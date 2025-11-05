@@ -327,7 +327,7 @@ function OverviewTab() {
           totalUsers: usersData.users?.length || 0,
           totalPosts: posts.length || 0,
           recentActivity: posts.filter((post: BlogPost) => {
-            const postDate = new Date(post.date)
+            const postDate = new Date(post.created_at || post.date || '')
             const weekAgo = new Date()
             weekAgo.setDate(weekAgo.getDate() - 7)
             return postDate > weekAgo
